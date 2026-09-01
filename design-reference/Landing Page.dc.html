@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/effects.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/base.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0}
+a{color:var(--brand-deep)}
+a:hover{color:var(--brand-dark)}
+</style>
+</helmet>
+
+<header id="top" style="position:sticky;top:0;z-index:40;background:rgba(0,0,0,0.92);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid rgba(255,255,255,0.08);box-shadow:0 4px 24px rgba(0,0,0,0.12)">
+  <nav style="max-width:var(--container-marketing);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 40px">
+    <a href="#top" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span style="width:32px;height:32px;border-radius:10px;background:var(--itutor-green);display:grid;place-items:center;flex-shrink:0">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 17 }}" color="#fff" hint-size="17px,17px"></x-import>
+      </span>
+      <span style="font-family:var(--font-display);font-weight:700;font-size:18px;color:#fff">iTutor <span style="font-weight:500;color:rgba(255,255,255,0.55)">Business</span></span>
+    </a>
+    <a href="#how-it-works" style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:rgba(255,255,255,0.7);text-decoration:none">How it works</a>
+    <div style="display:flex;align-items:center;gap:24px">
+      <a href="#" style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:rgba(255,255,255,0.7);text-decoration:none">Log in</a>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="gradient" as="a" href="#role-picker" hint-size="90px,40px">Sign up</x-import>
+    </div>
+  </nav>
+</header>
+
+<sc-if value="{{ heroPhoto }}" hint-placeholder-val="{{ true }}">
+<section style="position:relative;overflow:hidden;background:var(--gradient-mint-wash);padding:52px 24px 40px">
+  <div class="animate-blob" style="position:absolute;left:-128px;top:60px;width:280px;height:280px;border-radius:9999px;background:color-mix(in oklab, var(--brand) 20%, transparent);filter:blur(64px);pointer-events:none"></div>
+  <div class="animate-blob" style="position:absolute;right:0;top:20%;width:320px;height:320px;border-radius:9999px;background:color-mix(in oklab, var(--coral) 15%, transparent);filter:blur(64px);pointer-events:none;animation-delay:-6s"></div>
+  <div style="position:relative;max-width:var(--container-content);margin:0 auto;display:grid;grid-template-columns:1.05fr 1fr;gap:64px;align-items:center">
+    <div style="min-width:0">
+      <div style="display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius-full);border:1px solid color-mix(in oklab, var(--brand) 30%, transparent);background:rgba(255,255,255,0.7);padding:6px 16px;font-size:var(--text-sm);font-weight:var(--weight-medium);color:var(--forest);backdrop-filter:blur(8px)">
+        <span style="width:8px;height:8px;border-radius:9999px;background:var(--brand)"></span>
+        Training software for growing teams
+      </div>
+      <h1 style="margin-top:24px;margin-bottom:0;font-size:var(--text-hero);font-weight:var(--weight-bold);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--ink)">
+        Train your team.<br/>
+        <span style="color:var(--itutor-green)">Track every course.</span>
+      </h1>
+      <p style="margin-top:28px;max-width:480px;font-size:var(--text-lg);line-height:var(--leading-relaxed);color:var(--ink-muted)">
+        One platform for businesses to onboard and train their teams, and for individuals to build verified, job-ready skills.
+      </p>
+      <div style="margin-top:32px;display:flex;flex-wrap:wrap;gap:12px">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="marketing" size="lg" as="a" href="#role-picker" hint-size="180px,52px">Get Started</x-import>
+      </div>
+    </div>
+    <div style="position:relative;min-width:0">
+      <div style="position:relative;overflow:hidden;border-radius:var(--radius-3xl);box-shadow:var(--shadow-pop);outline:1px solid rgba(17,24,39,0.05)">
+        <image-slot id="landing-hero-photo" shape="rect" placeholder="Drop in a photo of your team training or onboarding" style="width:100%;height:320px;display:block"></image-slot>
+      </div>
+      <div style="position:absolute;left:-28px;bottom:-28px;max-width:230px;background:#fff;border-radius:var(--radius-2xl);padding:16px;box-shadow:var(--shadow-card);outline:1px solid rgba(17,24,39,0.05)">
+        <p style="margin:0 0 10px;font-size:var(--text-2xs);font-weight:var(--weight-bold);color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.06em">Onboarding checklist</p>
+        <div style="display:grid;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);color:var(--ink)">
+            <span style="width:18px;height:18px;border-radius:9999px;background:rgba(25,147,86,0.15);color:var(--itutor-green);display:grid;place-items:center;flex-shrink:0">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 11 }}" stroke-width="{{ 3 }}" hint-size="11px,11px"></x-import>
+            </span>
+            Account created
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);color:var(--ink)">
+            <span style="width:18px;height:18px;border-radius:9999px;background:rgba(25,147,86,0.15);color:var(--itutor-green);display:grid;place-items:center;flex-shrink:0">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 11 }}" stroke-width="{{ 3 }}" hint-size="11px,11px"></x-import>
+            </span>
+            Team invited
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);color:var(--ink)">
+            <span style="width:18px;height:18px;border-radius:9999px;background:var(--neutral-bg);color:#9ca3af;display:grid;place-items:center;flex-shrink:0">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 11 }}" stroke-width="{{ 3 }}" hint-size="11px,11px"></x-import>
+            </span>
+            First course assigned
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ heroGradient }}" hint-placeholder-val="{{ false }}">
+<section style="position:relative;overflow:hidden;background:var(--gradient-mint-wash);padding:52px 24px 40px">
+  <div class="animate-blob" style="position:absolute;left:-128px;top:60px;width:280px;height:280px;border-radius:9999px;background:color-mix(in oklab, var(--brand) 20%, transparent);filter:blur(64px);pointer-events:none"></div>
+  <div style="position:relative;max-width:var(--container-content);margin:0 auto;display:grid;grid-template-columns:1.05fr 1fr;gap:64px;align-items:center">
+    <div style="min-width:0">
+      <div style="display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius-full);border:1px solid color-mix(in oklab, var(--brand) 30%, transparent);background:rgba(255,255,255,0.7);padding:6px 16px;font-size:var(--text-sm);font-weight:var(--weight-medium);color:var(--forest)">
+        <span style="width:8px;height:8px;border-radius:9999px;background:var(--brand)"></span>
+        Training software for growing teams
+      </div>
+      <h1 style="margin-top:24px;margin-bottom:0;font-size:var(--text-hero);font-weight:var(--weight-bold);line-height:1.02;letter-spacing:var(--tracking-display);color:var(--ink)">
+        Train your team.<br/>
+        <span style="color:var(--itutor-green)">Track every course.</span>
+      </h1>
+      <p style="margin-top:28px;max-width:480px;font-size:var(--text-lg);line-height:var(--leading-relaxed);color:var(--ink-muted)">
+        One platform for businesses to onboard and train their teams, and for individuals to build verified, job-ready skills.
+      </p>
+      <div style="margin-top:32px;display:flex;flex-wrap:wrap;gap:12px">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="marketing" size="lg" as="a" href="#role-picker" hint-size="180px,52px">Get Started</x-import>
+      </div>
+    </div>
+    <div style="position:relative;min-width:0;border-radius:var(--radius-3xl);background:var(--gradient-brand);box-shadow:var(--shadow-pop);height:320px;display:grid;place-items:center">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="layout-dashboard" size="{{ 96 }}" stroke-width="{{ 1.2 }}" color="rgba(255,255,255,0.9)" hint-size="96px,96px"></x-import>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<section id="courses" style="padding:16px 24px 72px;background:#fff">
+  <div style="max-width:var(--container-content);margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:24px">
+      <div>
+        <h2 style="font-size:clamp(26px,3vw,32px);font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--ink);margin:0 0 6px">Browse courses</h2>
+        <p style="margin:0;color:var(--ink-muted);font-size:var(--text-base)">A sample of what's live on the platform today — no account needed to look around.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="width:220px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.SearchField" shape="rect" placeholder="Search courses…" value="{{ marketSearch }}" onChange="{{ onMarketSearch }}" hint-size="100%,40px"></x-import>
+        </div>
+        <select value="{{ marketCategory }}" onChange="{{ onMarketCategory }}" style="padding:0 12px;height:40px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+          <sc-for list="{{ marketCategoryOptions }}" as="opt" hint-placeholder-count="6"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+      <sc-for list="{{ marketCourses }}" as="course" hint-placeholder-count="8">
+        <div onClick="{{ openGate }}" style="cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:var(--radius-card);overflow:hidden;transition:transform var(--dur-slow) var(--ease-out),box-shadow var(--dur-slow) var(--ease-out)" style-hover="transform:translateY(-4px);box-shadow:var(--shadow-hover-card)">
+          <div style="height:110px;background:{{ course.iconBg }};display:flex;align-items:center;justify-content:center">
+            <span style="color:{{ course.iconColor }}"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ course.icon }}" size="{{ 34 }}" stroke-width="{{ 1.6 }}" hint-size="34px,34px"></x-import></span>
+          </div>
+          <div style="padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Badge" tone="neutral" hint-size="auto,22px">{{ course.category }}</x-import>
+              <span style="font-size:11px;color:#9ca3af">{{ course.durationLabel }}</span>
+            </div>
+            <h3 style="font-size:15px;font-weight:700;color:var(--ink);margin:0 0 6px;line-height:1.3">{{ course.title }}</h3>
+            <p style="font-size:12px;color:#6b7280;margin:0 0 8px">{{ course.provider }}</p>
+            <p style="font-size:12px;color:#6b7280;line-height:1.5;margin:0 0 14px">{{ course.description }}</p>
+            <button onClick="{{ openGate }}" style="width:100%;padding:9px 16px;font-size:13px;font-family:inherit;font-weight:700;color:#fff;background:var(--itutor-green);border:none;border-radius:var(--radius-lg);cursor:pointer">Enroll</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ noMarketResults }}" hint-placeholder-val="{{ false }}"><p style="text-align:center;padding:40px 0;color:#9ca3af;font-size:var(--text-sm)">No courses match your search.</p></sc-if>
+  </div>
+</section>
+
+<sc-if value="{{ gateOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeGate }}" style="position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font-sans)">
+    <div onClick="{{ stopClick }}" style="position:relative;width:100%;max-width:860px;max-height:92vh;overflow:hidden;display:flex;background:#fff;border-radius:var(--radius-2xl);box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)">
+      <div style="width:40%;flex-shrink:0;background:var(--gradient-auth);padding:36px;display:flex;flex-direction:column;justify-content:space-between;color:#fff">
+        <div>
+          <p style="margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--itutor-green)">iTutor Business</p>
+          <h3 style="font-family:var(--font-display);font-size:24px;font-weight:700;line-height:1.25;margin:0">Everything you need to keep learning.</h3>
+        </div>
+        <div style="border-radius:16px;overflow:hidden;margin:20px 0">
+          <image-slot id="gate-modal-image" shape="rect" placeholder="Learner photo" style="width:100%;height:150px;display:block"></image-slot>
+        </div>
+        <ul style="margin:0;padding:0;list-style:none;display:grid;gap:10px;font-size:13px;color:rgba(255,255,255,0.85)">
+          <li style="display:flex;gap:10px;align-items:flex-start">
+            <span style="margin-top:1px;width:16px;height:16px;flex-shrink:0;display:grid;place-items:center;border-radius:9999px;background:rgba(25,147,86,0.2);color:var(--itutor-green)"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 10 }}" stroke-width="{{ 3 }}" hint-size="10px,10px"></x-import></span>
+            Track your training
+          </li>
+          <li style="display:flex;gap:10px;align-items:flex-start">
+            <span style="margin-top:1px;width:16px;height:16px;flex-shrink:0;display:grid;place-items:center;border-radius:9999px;background:rgba(25,147,86,0.2);color:var(--itutor-green)"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 10 }}" stroke-width="{{ 3 }}" hint-size="10px,10px"></x-import></span>
+            Get certified
+          </li>
+          <li style="display:flex;gap:10px;align-items:flex-start">
+            <span style="margin-top:1px;width:16px;height:16px;flex-shrink:0;display:grid;place-items:center;border-radius:9999px;background:rgba(25,147,86,0.2);color:var(--itutor-green)"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 10 }}" stroke-width="{{ 3 }}" hint-size="10px,10px"></x-import></span>
+            Learn from real businesses
+          </li>
+        </ul>
+      </div>
+      <div style="flex:1;padding:36px;overflow-y:auto">
+        <p style="text-align:right;margin:0 0 20px;font-size:13px;color:#6b7280">Already have an account? <a href="#" style="font-weight:600;color:var(--itutor-green);text-decoration:underline">Sign in</a></p>
+        <h2 style="font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--ink);margin:0">Create a new account</h2>
+        <p style="margin:8px 0 24px;font-size:var(--text-sm);color:#6b7280">Sign up to enroll in this course and track your progress.</p>
+        <div style="display:grid;gap:12px">
+          <a href="Learner Sign-Up.dc.html" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:var(--radius-lg);border:1px solid var(--surface-border);background:#fff;font-size:var(--text-sm);font-weight:600;color:#374151;text-decoration:none">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"></path><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.49 12c0-.73.13-1.44.35-2.1V7.07H2.18a11 11 0 0 0 0 9.87l3.66-2.84z"></path><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"></path></svg>
+            Continue with Google
+          </a>
+          <a href="Learner Sign-Up.dc.html" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:var(--radius-lg);border:none;background:#000;font-size:var(--text-sm);font-weight:600;color:#fff;text-decoration:none">Continue with Apple</a>
+        </div>
+        <div style="position:relative;margin:22px 0;text-align:center">
+          <span style="position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--surface-border)"></span>
+          <span style="position:relative;background:#fff;padding:0 10px;font-size:11px;text-transform:uppercase;color:#9ca3af">or</span>
+        </div>
+        <a href="Learner Sign-Up.dc.html" style="display:block;text-align:center;font-size:var(--text-sm);font-weight:600;color:var(--itutor-green);text-decoration:underline">Sign up using email</a>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<section id="role-picker" style="padding:64px 24px;background:#fff">
+  <div style="max-width:var(--container-content);margin:0 auto">
+    <div style="text-align:center;margin-bottom:40px">
+      <h2 style="font-size:clamp(28px,4vw,36px);font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--ink);margin:0 0 10px">How would you like to get started?</h2>
+      <p style="margin:0;color:var(--ink-muted);font-size:var(--text-base)">You can always invite the rest of your team, or switch roles, later.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <a href="Organization Sign-Up.dc.html" style="display:block;text-decoration:none;padding:40px;border-radius:var(--radius-2xl);background:rgba(255,255,255,0.8);border:1px solid #f3f4f6;box-shadow:var(--shadow-sm);transition:transform var(--dur-slow) var(--ease-out),box-shadow var(--dur-slow) var(--ease-out),border-color var(--dur-slow) var(--ease-out)" style-hover="transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:color-mix(in oklab, var(--brand) 30%, transparent)">
+        <span style="width:64px;height:64px;border-radius:var(--radius-2xl);background:var(--brand-light);color:var(--itutor-green);display:grid;place-items:center;margin-bottom:24px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="building-2" size="{{ 30 }}" stroke-width="{{ 2 }}" hint-size="30px,30px"></x-import>
+        </span>
+        <h3 style="font-family:var(--font-display);font-size:24px;font-weight:var(--weight-bold);color:var(--ink);margin:0 0 8px">I'm a Business</h3>
+        <p style="margin:0 0 20px;color:var(--ink-muted);font-size:var(--text-base)">Onboard and train your contractors</p>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:var(--text-sm);font-weight:var(--weight-semibold);color:var(--itutor-green)">
+          Get started <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="arrow-right" size="{{ 15 }}" hint-size="15px,15px"></x-import>
+        </span>
+      </a>
+      <a href="Learner Sign-Up.dc.html" style="display:block;text-decoration:none;padding:40px;border-radius:var(--radius-2xl);background:rgba(255,255,255,0.8);border:1px solid #f3f4f6;box-shadow:var(--shadow-sm);transition:transform var(--dur-slow) var(--ease-out),box-shadow var(--dur-slow) var(--ease-out),border-color var(--dur-slow) var(--ease-out)" style-hover="transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:color-mix(in oklab, var(--coral) 30%, transparent)">
+        <span style="width:64px;height:64px;border-radius:var(--radius-2xl);background:var(--coral-soft);color:var(--coral);display:grid;place-items:center;margin-bottom:24px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 30 }}" stroke-width="{{ 2 }}" hint-size="30px,30px"></x-import>
+        </span>
+        <h3 style="font-family:var(--font-display);font-size:24px;font-weight:var(--weight-bold);color:var(--ink);margin:0 0 8px">I'm a Learner</h3>
+        <p style="margin:0 0 20px;color:var(--ink-muted);font-size:var(--text-base)">Take courses and grow your skills</p>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:var(--text-sm);font-weight:var(--weight-semibold);color:var(--coral)">
+          Get started <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="arrow-right" size="{{ 15 }}" hint-size="15px,15px"></x-import>
+        </span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<sc-if value="{{ showHowItWorks }}" hint-placeholder-val="{{ true }}">
+<section id="how-it-works" style="padding:80px 24px;background:var(--surface-soft)">
+  <div style="text-align:center;margin-bottom:56px">
+    <h2 style="font-size:clamp(32px,4vw,44px);font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--ink);margin:0 0 12px">How It Works</h2>
+    <p style="margin:0 auto;max-width:480px;font-size:var(--text-lg);color:var(--ink-muted)">From sign-up to certified, in three steps.</p>
+  </div>
+  <div style="max-width:var(--container-content);margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+    <div style="position:relative">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.StepCard" number="01" title="Create your account" description="Sign up as a business or an individual learner in just a few minutes." icon="user-plus" icon-bg="#ede9fe" icon-color="#7c3aed" hint-size="100%,300px"></x-import>
+      <div style="position:absolute;right:-14px;top:64px;width:24px;border-top:2px dashed #86efac;z-index:10"></div>
+    </div>
+    <div style="position:relative">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.StepCard" number="02" title="Add your team, or browse courses" description="Businesses invite contractors and assign training. Learners explore the course catalog." icon="layout-grid" icon-bg="#ffedd5" icon-color="#ea580c" hint-size="100%,300px"></x-import>
+      <div style="position:absolute;right:-14px;top:64px;width:24px;border-top:2px dashed #86efac;z-index:10"></div>
+    </div>
+    <div>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.StepCard" number="03" title="Learn and track progress" description="Complete courses on any device, and follow completions on a live dashboard." icon="trending-up" icon-bg="#dcfce7" icon-color="#16a34a" hint-size="100%,300px"></x-import>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+<section style="padding:80px 24px;background:var(--surface-soft)">
+  <div style="max-width:1024px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:var(--radius-3xl);overflow:hidden;box-shadow:var(--shadow-card)">
+    <div style="background:#fff;padding:32px;text-align:center">
+      <div style="font-size:44px;font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--brand);font-variant-numeric:tabular-nums">3,200+</div>
+      <p style="margin:8px 0 0;font-size:var(--text-sm);color:var(--ink-muted)">Courses completed</p>
+    </div>
+    <div style="background:#fff;padding:32px;text-align:center">
+      <div style="font-size:44px;font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--coral);font-variant-numeric:tabular-nums">410+</div>
+      <p style="margin:8px 0 0;font-size:var(--text-sm);color:var(--ink-muted)">Organizations onboarded</p>
+    </div>
+    <div style="background:#fff;padding:32px;text-align:center">
+      <div style="font-size:44px;font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--brand-deep);font-variant-numeric:tabular-nums">40+</div>
+      <p style="margin:8px 0 0;font-size:var(--text-sm);color:var(--ink-muted)">Course categories</p>
+    </div>
+    <div style="background:#fff;padding:32px;text-align:center">
+      <div style="font-size:44px;font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--coral);font-variant-numeric:tabular-nums">97%</div>
+      <p style="margin:8px 0 0;font-size:var(--text-sm);color:var(--ink-muted)">Completion rate</p>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ showTrustStripVal }}" hint-placeholder-val="{{ true }}">
+<section style="padding:64px 24px;background:#fff;text-align:center">
+  <p style="margin:0 0 32px;font-size:var(--text-sm);font-weight:var(--weight-semibold);color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em">Trusted by teams across industries</p>
+  <div style="max-width:var(--container-content);margin:0 auto;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+    <div style="width:128px;height:48px;border-radius:var(--radius-md);background:var(--neutral-bg);display:grid;place-items:center;color:#9ca3af">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="building" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+    </div>
+    <div style="width:128px;height:48px;border-radius:var(--radius-md);background:var(--neutral-bg);display:grid;place-items:center;color:#9ca3af">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="store" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+    </div>
+    <div style="width:128px;height:48px;border-radius:var(--radius-md);background:var(--neutral-bg);display:grid;place-items:center;color:#9ca3af">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="factory" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+    </div>
+    <div style="width:128px;height:48px;border-radius:var(--radius-md);background:var(--neutral-bg);display:grid;place-items:center;color:#9ca3af">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="briefcase" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+    </div>
+    <div style="width:128px;height:48px;border-radius:var(--radius-md);background:var(--neutral-bg);display:grid;place-items:center;color:#9ca3af">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="shopping-bag" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ showFeatures }}" hint-placeholder-val="{{ true }}">
+<section style="padding:80px 24px;background:var(--surface-soft)">
+  <div style="max-width:var(--container-content);margin:0 auto">
+    <div style="text-align:center;margin-bottom:48px">
+      <h2 style="font-size:clamp(32px,4vw,40px);font-weight:var(--weight-bold);letter-spacing:var(--tracking-heading);color:var(--ink);margin:0 0 12px">Everything your team needs</h2>
+      <p style="margin:0;color:var(--ink-muted);font-size:var(--text-lg)">From onboarding to certification, manage it all in one platform.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Card" variant="marketing" hint-size="100%,220px">
+        <span style="width:48px;height:48px;border-radius:var(--radius-lg);background:#ede9fe;color:#7c3aed;display:grid;place-items:center;margin-bottom:20px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="users" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+        </span>
+        <h3 style="font-size:18px;font-weight:var(--weight-bold);color:var(--ink);margin:0 0 8px">Role-based team management</h3>
+        <p style="font-size:var(--text-sm);color:var(--ink-muted);line-height:var(--leading-relaxed);margin:0">Give owners, managers and contractors exactly the access they need.</p>
+      </x-import>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Card" variant="marketing" hint-size="100%,220px">
+        <span style="width:48px;height:48px;border-radius:var(--radius-lg);background:var(--sky);color:#2563eb;display:grid;place-items:center;margin-bottom:20px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="layers" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+        </span>
+        <h3 style="font-size:18px;font-weight:var(--weight-bold);color:var(--ink);margin:0 0 8px">Any course format</h3>
+        <p style="font-size:var(--text-sm);color:var(--ink-muted);line-height:var(--leading-relaxed);margin:0">Mix video, live sessions, documents and quizzes within a single course.</p>
+      </x-import>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Card" variant="marketing" hint-size="100%,220px">
+        <span style="width:48px;height:48px;border-radius:var(--radius-lg);background:var(--peach);color:#ea580c;display:grid;place-items:center;margin-bottom:20px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="bar-chart-3" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+        </span>
+        <h3 style="font-size:18px;font-weight:var(--weight-bold);color:var(--ink);margin:0 0 8px">Progress dashboards</h3>
+        <p style="font-size:var(--text-sm);color:var(--ink-muted);line-height:var(--leading-relaxed);margin:0">See completion and certification status across your whole team at a glance.</p>
+      </x-import>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<section style="padding:64px 24px 0;background:#fff">
+  <div style="position:relative;overflow:hidden;max-width:var(--container-content);margin:0 auto;border-radius:var(--radius-band);padding:56px;text-align:center;box-shadow:var(--shadow-pop);background:var(--gradient-cta-band)">
+    <div style="position:absolute;left:-80px;top:-80px;width:288px;height:288px;border-radius:9999px;background:rgba(255,255,255,0.15);filter:blur(64px)"></div>
+    <h2 style="position:relative;font-size:40px;font-weight:var(--weight-bold);line-height:1.1;color:#fff;margin:0">Ready to get your team started?</h2>
+    <p style="position:relative;margin:16px auto 0;max-width:480px;color:rgba(255,255,255,0.85)">Sign up in minutes — no approval wait, no setup fees.</p>
+    <div style="position:relative;margin-top:28px">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="marketingSecondary" size="lg" as="a" href="#role-picker" hint-size="120px,52px">Sign up</x-import>
+    </div>
+  </div>
+</section>
+
+<footer style="background:#000;color:#fff;margin-top:64px">
+  <div style="max-width:var(--container-marketing);margin:0 auto;padding:64px 40px 40px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:48px">
+    <div>
+      <a href="#top" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <span style="width:32px;height:32px;border-radius:10px;background:var(--itutor-green);display:grid;place-items:center;flex-shrink:0">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 17 }}" color="#fff" hint-size="17px,17px"></x-import>
+        </span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:18px;color:#fff">iTutor <span style="font-weight:500;color:rgba(255,255,255,0.55)">Business</span></span>
+      </a>
+      <p style="margin-top:20px;max-width:360px;font-size:var(--text-sm);line-height:var(--leading-relaxed);color:rgba(255,255,255,0.6)">Training and course management for businesses, and the people who work with them.</p>
+      <a href="mailto:support@myitutor.com" style="margin-top:20px;display:inline-flex;align-items:center;gap:8px;font-size:var(--text-sm);color:rgba(255,255,255,0.8)">
+        <span style="color:var(--brand)"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="mail" size="{{ 16 }}" hint-size="16px,16px"></x-import></span> support@myitutor.com
+      </a>
+    </div>
+    <div>
+      <h3 style="font-size:var(--text-sm);font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);margin:0">Company</h3>
+      <ul style="margin:20px 0 0;padding:0;list-style:none;display:grid;gap:12px;font-size:var(--text-sm)">
+        <li><a href="#" style="color:rgba(255,255,255,0.75)">About</a></li>
+        <li><a href="#" style="color:rgba(255,255,255,0.75)">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:var(--text-sm);font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);margin:0">Legal</h3>
+      <ul style="margin:20px 0 0;padding:0;list-style:none;display:grid;gap:12px;font-size:var(--text-sm)">
+        <li><a href="#" style="color:rgba(255,255,255,0.75)">Privacy</a></li>
+        <li><a href="#" style="color:rgba(255,255,255,0.75)">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="max-width:var(--container-marketing);margin:0 auto;padding:24px 40px 40px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.1);font-size:var(--text-sm);color:rgba(255,255,255,0.5)">
+    <p style="margin:0">© 2026 iTutor Business</p>
+    <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="ghostOnDark" as="a" href="#role-picker" hint-size="90px,36px">Sign up</x-import>
+  </div>
+</footer>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showTrustStrip&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;heroTreatment&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;photo&quot;,&quot;options&quot;:[&quot;photo&quot;,&quot;gradient-icon&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;initialStep&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:1,&quot;max&quot;:4,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;}}">
+const MARKET_COURSES = [
+  { title: 'Food Safety & Sanitation Basics', provider: 'Northshore Culinary Group', category: 'Food & Beverage', durationLabel: '2 hrs', icon: 'utensils', iconBg: '#dcfce7', iconColor: '#16a34a', description: 'Core food handling, storage and sanitation practices for commercial kitchens.' },
+  { title: 'Allergen Awareness for Frontline Staff', provider: 'Northshore Culinary Group', category: 'Food & Beverage', durationLabel: '45 min', icon: 'shield-alert', iconBg: '#dcfce7', iconColor: '#16a34a', description: 'Spot the most common allergens and respond correctly when a guest asks.' },
+  { title: 'Point of Sale & Payment Handling', provider: 'Northshore Culinary Group', category: 'Retail', durationLabel: '1 hr', icon: 'credit-card', iconBg: '#fce7f3', iconColor: '#db2777', description: 'Running a register, processing payments, and handling refunds accurately.' },
+  { title: 'Customer Service Excellence', provider: 'Bright Path Retail', category: 'Retail', durationLabel: '1.5 hrs', icon: 'smile', iconBg: '#fce7f3', iconColor: '#db2777', description: 'Practical scripts and techniques for handling everyday customer interactions.' },
+  { title: 'Warehouse Safety Fundamentals', provider: 'Anchor Logistics', category: 'Logistics', durationLabel: '2.5 hrs', icon: 'package', iconBg: '#ffedd5', iconColor: '#ea580c', description: 'Safe lifting, equipment use and hazard awareness for warehouse floors.' },
+  { title: 'Leadership for New Supervisors', provider: 'Elevate Training Co.', category: 'Professional Development', durationLabel: '3 hrs', icon: 'users', iconBg: '#ede9fe', iconColor: '#7c3aed', description: 'Delegation, feedback and scheduling skills for first-time supervisors.' },
+  { title: 'Cash Handling & Loss Prevention', provider: 'Bright Path Retail', category: 'Retail', durationLabel: '1 hr', icon: 'shield-check', iconBg: '#fce7f3', iconColor: '#db2777', description: 'Till procedures and everyday loss-prevention habits for retail staff.' },
+  { title: 'De-escalation & Conflict Resolution', provider: 'Elevate Training Co.', category: 'Hospitality', durationLabel: '1.5 hrs', icon: 'message-circle', iconBg: '#dbeafe', iconColor: '#2563eb', description: 'Staying calm and defusing tension with upset customers or guests.' },
+];
+
+class Component extends DCLogic {
+  state = { gateOpen: false, marketSearch: '', marketCategory: 'All categories' };
+
+  openGate() { this.setState({ gateOpen: true }); }
+  closeGate() { this.setState({ gateOpen: false }); }
+
+  renderVals() {
+    const s = this.state;
+    const treatment = this.props.heroTreatment || 'photo';
+    const sections = this.props.showTrustStrip ?? true;
+    const q = s.marketSearch.trim().toLowerCase();
+    const filtered = MARKET_COURSES.filter(c => {
+      if (s.marketCategory !== 'All categories' && c.category !== s.marketCategory) return false;
+      if (q && !(c.title.toLowerCase().includes(q) || c.provider.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    return {
+      heroPhoto: treatment === 'photo',
+      heroGradient: treatment === 'gradient-icon',
+      showHowItWorks: true,
+      showStats: true,
+      showTrustStripVal: sections,
+      showFeatures: true,
+      marketSearch: s.marketSearch, onMarketSearch: e => this.setState({ marketSearch: e.target.value }),
+      marketCategory: s.marketCategory, onMarketCategory: e => this.setState({ marketCategory: e.target.value }),
+      marketCategoryOptions: ['All categories', 'Food & Beverage', 'Retail', 'Logistics', 'Professional Development', 'Hospitality'],
+      marketCourses: filtered, noMarketResults: filtered.length === 0,
+      gateOpen: s.gateOpen,
+      openGate: () => this.openGate(),
+      closeGate: () => this.closeGate(),
+      stopClick: e => e.stopPropagation(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

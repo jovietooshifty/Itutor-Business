@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/effects.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/base.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0}
+a{color:var(--brand-deep)}
+a:hover{color:var(--brand-dark)}
+</style>
+</helmet>
+
+<header style="position:sticky;top:0;z-index:30;background:var(--ink);padding:14px 28px;display:flex;align-items:center;gap:14px">
+  <a href="Organization Sign-Up.dc.html" style="display:flex;align-items:center;gap:8px;text-decoration:none">
+    <span style="width:26px;height:26px;border-radius:7px;background:var(--itutor-green);display:grid;place-items:center;flex-shrink:0">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 14 }}" color="#fff" hint-size="14px,14px"></x-import>
+    </span>
+    <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:#fff">iTutor Business</span>
+  </a>
+  <span style="color:rgba(255,255,255,0.3)">/</span>
+  <span style="font-size:var(--text-sm);color:rgba(255,255,255,0.8);font-weight:600">{{ screenLabel }}</span>
+</header>
+
+<sc-if value="{{ screen1 }}" hint-placeholder-val="{{ true }}">
+<main style="max-width:720px;margin:0 auto;padding:48px 24px 100px;font-family:var(--font-sans)">
+  <h1 style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--ink);margin:0 0 6px">Create a course</h1>
+  <p style="margin:0;color:var(--ink-muted);font-size:var(--text-base)">Set up the basics — you'll build the lesson sequence next.</p>
+
+  <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm);margin-top:28px">
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <image-slot id="course-thumbnail" shape="rounded" radius="12" placeholder="Thumbnail" style="width:140px;height:100px;flex-shrink:0"></image-slot>
+      <div style="flex:1">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Course title" placeholder="e.g. Food Safety &amp; Sanitation Basics" value="{{ title }}" onChange="{{ onTitle }}" hint-size="100%,64px"></x-import>
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:4px">Short description</label>
+      <p style="font-size:12px;color:#9ca3af;margin:0 0 8px">Shown on marketplace cards.</p>
+      <textarea value="{{ description }}" onChange="{{ onDescription }}" rows="{{ 3 }}" placeholder="What will learners get out of this course?" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);resize:vertical;outline:none;box-sizing:border-box"></textarea>
+    </div>
+    <div style="margin-top:20px">
+      <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:8px">Category / tags</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ tagChips }}" as="chip" hint-placeholder-count="2">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:var(--brand-light);color:var(--itutor-green);font-size:13px;font-weight:600">{{ chip.label }}<span onClick="{{ chip.onRemove }}" style="cursor:pointer">×</span></span>
+        </sc-for>
+        <sc-for list="{{ suggestedTagChips }}" as="sugg" hint-placeholder-count="6">
+          <span onClick="{{ sugg.onAdd }}" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:9999px;border:1px dashed #d1d5db;color:#6b7280;font-size:12px;font-weight:600;cursor:pointer">+ {{ sugg.label }}</span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+      <div>
+        <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Visibility</label>
+        <div style="display:flex;gap:8px">
+          <button onClick="{{ setPublic }}" style="flex:1;padding:10px;border-radius:var(--radius-md);font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ publicBorder }};background:{{ publicBg }};color:{{ publicFg }}">Public</button>
+          <button onClick="{{ setPrivate }}" style="flex:1;padding:10px;border-radius:var(--radius-md);font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ privateBorder }};background:{{ privateBg }};color:{{ privateFg }}">Private</button>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Estimated duration</label>
+        <input value="{{ duration }}" onChange="{{ onDuration }}" placeholder="e.g. 2 hrs" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm);margin-top:20px">
+    <h3 style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--ink);margin:0">Quiz defaults</h3>
+    <p style="font-size:12px;color:#9ca3af;margin:4px 0 0">Applies to every quiz block, unless overridden per quiz.</p>
+    <div style="margin-top:16px">
+      <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Quiz navigation</label>
+      <div style="display:flex;gap:8px;max-width:360px">
+        <button onClick="{{ setNavBack }}" style="flex:1;padding:9px;border-radius:var(--radius-md);font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ navBackBorder }};background:{{ navBackBg }};color:{{ navBackFg }}">Allow going back</button>
+        <button onClick="{{ setNavLock }}" style="flex:1;padding:9px;border-radius:var(--radius-md);font-size:13px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ navLockBorder }};background:{{ navLockBg }};color:{{ navLockFg }}">Lock forward-only</button>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding-left:16px;border-left:2px solid #e5e7eb">
+      <label style="font-size:13px;font-weight:600;color:#374151">Retries</label>
+      <sc-if value="{{ courseRetriesLocked }}" hint-placeholder-val="{{ true }}">
+        <p style="margin:6px 0 0;font-size:12px;color:#9ca3af;font-style:italic">Not available — requires "Allow going back"</p>
+      </sc-if>
+      <sc-if value="{{ courseRetriesActive }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:14px;margin-top:8px">
+          <div>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Maximum attempts</label>
+            <input type="number" value="{{ retryMax }}" onChange="{{ onRetryMax }}" style="width:90px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">Wait before retry</label>
+            <select value="{{ retryCooldown }}" onChange="{{ onRetryCooldown }}" style="padding:8px 10px;height:38px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+              <sc-for list="{{ cooldownOptions }}" as="co" hint-placeholder-count="3"><option value="{{ co.v }}">{{ co.label }}</option></sc-for>
+            </select>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;text-align:right">
+    <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" onClick="{{ continueToBuilder }}" hint-size="190px,48px">Continue to builder</x-import>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ screen2 }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;background:var(--surface-soft);padding-bottom:60px;font-family:var(--font-sans)">
+  <div style="max-width:760px;margin:0 auto;padding:32px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--ink);margin:0">{{ titleOrDefault }}</h1>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span onClick="{{ openPreview }}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--itutor-green);cursor:pointer">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="eye" size="{{ 14 }}" hint-size="14px,14px"></x-import> Preview as student
+        </span>
+        <span onClick="{{ toggleCourseSettings }}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-muted);cursor:pointer">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="settings" size="{{ 14 }}" hint-size="14px,14px"></x-import> Course settings
+        </span>
+      </div>
+    </div>
+
+    <sc-if value="{{ showCourseSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:22px;box-shadow:var(--shadow-sm);margin-top:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Course title" value="{{ title }}" onChange="{{ onTitle }}" hint-size="100%,64px"></x-import>
+          <input value="{{ duration }}" onChange="{{ onDuration }}" placeholder="Estimated duration" style="margin-top:24px;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button onClick="{{ setPublic }}" style="padding:8px 16px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ publicBorder }};background:{{ publicBg }};color:{{ publicFg }}">Public</button>
+          <button onClick="{{ setPrivate }}" style="padding:8px 16px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ privateBorder }};background:{{ privateBg }};color:{{ privateFg }}">Private</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="margin-top:20px">
+      <sc-for list="{{ timeline }}" as="row" hint-placeholder-count="7">
+        <sc-if value="{{ row.isInsert }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="width:2px;height:16px;background:#e2e8f0"></div>
+            <span onClick="{{ row.onToggle }}" style="width:26px;height:26px;border-radius:9999px;background:{{ row.btnBg }};color:{{ row.btnFg }};display:grid;place-items:center;cursor:pointer;border:1px solid #e2e8f0;flex-shrink:0">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="plus" size="{{ 13 }}" hint-size="13px,13px"></x-import>
+            </span>
+            <div style="width:2px;height:16px;background:#e2e8f0"></div>
+            <sc-if value="{{ row.open }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:8px;padding:14px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);margin:2px 0 14px;width:100%;box-sizing:border-box">
+                <sc-for list="{{ row.typeOptions }}" as="bt" hint-placeholder-count="4">
+                  <div onClick="{{ bt.onPick }}" style="flex:1;padding:12px 8px;border-radius:var(--radius-md);text-align:center;cursor:pointer" style-hover="background:var(--surface-inset)">
+                    <span style="width:32px;height:32px;border-radius:9999px;background:{{ bt.iconBg }};color:{{ bt.iconColor }};display:grid;place-items:center;margin:0 auto 8px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ bt.icon }}" size="{{ 15 }}" hint-size="15px,15px"></x-import></span>
+                    <p style="margin:0;font-size:12px;font-weight:700;color:var(--ink)">{{ bt.label }}</p>
+                    <p style="margin:2px 0 0;font-size:10.5px;color:#9ca3af;line-height:1.3">{{ bt.desc }}</p>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ row.isBlockRow }}" hint-placeholder-val="{{ false }}">
+          <div draggable="{{ true }}" onDragStart="{{ row.block.onDragStart }}" onDragOver="{{ row.block.onDragOver }}" onDrop="{{ row.block.onDrop }}" style="background:#fff;border:1px solid #e5e7eb;border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)">
+            <div onClick="{{ row.block.onToggleExpand }}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer">
+              <span style="cursor:grab;color:#9ca3af;display:flex;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="grip-vertical" size="{{ 15 }}" hint-size="15px,15px"></x-import></span>
+              <span style="width:30px;height:30px;border-radius:8px;background:{{ row.block.iconBg }};color:{{ row.block.iconColor }};display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ row.block.icon }}" size="{{ 15 }}" hint-size="15px,15px"></x-import></span>
+              <input value="{{ row.block.title }}" onChange="{{ row.block.onTitleChange }}" onClick="{{ row.block.stopClick }}" placeholder="{{ row.block.placeholderTitle }}" style="flex:1;min-width:0;border:none;outline:none;font-size:var(--text-sm);font-weight:600;color:var(--ink);background:transparent"/>
+              <sc-if value="{{ row.block.hasTranscriptStatus }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:{{ row.block.transcriptColor }};background:{{ row.block.transcriptBg }};padding:3px 9px;border-radius:9999px;white-space:nowrap">{{ row.block.transcriptStatus }}</span></sc-if>
+              <span onClick="{{ row.block.onRemove }}" style="color:#9ca3af;cursor:pointer;display:flex;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="trash-2" size="{{ 14 }}" hint-size="14px,14px"></x-import></span>
+              <span style="color:#9ca3af;display:flex;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ row.block.chevronIcon }}" size="{{ 16 }}" hint-size="16px,16px"></x-import></span>
+            </div>
+
+            <sc-if value="{{ row.block.expanded }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:4px 16px 20px;border-top:1px solid #f3f4f6;margin-top:2px">
+
+              <sc-if value="{{ row.block.type_video }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:8px;margin:14px 0 12px">
+                  <button onClick="{{ row.block.setMethodUpload }}" style="padding:7px 14px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.uploadBorder }};background:{{ row.block.uploadBg }};color:{{ row.block.uploadFg }}">Upload file</button>
+                  <button onClick="{{ row.block.setMethodLink }}" style="padding:7px 14px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.linkBorder }};background:{{ row.block.linkBg }};color:{{ row.block.linkFg }}">Paste a link</button>
+                </div>
+                <sc-if value="{{ row.block.methodUpload }}" hint-placeholder-val="{{ true }}">
+                  <label style="display:flex;align-items:center;gap:8px;padding:14px;border:1px dashed #d1d5db;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:#6b7280">
+                    <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="upload" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ row.block.fileLabel }}
+                    <input type="file" accept="video/*" onChange="{{ row.block.onVideoFile }}" style="display:none"/>
+                  </label>
+                </sc-if>
+                <sc-if value="{{ row.block.methodLink }}" hint-placeholder-val="{{ false }}">
+                  <input value="{{ row.block.link }}" onChange="{{ row.block.onLink }}" onBlur="{{ row.block.onLinkBlur }}" placeholder="https://youtube.com/…" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+                </sc-if>
+                <div style="margin-top:12px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Checkbox" label="Show captions by default" checked="{{ row.block.captions }}" onChange="{{ row.block.onCaptions }}" hint-size="auto,24px"></x-import></div>
+              </sc-if>
+
+              <sc-if value="{{ row.block.type_text }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:6px;margin:14px 0 12px">
+                  <button onClick="{{ row.block.setRich }}" style="padding:6px 12px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.richBorder }};background:{{ row.block.richBg }};color:{{ row.block.richFg }}">Rich text</button>
+                  <button onClick="{{ row.block.setUpload }}" style="padding:6px 12px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.uploadBorder }};background:{{ row.block.uploadBg }};color:{{ row.block.uploadFg }}">Upload file</button>
+                  <button onClick="{{ row.block.setUrl }}" style="padding:6px 12px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.urlBorder }};background:{{ row.block.urlBg }};color:{{ row.block.urlFg }}">Paste URL</button>
+                </div>
+                <sc-if value="{{ row.block.subtabRich }}" hint-placeholder-val="{{ true }}">
+                  <textarea value="{{ row.block.richText }}" onChange="{{ row.block.onRichText }}" rows="{{ 5 }}" placeholder="Write the lesson content…" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);resize:vertical;outline:none;box-sizing:border-box"></textarea>
+                </sc-if>
+                <sc-if value="{{ row.block.subtabUpload }}" hint-placeholder-val="{{ false }}">
+                  <label style="display:flex;align-items:center;gap:8px;padding:14px;border:1px dashed #d1d5db;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:#6b7280">
+                    <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="upload" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ row.block.textFileLabel }}
+                    <input type="file" accept=".pdf,.doc,.docx" onChange="{{ row.block.onTextFile }}" style="display:none"/>
+                  </label>
+                </sc-if>
+                <sc-if value="{{ row.block.subtabUrl }}" hint-placeholder-val="{{ false }}">
+                  <input value="{{ row.block.url }}" onChange="{{ row.block.onUrl }}" placeholder="https://example.com/article" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+                </sc-if>
+              </sc-if>
+
+              <sc-if value="{{ row.block.type_website }}" hint-placeholder-val="{{ false }}">
+                <input value="{{ row.block.url }}" onChange="{{ row.block.onUrl }}" onBlur="{{ row.block.onUrlBlur }}" placeholder="https://example.com/article" style="margin-top:14px;width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+                <sc-if value="{{ row.block.hasPreview }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:10px;align-items:center;margin-top:12px;padding:12px;border:1px solid var(--surface-border);border-radius:var(--radius-md);background:var(--surface-inset)">
+                    <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="globe" size="{{ 18 }}" color="#9ca3af" hint-size="18px,18px"></x-import>
+                    <div>
+                      <p style="margin:0;font-size:13px;font-weight:600;color:var(--ink)">{{ row.block.previewDomain }}</p>
+                      <p style="margin:2px 0 0;font-size:12px;color:#9ca3af">Preview will render once the course is published.</p>
+                    </div>
+                  </div>
+                </sc-if>
+              </sc-if>
+
+              <sc-if value="{{ row.block.type_quiz }}" hint-placeholder-val="{{ false }}">
+                <sc-if value="{{ row.block.noPath }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px">
+                    <sc-for list="{{ row.block.pathCards }}" as="pc" hint-placeholder-count="3">
+                      <div onClick="{{ pc.onPick }}" style="padding:16px 10px;border:1px solid var(--surface-border);border-radius:var(--radius-lg);text-align:center;cursor:pointer" style-hover="border-color:var(--itutor-green);background:var(--brand-light)">
+                        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ pc.icon }}" size="{{ 20 }}" color="var(--itutor-green)" hint-size="20px,20px"></x-import>
+                        <p style="margin:8px 0 0;font-size:12.5px;font-weight:700;color:var(--ink)">{{ pc.label }}</p>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ row.block.hasPath }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:16px">
+                    <label style="font-size:13px;font-weight:600;color:#374151">What should this quiz test?</label>
+                    <div style="display:grid;gap:6px;margin-top:8px">
+                      <sc-for list="{{ row.block.scopeOptions }}" as="so" hint-placeholder-count="5">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer">
+                          <input type="radio" checked="{{ so.checked }}" onChange="{{ so.onPick }}" name="{{ row.block.scopeGroup }}"/>{{ so.label }}
+                        </label>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ row.block.scopeSpecific }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;gap:6px;margin-top:10px;padding:12px;background:var(--surface-inset);border-radius:var(--radius-md)">
+                        <sc-for list="{{ row.block.priorBlockChecklist }}" as="pb" hint-placeholder-count="2">
+                          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer">
+                            <input type="checkbox" checked="{{ pb.checked }}" onChange="{{ pb.onToggle }}"/>{{ pb.label }}
+                          </label>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ row.block.pathAiNotGenerated }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:14px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" disabled="{{ row.block.generating }}" onClick="{{ row.block.onGenerate }}" hint-size="140px,40px">{{ row.block.generateLabel }}</x-import></div>
+                    </sc-if>
+                    <sc-if value="{{ row.block.pathUploadNotImported }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:14px;display:grid;gap:10px">
+                        <a href="data:text/csv;charset=utf-8,Question,Option%20A,Option%20B,Option%20C,Option%20D,Correct%20Answer%20(A-D),Explanation" download="quiz-template.csv" style="font-size:13px;font-weight:600;color:var(--itutor-green)">Download CSV template</a>
+                        <label style="display:flex;align-items:center;gap:8px;padding:14px;border:1px dashed #d1d5db;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:#6b7280">
+                          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="upload" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ row.block.importLabel }}
+                          <input type="file" accept=".csv" onChange="{{ row.block.onImportFile }}" style="display:none"/>
+                        </label>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ row.block.showQuestions }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;gap:12px;margin-top:16px">
+                        <sc-for list="{{ row.block.questions }}" as="q" hint-placeholder-count="3">
+                          <div style="border:1px solid var(--surface-border);border-radius:var(--radius-lg);padding:14px">
+                            <div style="display:flex;gap:8px;align-items:flex-start">
+                              <textarea value="{{ q.text }}" onChange="{{ q.onText }}" rows="{{ 2 }}" placeholder="Question text" style="flex:1;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);resize:vertical;outline:none;box-sizing:border-box"></textarea>
+                              <sc-if value="{{ q.canRegenerate }}" hint-placeholder-val="{{ false }}"><span onClick="{{ q.onRegenerate }}" style="cursor:pointer;color:#9ca3af;flex-shrink:0;padding-top:6px" title="Regenerate this question"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="refresh-cw" size="{{ 14 }}" hint-size="14px,14px"></x-import></span></sc-if>
+                              <span onClick="{{ q.onRemove }}" style="cursor:pointer;color:#9ca3af;flex-shrink:0;padding-top:6px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="x" size="{{ 14 }}" hint-size="14px,14px"></x-import></span>
+                            </div>
+                            <div style="display:grid;gap:6px;margin-top:8px">
+                              <sc-for list="{{ q.optionRows }}" as="opt" hint-placeholder-count="4">
+                                <label style="display:flex;align-items:center;gap:8px">
+                                  <input type="radio" checked="{{ opt.checked }}" onChange="{{ opt.onMarkCorrect }}" name="{{ q.radioName }}"/>
+                                  <input value="{{ opt.text }}" onChange="{{ opt.onText }}" placeholder="Option" style="flex:1;padding:6px 10px;font-size:12.5px;font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-sm);outline:none;box-sizing:border-box"/>
+                                </label>
+                              </sc-for>
+                            </div>
+                            <input value="{{ q.explanation }}" onChange="{{ q.onExplanation }}" placeholder="Explanation (optional)" style="width:100%;margin-top:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;color:#6b7280;border:1px solid var(--surface-border);border-radius:var(--radius-sm);outline:none;box-sizing:border-box"/>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <span onClick="{{ row.block.addQuestion }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:600;color:var(--itutor-green);cursor:pointer">+ Add question</span>
+
+                      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
+                        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px">Passing score</label>
+                        <select value="{{ row.block.passingScore }}" onChange="{{ row.block.onPassingScore }}" style="width:150px;padding:8px 10px;height:38px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box">
+                          <sc-for list="{{ passingScoreOptions }}" as="p" hint-placeholder-count="4"><option value="{{ p }}">{{ p }}%</option></sc-for>
+                        </select>
+                      </div>
+                      <div style="margin-top:16px">
+                        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px">Navigation</label>
+                        <sc-if value="{{ row.block.navUsingDefault }}" hint-placeholder-val="{{ true }}">
+                          <p style="margin:0;font-size:12.5px;color:#6b7280">Use course default ({{ row.block.courseNavLabel }}) — <span onClick="{{ row.block.overrideNav }}" style="color:var(--itutor-green);font-weight:600;cursor:pointer">Override for this quiz</span></p>
+                        </sc-if>
+                        <sc-if value="{{ row.block.navOverridden }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex;gap:8px;max-width:320px">
+                            <button onClick="{{ row.block.setBlockNavBack }}" style="flex:1;padding:7px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.blockNavBackActive ? 'var(--itutor-green)' : 'var(--surface-border)' }};background:{{ row.block.blockNavBackActive ? 'var(--itutor-green)' : '#fff' }};color:{{ row.block.blockNavBackActive ? '#fff' : 'var(--ink)' }}">Allow going back</button>
+                            <button onClick="{{ row.block.setBlockNavLock }}" style="flex:1;padding:7px;border-radius:var(--radius-md);font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ row.block.blockNavLockActive ? 'var(--itutor-green)' : 'var(--surface-border)' }};background:{{ row.block.blockNavLockActive ? 'var(--itutor-green)' : '#fff' }};color:{{ row.block.blockNavLockActive ? '#fff' : 'var(--ink)' }}">Lock forward-only</button>
+                          </div>
+                          <p style="margin:8px 0 0"><span onClick="{{ row.block.clearOverrideNav }}" style="font-size:11.5px;color:#9ca3af;cursor:pointer">Use course default instead</span></p>
+                        </sc-if>
+                      </div>
+                      <div style="margin-top:14px;padding-left:14px;border-left:2px solid #e5e7eb">
+                        <label style="font-size:12px;font-weight:600;color:#374151">Retries</label>
+                        <sc-if value="{{ row.block.retriesLocked }}" hint-placeholder-val="{{ true }}">
+                          <p style="margin:6px 0 0;font-size:11.5px;color:#9ca3af;font-style:italic">Not available — requires "Allow going back"</p>
+                        </sc-if>
+                        <sc-if value="{{ row.block.retriesActive }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex;gap:12px;margin-top:8px">
+                            <input type="number" value="{{ row.block.blockRetryMax }}" onChange="{{ row.block.onBlockRetryMax }}" style="width:80px;padding:7px 9px;font-size:12.5px;font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+                            <select value="{{ row.block.blockRetryCooldown }}" onChange="{{ row.block.onBlockRetryCooldown }}" style="padding:7px 9px;height:34px;font-size:12.5px;font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+                              <sc-for list="{{ cooldownOptions }}" as="co" hint-placeholder-count="3"><option value="{{ co.v }}">{{ co.label }}</option></sc-for>
+                            </select>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </sc-if>
+
+            </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;gap:12px;margin-top:8px">
+      <div style="display:flex;gap:10px">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" onClick="{{ saveDraft }}" hint-size="110px,40px">Save draft</x-import>
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" onClick="{{ previewCourse }}" hint-size="140px,40px">Preview course</x-import>
+      </div>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" onClick="{{ goReview }}" hint-size="170px,40px">Continue to review</x-import>
+    </div>
+    <sc-if value="{{ showSavedToast }}" hint-placeholder-val="{{ false }}"><p style="text-align:right;margin:10px 0 0;font-size:12px;color:var(--itutor-green);font-weight:600">Draft saved</p></sc-if>
+    <sc-if value="{{ showPreviewToast }}" hint-placeholder-val="{{ false }}"><p style="text-align:right;margin:10px 0 0;font-size:12px;color:#9ca3af">This is what learners will see once the course is published.</p></sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screen3 }}" hint-placeholder-val="{{ false }}">
+<main style="max-width:720px;margin:0 auto;padding:48px 24px 100px;font-family:var(--font-sans)">
+  <sc-if value="{{ notPublished }}" hint-placeholder-val="{{ true }}">
+    <h1 style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--ink);margin:0 0 6px">Review &amp; publish</h1>
+    <p style="margin:0;color:var(--ink-muted);font-size:var(--text-base)">A last look before this goes live for learners.</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.StatCard" label="Total blocks" value="{{ blockCount }}" icon="layers" tone="neutral" hint-size="100%,90px"></x-import>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.StatCard" label="Total quizzes" value="{{ quizCount }}" icon="help-circle" tone="neutral" hint-size="100%,90px"></x-import>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.StatCard" label="Est. duration" value="{{ estimatedDuration }}" icon="clock" tone="neutral" hint-size="100%,90px"></x-import>
+    </div>
+    <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:8px;box-shadow:var(--shadow-sm)">
+      <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #f3f4f6">
+          <span style="width:28px;height:28px;border-radius:8px;background:{{ r.iconBg }};color:{{ r.iconColor }};display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ r.icon }}" size="{{ 14 }}" hint-size="14px,14px"></x-import></span>
+          <div style="flex:1;min-width:0">
+            <p style="margin:0;font-size:var(--text-sm);font-weight:600;color:var(--ink)">{{ r.title }}</p>
+            <sc-if value="{{ r.hasSummary }}" hint-placeholder-val="{{ false }}"><p style="margin:2px 0 0;font-size:12px;color:#9ca3af">{{ r.summary }}</p></sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ noBlocks }}" hint-placeholder-val="{{ false }}"><p style="text-align:center;padding:32px 0;color:#9ca3af;font-size:var(--text-sm)">No blocks yet — go back and add some content.</p></sc-if>
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" hint-size="130px,44px">Save as draft</x-import>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" onClick="{{ publish }}" hint-size="150px,44px">Publish course</x-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isPublished }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;padding:80px 0">
+      <span style="width:64px;height:64px;border-radius:9999px;background:var(--brand-light);color:var(--itutor-green);display:grid;place-items:center;margin:0 auto 20px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check-circle" size="{{ 30 }}" hint-size="30px,30px"></x-import></span>
+      <h1 style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--ink);margin:0 0 8px">Your course is live!</h1>
+      <p style="margin:0 0 24px;color:var(--ink-muted)">{{ titleOrDefault }} is now visible per its {{ visibilityLower }} setting.</p>
+      <a href="Organization Sign-Up.dc.html" style="font-weight:600;color:var(--itutor-green)">Back to dashboard</a>
+    </div>
+  </sc-if>
+</main>
+</sc-if>
+
+<sc-if value="{{ previewOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:60;background:var(--surface-soft);display:flex;flex-direction:column;font-family:var(--font-sans)">
+  <div style="background:#111827;color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <span style="font-size:13px;font-weight:600">Previewing as a student — quiz answers and progress here are not saved.</span>
+    <span onClick="{{ closePreview }}" style="font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,0.15);padding:6px 14px;border-radius:var(--radius-md);cursor:pointer">Exit preview</span>
+  </div>
+  <div style="background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:24px;flex-shrink:0">
+    <span onClick="{{ setPreviewMarketplace }}" style="padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;color:{{ previewMarketplace ? 'var(--itutor-green)' : 'var(--ink-muted)' }};border-bottom:2px solid {{ previewMarketplace ? 'var(--itutor-green)' : 'transparent' }}">Marketplace view</span>
+    <span onClick="{{ setPreviewCourseView }}" style="padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;color:{{ previewCourseView ? 'var(--itutor-green)' : 'var(--ink-muted)' }};border-bottom:2px solid {{ previewCourseView ? 'var(--itutor-green)' : 'transparent' }}">In-course view</span>
+  </div>
+
+  <div style="flex:1;overflow-y:auto">
+    <sc-if value="{{ previewMarketplace }}" hint-placeholder-val="{{ true }}">
+      <div style="max-width:640px;margin:0 auto;padding:40px 24px">
+        <div style="height:180px;border-radius:var(--radius-xl);background:var(--brand-light);display:grid;place-items:center;margin-bottom:20px">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="book-open" size="{{ 44 }}" color="var(--itutor-green)" hint-size="44px,44px"></x-import>
+        </div>
+        <h1 style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--ink);margin:0 0 8px">{{ titleOrDefault }}</h1>
+        <p style="margin:0 0 16px;color:var(--ink-muted)">{{ description }}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <sc-for list="{{ tags }}" as="t" hint-placeholder-count="2"><span style="font-size:12px;color:#6b7280;background:var(--neutral-bg);padding:4px 10px;border-radius:9999px">{{ t }}</span></sc-for>
+        </div>
+        <p style="font-size:13px;color:#9ca3af;margin:0 0 24px">{{ duration }} · {{ visibility }}</p>
+        <button title="Inactive in preview" style="padding:12px 28px;font-size:14px;font-weight:700;color:#9ca3af;background:var(--neutral-bg);border:none;border-radius:var(--radius-lg);cursor:not-allowed">Enroll (preview)</button>
+        <sc-if value="{{ previewIsPrivate }}" hint-placeholder-val="{{ false }}">
+          <p style="margin-top:16px;font-size:12px;color:#9ca3af">This page is only reachable via the share link in real usage — private courses don't appear on the open marketplace.</p>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ previewCourseView }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ previewHasBlocks }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;height:100%;max-width:1100px;margin:0 auto">
+        <div style="width:260px;flex-shrink:0;border-right:1px solid var(--border);padding:16px;overflow-y:auto">
+          <sc-for list="{{ previewRail }}" as="pr" hint-placeholder-count="4">
+            <div onClick="{{ pr.onClick }}" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--radius-md);cursor:pointer;background:{{ pr.activeBg }};margin-bottom:2px">
+              <span style="width:24px;height:24px;border-radius:7px;background:{{ pr.iconBg }};color:{{ pr.iconColor }};display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ pr.icon }}" size="{{ 12 }}" hint-size="12px,12px"></x-import></span>
+              <span style="flex:1;font-size:12.5px;font-weight:600;color:var(--ink)">{{ pr.title }}</span>
+              <sc-if value="{{ pr.isQuiz }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:3px;font-size:10px;color:#9ca3af"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ pr.navIcon }}" size="{{ 10 }}" hint-size="10px,10px"></x-import>{{ pr.navBadge }}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:1;padding:32px;overflow-y:auto">
+          <p style="margin:0 0 16px;font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em">{{ previewProgressLabel }}</p>
+          <sc-if value="{{ previewHasBlock }}" hint-placeholder-val="{{ false }}">
+            <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink);margin:0 0 16px">{{ previewBlockVM.title }}</h2>
+            <sc-if value="{{ previewBlockVM.isVideo }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#000;border-radius:var(--radius-lg);height:280px;display:grid;place-items:center;color:#fff">
+                <div style="text-align:center">
+                  <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="play-circle" size="{{ 40 }}" hint-size="40px,40px"></x-import>
+                  <p style="margin:10px 0 0;font-size:13px;color:rgba(255,255,255,0.7)">{{ previewBlockVM.videoLabel }}</p>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ previewBlockVM.isText }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;font-size:var(--text-sm);color:var(--ink);line-height:1.7;white-space:pre-wrap">{{ previewBlockVM.textContent }}</div>
+            </sc-if>
+            <sc-if value="{{ previewBlockVM.isWebsite }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;display:flex;gap:12px;align-items:center">
+                <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="globe" size="{{ 22 }}" color="#9ca3af" hint-size="22px,22px"></x-import>
+                <span style="font-size:var(--text-sm);color:var(--ink)">{{ previewBlockVM.websiteUrl }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ previewBlockVM.isQuiz }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ previewBlockVM.quizHasQuestions }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid;gap:16px">
+                  <sc-for list="{{ previewBlockVM.quizQuestions }}" as="q" hint-placeholder-count="3">
+                    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px">
+                      <p style="margin:0 0 10px;font-size:var(--text-sm);font-weight:700;color:var(--ink)">{{ q.text }}</p>
+                      <div style="display:grid;gap:6px">
+                        <sc-for list="{{ q.options }}" as="opt" hint-placeholder-count="4">
+                          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-md);background:{{ opt.rowBg }};cursor:pointer">
+                            <input type="radio" checked="{{ opt.isSelected }}" onChange="{{ opt.onPick }}" name="{{ q.id }}"/>
+                            <span style="font-size:13px;color:var(--ink)">{{ opt.text }}</span>
+                          </label>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ previewBlockVM.quizSubmitted }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:16px;padding:16px;background:var(--brand-light);border-radius:var(--radius-lg)">
+                    <p style="margin:0;font-size:15px;font-weight:700;color:var(--forest)">{{ previewBlockVM.quizScoreLabel }}</p>
+                    <p style="margin:4px 0 0;font-size:12px;font-weight:700;color:var(--itutor-green);text-transform:uppercase;letter-spacing:0.04em">Preview result — not recorded</p>
+                    <span onClick="{{ previewBlockVM.onRetryQuiz }}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--itutor-green);cursor:pointer">Try again</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ previewBlockVM.quizNotSubmitted }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:16px">
+                    <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" disabled="{{ previewBlockVM.submitDisabled }}" onClick="{{ previewBlockVM.onSubmitQuiz }}" hint-size="140px,42px">Submit quiz</x-import>
+                  </div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ previewBlockVM.quizNoQuestions }}" hint-placeholder-val="{{ false }}">
+                <p style="color:#9ca3af;font-size:var(--text-sm)">This quiz has no questions yet.</p>
+              </sc-if>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ previewNoBlocks }}" hint-placeholder-val="{{ false }}">
+        <p style="text-align:center;padding:60px 0;color:#9ca3af;font-size:var(--text-sm)">No blocks yet — add some content in the sequence builder first.</p>
+      </sc-if>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;initialScreen&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:1,&quot;max&quot;:3,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;}}">
+const COURSE_TAGS = ['Food Safety', 'Sanitation', 'Allergen Awareness', 'Customer Service', 'Cash Handling', 'Safety', 'Inventory Management', 'Leadership', 'Loss Prevention', 'Conflict Resolution'];
+const BLOCK_TYPES = [
+  { type: 'video', label: 'Video', icon: 'video', desc: 'Upload a video or paste a link', iconBg: '#fce7f3', iconColor: '#db2777' },
+  { type: 'text', label: 'Text', icon: 'file-text', desc: 'Rich text, a document, or a URL', iconBg: '#ede9fe', iconColor: '#7c3aed' },
+  { type: 'website', label: 'Website', icon: 'globe', desc: 'Link out to an external page', iconBg: '#dbeafe', iconColor: '#2563eb' },
+  { type: 'quiz', label: 'Quiz', icon: 'help-circle', desc: 'Test what learners just covered', iconBg: '#dcfce7', iconColor: '#16a34a' },
+];
+const SAMPLE_QUESTIONS = [
+  { text: 'What temperature range is considered the "danger zone" for food safety?', options: ['40°F–140°F', '0°F–32°F', '140°F–212°F', 'Below 0°F'], correct: 0, explanation: 'Bacteria multiply fastest between 40°F and 140°F.' },
+  { text: 'How often should hand-washing occur during a shift?', options: ['Once at the start of the shift', 'Only after using the restroom', 'Before, during and after food handling tasks', 'Only when hands look dirty'], correct: 2, explanation: 'Hands should be washed at every task transition.' },
+  { text: 'What should you do if a coworker skips a safety procedure?', options: ['Ignore it', 'Report it to a supervisor', 'Wait until the shift ends', 'Fix it silently'], correct: 1, explanation: 'Safety issues should be flagged right away.' },
+  { text: 'Which of these is an example of cross-contamination?', options: ['Washing produce before use', 'Using the same board for raw chicken and vegetables unwashed', 'Storing raw meat on the bottom shelf', 'Labeling leftovers with a date'], correct: 1, explanation: 'Unwashed equipment between raw and ready-to-eat foods spreads bacteria.' },
+];
+function makeDemoBlocks(idStart) {
+  return [
+    { id: idStart, type: 'video', title: 'Kitchen Safety Walkthrough', expanded: false, method: 'upload', link: '', fileName: 'kitchen-safety.mp4', transcriptStatus: 'Transcript ready', captions: true },
+    { id: idStart + 1, type: 'text', title: 'Sanitation Checklist', expanded: false, subtab: 'upload', richText: '', fileName: 'sanitation-checklist.pdf', url: '' },
+    { id: idStart + 2, type: 'quiz', title: 'Knowledge Check', expanded: false, path: 'ai', scope: 'before', scopeIds: [], generating: false, imported: false, questions: SAMPLE_QUESTIONS.slice(0, 3).map((q, i) => ({ ...q, id: 900 + i })), passingScore: 70, retake: 'inherit', navOverride: null, retryMax: null, retryCooldown: 'none' },
+  ];
+}
+
+class Component extends DCLogic {
+  qIdCounter = 1;
+
+  state = (() => {
+    const initScreen = (Number(this.props.initialScreen) >= 1 && Number(this.props.initialScreen) <= 3) ? Number(this.props.initialScreen) : 1;
+    return {
+      screen: initScreen,
+      title: initScreen > 1 ? 'Food Safety & Sanitation Basics' : '', description: '', tags: initScreen > 1 ? ['Food Safety'] : [],
+      visibility: 'Public', duration: '',
+      showCourseSettings: false,
+      blocks: initScreen > 1 ? makeDemoBlocks(1) : [],
+      nextId: 4,
+      activeInsertIndex: null, draggingId: null,
+      showSavedToast: false, showPreviewToast: false,
+      published: false,
+      quizNavDefault: 'lock', retryMax: 3, retryCooldown: 'none',
+      previewOpen: false, previewView: 'marketplace', previewBlockId: null, previewQuiz: {},
+    };
+  })();
+
+  setField(name, value) { this.setState({ [name]: value }); }
+
+  addTag(tag) { if (!this.state.tags.includes(tag)) this.setState(s => ({ tags: [...s.tags, tag] })); }
+  removeTag(i) { this.setState(s => ({ tags: s.tags.filter((_, idx) => idx !== i) })); }
+
+  insertBlock(index, type) {
+    const id = this.state.nextId;
+    const base = { id, type, title: '', expanded: true };
+    let extra = {};
+    if (type === 'video') extra = { method: 'upload', link: '', fileName: '', transcriptStatus: '', captions: false };
+    if (type === 'text') extra = { subtab: 'rich', richText: '', fileName: '', url: '' };
+    if (type === 'website') extra = { url: '' };
+    if (type === 'quiz') extra = { path: '', scope: 'before', scopeIds: [], generating: false, imported: false, questions: [], passingScore: 70, retake: 'inherit', navOverride: null, retryMax: null, retryCooldown: 'none' };
+    const block = { ...base, ...extra };
+    this.setState(s => { const blocks = [...s.blocks]; blocks.splice(index, 0, block); return { blocks, nextId: s.nextId + 1, activeInsertIndex: null }; });
+  }
+  updateBlock(id, patch) { this.setState(s => ({ blocks: s.blocks.map(b => b.id === id ? { ...b, ...patch } : b) })); }
+  removeBlock(id) { this.setState(s => ({ blocks: s.blocks.filter(b => b.id !== id) })); }
+  toggleExpand(id) { this.setState(s => ({ blocks: s.blocks.map(b => b.id === id ? { ...b, expanded: !b.expanded } : b) })); }
+
+  onVideoFile(id, e) {
+    const name = e.target.files && e.target.files[0] ? e.target.files[0].name : 'video.mp4';
+    this.updateBlock(id, { fileName: name, transcriptStatus: 'Transcribing…' });
+    setTimeout(() => this.updateBlock(id, { transcriptStatus: 'Transcript ready' }), 1400);
+  }
+  onLinkBlur(id, block) {
+    if (block.link.trim() && !block.transcriptStatus) {
+      this.updateBlock(id, { transcriptStatus: 'Transcribing…' });
+      setTimeout(() => this.updateBlock(id, { transcriptStatus: 'Transcript ready' }), 1400);
+    }
+  }
+  onTextFile(id, e) {
+    const name = e.target.files && e.target.files[0] ? e.target.files[0].name : 'document.pdf';
+    this.updateBlock(id, { fileName: name });
+  }
+
+  updateQuestion(blockId, qId, patch) {
+    this.setState(s => ({ blocks: s.blocks.map(b => b.id === blockId ? { ...b, questions: b.questions.map(q => q.id === qId ? { ...q, ...patch } : q) } : b) }));
+  }
+  updateOption(blockId, qId, idx, value) {
+    this.setState(s => ({ blocks: s.blocks.map(b => b.id === blockId ? { ...b, questions: b.questions.map(q => q.id === qId ? { ...q, options: q.options.map((o, i) => i === idx ? value : o) } : q) } : b) }));
+  }
+  addQuestion(blockId) {
+    const id = this.qIdCounter++;
+    this.updateBlockAppendQuestion(blockId, { id, text: '', options: ['', '', '', ''], correct: 0, explanation: '' });
+  }
+  updateBlockAppendQuestion(blockId, q) {
+    this.setState(s => ({ blocks: s.blocks.map(b => b.id === blockId ? { ...b, questions: [...b.questions, q] } : b) }));
+  }
+  removeQuestion(blockId, qId) {
+    this.setState(s => ({ blocks: s.blocks.map(b => b.id === blockId ? { ...b, questions: b.questions.filter(q => q.id !== qId) } : b) }));
+  }
+  regenerateQuestion(blockId, qId) {
+    const pick = SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
+    this.updateQuestion(blockId, qId, { text: pick.text, options: [...pick.options], correct: pick.correct, explanation: pick.explanation });
+  }
+  generateQuiz(blockId) {
+    this.updateBlock(blockId, { generating: true });
+    setTimeout(() => {
+      const qs = SAMPLE_QUESTIONS.slice(0, 3).map((q, i) => ({ ...q, id: this.qIdCounter++ }));
+      this.updateBlock(blockId, { generating: false, questions: qs });
+    }, 1200);
+  }
+  importQuiz(blockId) {
+    this.updateBlock(blockId, { imported: true });
+    setTimeout(() => {
+      const qs = SAMPLE_QUESTIONS.slice(2, 4).map((q, i) => ({ ...q, id: this.qIdCounter++ }));
+      this.updateBlock(blockId, { questions: qs });
+    }, 900);
+  }
+  toggleScopeBlock(blockId, otherId) {
+    this.setState(s => ({ blocks: s.blocks.map(b => b.id === blockId ? { ...b, scopeIds: b.scopeIds.includes(otherId) ? b.scopeIds.filter(x => x !== otherId) : [...b.scopeIds, otherId] } : b) }));
+  }
+
+  onDragStartBlock(id) { return e => { this.setState({ draggingId: id }); try { e.dataTransfer.effectAllowed = 'move'; } catch (err) {} }; }
+  onDragOverBlock(e) { e.preventDefault(); }
+  onDropOnBlock(targetId) {
+    return e => {
+      e.preventDefault();
+      const draggingId = this.state.draggingId;
+      if (draggingId == null || draggingId === targetId) return;
+      this.setState(s => {
+        const blocks = [...s.blocks];
+        const from = blocks.findIndex(b => b.id === draggingId);
+        const to = blocks.findIndex(b => b.id === targetId);
+        if (from === -1 || to === -1) return {};
+        const [moved] = blocks.splice(from, 1);
+        blocks.splice(to, 0, moved);
+        return { blocks, draggingId: null };
+      });
+    };
+  }
+
+  setNavDefault(mode) {
+    if (mode === 'lock') this.setState({ quizNavDefault: mode, retryMax: null, retryCooldown: 'none' });
+    else this.setState({ quizNavDefault: mode, retryMax: this.state.retryMax || 3 });
+  }
+  setBlockNavOverride(id, mode) {
+    if (mode === 'lock') this.updateBlock(id, { navOverride: mode, retryMax: null, retryCooldown: 'none' });
+    else if (mode === 'back') this.updateBlock(id, { navOverride: mode, retryMax: 3, retryCooldown: 'none' });
+    else this.updateBlock(id, { navOverride: null });
+  }
+
+  openPreview(launchedFrom) { this.setState({ previewOpen: true, previewView: 'marketplace', previewBlockId: null, previewQuiz: {}, previewLaunchedFrom: launchedFrom || 'sequence' }); }
+  closePreview() { this.setState({ previewOpen: false }); }
+  selectPreviewBlock(id) { this.setState({ previewView: 'course', previewBlockId: id }); }
+  answerPreviewQuiz(blockId, qId, idx) {
+    this.setState(s => ({ previewQuiz: { ...s.previewQuiz, [blockId]: { ...(s.previewQuiz[blockId] || {}), [qId]: idx, __submitted: false } } }));
+  }
+  submitPreviewQuiz(blockId) {
+    this.setState(s => ({ previewQuiz: { ...s.previewQuiz, [blockId]: { ...(s.previewQuiz[blockId] || {}), __submitted: true } } }));
+  }
+  retryPreviewQuiz(blockId) { this.setState(s => ({ previewQuiz: { ...s.previewQuiz, [blockId]: {} } })); }
+
+  continueToBuilder() { this.setState({ screen: 2 }); }
+  saveDraft() { this.setState({ showSavedToast: true, showPreviewToast: false }); setTimeout(() => this.setState({ showSavedToast: false }), 2200); }
+  previewCourse() { this.setState({ showPreviewToast: true, showSavedToast: false }); setTimeout(() => this.setState({ showPreviewToast: false }), 2600); }
+  publish() { this.setState({ published: true }); }
+
+  buildBlockVM(b, index, allBlocks) {
+    const typeMeta = BLOCK_TYPES.find(t => t.type === b.type);
+    const vm = {
+      id: b.id, expanded: b.expanded,
+      type_video: b.type === 'video', type_text: b.type === 'text', type_website: b.type === 'website', type_quiz: b.type === 'quiz',
+      icon: typeMeta.icon, iconBg: typeMeta.iconBg, iconColor: typeMeta.iconColor,
+      title: b.title, placeholderTitle: typeMeta.label + ' block',
+      onTitleChange: e => this.updateBlock(b.id, { title: e.target.value }),
+      stopClick: e => e.stopPropagation(),
+      onToggleExpand: () => this.toggleExpand(b.id),
+      chevronIcon: b.expanded ? 'chevron-up' : 'chevron-down',
+      onRemove: e => { e.stopPropagation(); this.removeBlock(b.id); },
+      onDragStart: this.onDragStartBlock(b.id), onDragOver: this.onDragOverBlock, onDrop: this.onDropOnBlock(b.id),
+    };
+    if (b.type === 'video') {
+      Object.assign(vm, {
+        methodUpload: b.method === 'upload', methodLink: b.method === 'link',
+        setMethodUpload: () => this.updateBlock(b.id, { method: 'upload' }), setMethodLink: () => this.updateBlock(b.id, { method: 'link' }),
+        uploadBg: b.method === 'upload' ? 'var(--itutor-green)' : '#fff', uploadFg: b.method === 'upload' ? '#fff' : 'var(--ink)', uploadBorder: b.method === 'upload' ? 'var(--itutor-green)' : 'var(--surface-border)',
+        linkBg: b.method === 'link' ? 'var(--itutor-green)' : '#fff', linkFg: b.method === 'link' ? '#fff' : 'var(--ink)', linkBorder: b.method === 'link' ? 'var(--itutor-green)' : 'var(--surface-border)',
+        fileLabel: b.fileName || 'Drop a video file, or click to browse',
+        onVideoFile: e => this.onVideoFile(b.id, e),
+        link: b.link, onLink: e => this.updateBlock(b.id, { link: e.target.value }), onLinkBlur: () => this.onLinkBlur(b.id, b),
+        hasTranscriptStatus: !!b.transcriptStatus, transcriptStatus: b.transcriptStatus,
+        transcriptBg: b.transcriptStatus === 'Transcript ready' ? 'var(--brand-light)' : 'var(--neutral-bg)',
+        transcriptColor: b.transcriptStatus === 'Transcript ready' ? 'var(--itutor-green)' : '#6b7280',
+        captions: b.captions, onCaptions: e => this.updateBlock(b.id, { captions: e.target.checked }),
+      });
+    }
+    if (b.type === 'text') {
+      Object.assign(vm, {
+        subtabRich: b.subtab === 'rich', subtabUpload: b.subtab === 'upload', subtabUrl: b.subtab === 'url',
+        setRich: () => this.updateBlock(b.id, { subtab: 'rich' }), setUpload: () => this.updateBlock(b.id, { subtab: 'upload' }), setUrl: () => this.updateBlock(b.id, { subtab: 'url' }),
+        richBg: b.subtab === 'rich' ? 'var(--itutor-green)' : '#fff', richFg: b.subtab === 'rich' ? '#fff' : 'var(--ink)', richBorder: b.subtab === 'rich' ? 'var(--itutor-green)' : 'var(--surface-border)',
+        uploadBg: b.subtab === 'upload' ? 'var(--itutor-green)' : '#fff', uploadFg: b.subtab === 'upload' ? '#fff' : 'var(--ink)', uploadBorder: b.subtab === 'upload' ? 'var(--itutor-green)' : 'var(--surface-border)',
+        urlBg: b.subtab === 'url' ? 'var(--itutor-green)' : '#fff', urlFg: b.subtab === 'url' ? '#fff' : 'var(--ink)', urlBorder: b.subtab === 'url' ? 'var(--itutor-green)' : 'var(--surface-border)',
+        richText: b.richText, onRichText: e => this.updateBlock(b.id, { richText: e.target.value }),
+        textFileLabel: b.fileName || 'Drop a PDF or Word file, or click to browse',
+        onTextFile: e => this.onTextFile(b.id, e),
+        url: b.url, onUrl: e => this.updateBlock(b.id, { url: e.target.value }),
+      });
+    }
+    if (b.type === 'website') {
+      Object.assign(vm, {
+        url: b.url, onUrl: e => this.updateBlock(b.id, { url: e.target.value }),
+        onUrlBlur: () => {}, hasPreview: b.url.trim().length > 4,
+        previewDomain: (() => { const m = b.url.match(/^https?:\/\/([^/]+)/); return m ? m[1] : b.url; })(),
+      });
+    }
+    if (b.type === 'quiz') {
+      const priorBlocks = allBlocks.slice(0, index).filter(x => x.type !== 'quiz');
+      const scopeDefs = [
+        { id: 'before', label: 'The block(s) immediately before it' },
+        { id: 'sincelast', label: 'All material since the last quiz' },
+        { id: 'specific', label: 'Specific blocks' },
+        { id: 'whole', label: 'Whole course' },
+        { id: 'none', label: 'None — general knowledge' },
+      ];
+      Object.assign(vm, {
+        noPath: !b.path, hasPath: !!b.path,
+        pathCards: [
+          { icon: 'sparkles', label: 'Generate with AI', onPick: () => this.updateBlock(b.id, { path: 'ai' }) },
+          { icon: 'pencil', label: 'Write manually', onPick: () => this.updateBlock(b.id, { path: 'manual' }) },
+          { icon: 'upload', label: 'Upload questions', onPick: () => this.updateBlock(b.id, { path: 'upload' }) },
+        ],
+        scopeGroup: 'scope-' + b.id,
+        scopeOptions: scopeDefs.map(sd => ({ ...sd, checked: b.scope === sd.id, onPick: () => this.updateBlock(b.id, { scope: sd.id }) })),
+        scopeSpecific: b.scope === 'specific',
+        priorBlockChecklist: priorBlocks.map(pb => ({ label: pb.title || (BLOCK_TYPES.find(t => t.type === pb.type).label + ' block'), checked: b.scopeIds.includes(pb.id), onToggle: () => this.toggleScopeBlock(b.id, pb.id) })),
+        pathAiNotGenerated: b.path === 'ai' && b.questions.length === 0,
+        generating: b.generating, generateLabel: b.generating ? 'Generating…' : 'Generate',
+        onGenerate: () => this.generateQuiz(b.id),
+        pathUploadNotImported: b.path === 'upload' && b.questions.length === 0,
+        importLabel: b.imported ? 'Parsing…' : 'Drop a CSV file, or click to browse',
+        onImportFile: () => this.importQuiz(b.id),
+        showQuestions: b.questions.length > 0 || b.path === 'manual',
+        questions: b.questions.map(q => ({
+          id: q.id, text: q.text, explanation: q.explanation,
+          radioName: 'correct-' + q.id,
+          canRegenerate: b.path === 'ai',
+          onText: e => this.updateQuestion(b.id, q.id, { text: e.target.value }),
+          onExplanation: e => this.updateQuestion(b.id, q.id, { explanation: e.target.value }),
+          onRegenerate: () => this.regenerateQuestion(b.id, q.id),
+          onRemove: () => this.removeQuestion(b.id, q.id),
+          optionRows: q.options.map((opt, idx) => ({ text: opt, checked: q.correct === idx, onText: e => this.updateOption(b.id, q.id, idx, e.target.value), onMarkCorrect: () => this.updateQuestion(b.id, q.id, { correct: idx }) })),
+        })),
+        addQuestion: () => this.addQuestion(b.id),
+        passingScore: b.passingScore, onPassingScore: e => this.updateBlock(b.id, { passingScore: Number(e.target.value) }),
+        retake: b.retake, onRetake: e => this.updateBlock(b.id, { retake: e.target.value }),
+        navUsingDefault: !b.navOverride, navOverridden: !!b.navOverride,
+        courseNavLabel: this.state.quizNavDefault === 'lock' ? 'Lock forward-only' : 'Allow going back',
+        overrideNav: () => this.setBlockNavOverride(b.id, this.state.quizNavDefault === 'lock' ? 'back' : 'lock'),
+        clearOverrideNav: () => this.setBlockNavOverride(b.id, null),
+        setBlockNavBack: () => this.setBlockNavOverride(b.id, 'back'), setBlockNavLock: () => this.setBlockNavOverride(b.id, 'lock'),
+        blockNavBackActive: (b.navOverride || this.state.quizNavDefault) === 'back', blockNavLockActive: (b.navOverride || this.state.quizNavDefault) === 'lock',
+        retriesLocked: (b.navOverride || this.state.quizNavDefault) === 'lock', retriesActive: (b.navOverride || this.state.quizNavDefault) === 'back',
+        blockRetryMax: b.retryMax || 3, onBlockRetryMax: e => this.updateBlock(b.id, { retryMax: Number(e.target.value) }),
+        blockRetryCooldown: b.retryCooldown, onBlockRetryCooldown: e => this.updateBlock(b.id, { retryCooldown: e.target.value }),
+      });
+    }
+    return vm;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const screenLabels = { 1: 'Course setup', 2: 'Sequence builder', 3: 'Review & publish' };
+
+    const previewBlocksList = s.blocks;
+    const previewBlock = s.previewBlockId ? previewBlocksList.find(b => b.id === s.previewBlockId) : null;
+    const previewIndex = previewBlock ? previewBlocksList.indexOf(previewBlock) : -1;
+    const previewRail = previewBlocksList.map((b) => {
+      const meta = BLOCK_TYPES.find(t => t.type === b.type);
+      const nav = b.navOverride || s.quizNavDefault;
+      return {
+        id: b.id, title: b.title || (meta.label + ' block'), icon: meta.icon, iconBg: meta.iconBg, iconColor: meta.iconColor,
+        isQuiz: b.type === 'quiz', navBadge: nav === 'lock' ? 'Forward-only' : 'Allow back', navIcon: nav === 'lock' ? 'lock' : 'lock-open',
+        active: b.id === s.previewBlockId, activeBg: b.id === s.previewBlockId ? 'var(--brand-light)' : 'transparent',
+        onClick: () => this.selectPreviewBlock(b.id),
+      };
+    });
+    let previewBlockVM = null;
+    if (previewBlock) {
+      const meta = BLOCK_TYPES.find(t => t.type === previewBlock.type);
+      previewBlockVM = { title: previewBlock.title || (meta.label + ' block'), isVideo: previewBlock.type === 'video', isText: previewBlock.type === 'text', isWebsite: previewBlock.type === 'website', isQuiz: previewBlock.type === 'quiz' };
+      if (previewBlock.type === 'video') {
+        previewBlockVM.videoLabel = previewBlock.method === 'upload' ? (previewBlock.fileName || 'No file uploaded yet') : (previewBlock.link || 'No link set yet');
+        previewBlockVM.captionsOn = previewBlock.captions;
+      }
+      if (previewBlock.type === 'text') {
+        previewBlockVM.textContent = previewBlock.subtab === 'rich' ? (previewBlock.richText || 'No content written yet.') : previewBlock.subtab === 'upload' ? ('Document: ' + (previewBlock.fileName || 'none uploaded')) : ('Linked URL: ' + (previewBlock.url || 'none set'));
+      }
+      if (previewBlock.type === 'website') { previewBlockVM.websiteUrl = previewBlock.url || 'No URL set yet'; }
+      if (previewBlock.type === 'quiz') {
+        const pq = s.previewQuiz[previewBlock.id] || {};
+        const submitted = !!pq.__submitted;
+        previewBlockVM.quizQuestions = previewBlock.questions.map(q => {
+          const selected = pq[q.id];
+          return {
+            id: q.id, text: q.text || '(untitled question)',
+            options: q.options.map((opt, idx) => ({
+              text: opt || ('Option ' + (idx + 1)), idx, isSelected: selected === idx,
+              onPick: () => this.answerPreviewQuiz(previewBlock.id, q.id, idx),
+              showCorrect: submitted && idx === q.correct, showWrong: submitted && selected === idx && idx !== q.correct,
+              rowBg: submitted && idx === q.correct ? 'rgba(25,147,86,0.12)' : (submitted && selected === idx && idx !== q.correct ? 'rgba(220,38,38,0.1)' : 'transparent'),
+            })),
+          };
+        });
+        const correctCount = previewBlock.questions.filter(q => pq[q.id] === q.correct).length;
+        const allAnswered = previewBlock.questions.length > 0 && previewBlock.questions.every(q => pq[q.id] !== undefined);
+        previewBlockVM.quizSubmitted = submitted;
+        previewBlockVM.quizNotSubmitted = !submitted;
+        previewBlockVM.quizNoQuestions = previewBlock.questions.length === 0;
+        previewBlockVM.quizScoreLabel = 'You\u2019d score ' + correctCount + '/' + previewBlock.questions.length;
+        previewBlockVM.quizHasQuestions = previewBlock.questions.length > 0;
+        previewBlockVM.quizAllAnswered = allAnswered;
+        previewBlockVM.submitDisabled = !allAnswered;
+        previewBlockVM.onSubmitQuiz = () => this.submitPreviewQuiz(previewBlock.id);
+        previewBlockVM.onRetryQuiz = () => this.retryPreviewQuiz(previewBlock.id);
+      }
+    }
+
+    const timeline = [];
+    const makeInsert = (idx) => ({
+      isInsert: true, isBlockRow: false,
+      open: s.activeInsertIndex === idx,
+      onToggle: () => this.setState(s2 => ({ activeInsertIndex: s2.activeInsertIndex === idx ? null : idx })),
+      btnBg: s.activeInsertIndex === idx ? 'var(--itutor-green)' : '#fff', btnFg: s.activeInsertIndex === idx ? '#fff' : '#9ca3af',
+      typeOptions: BLOCK_TYPES.map(bt => ({ ...bt, onPick: () => this.insertBlock(idx, bt.type) })),
+    });
+    timeline.push(makeInsert(0));
+    s.blocks.forEach((b, i) => {
+      timeline.push({ isInsert: false, isBlockRow: true, block: this.buildBlockVM(b, i, s.blocks) });
+      timeline.push(makeInsert(i + 1));
+    });
+
+    const quizCount = s.blocks.filter(b => b.type === 'quiz').length;
+    const perTypeMin = { video: 10, text: 5, website: 3, quiz: 5 };
+    const totalMin = s.blocks.reduce((sum, b) => sum + (perTypeMin[b.type] || 0), 0);
+    const estimatedDuration = s.blocks.length > 0 ? (totalMin >= 60 ? (totalMin / 60).toFixed(1) + ' hrs' : totalMin + ' min') : (s.duration || '—');
+
+    const reviewRows = s.blocks.map(b => {
+      const meta = BLOCK_TYPES.find(t => t.type === b.type);
+      let summary = '';
+      if (b.type === 'quiz') {
+        const scopeLabelMap = { before: 'block(s) before it', sincelast: 'material since the last quiz', specific: b.scopeIds.length + ' selected block(s)', whole: 'the whole course', none: 'general knowledge' };
+        summary = 'Quiz — tests ' + (scopeLabelMap[b.scope] || 'block(s) before it') + ' · ' + b.questions.length + ' question(s)';
+      }
+      return { icon: meta.icon, iconBg: meta.iconBg, iconColor: meta.iconColor, title: b.title || (meta.label + ' block'), hasSummary: !!summary, summary };
+    });
+
+    return {
+      screenLabel: screenLabels[s.screen],
+      screen1: s.screen === 1, screen2: s.screen === 2, screen3: s.screen === 3,
+      title: s.title, onTitle: e => this.setField('title', e.target.value), titleOrDefault: s.title.trim() || 'Untitled course',
+      description: s.description, onDescription: e => this.setField('description', e.target.value),
+      tagChips: s.tags.map((t, i) => ({ label: t, onRemove: () => this.removeTag(i) })),
+      suggestedTagChips: COURSE_TAGS.filter(t => !s.tags.includes(t)).map(t => ({ label: t, onAdd: () => this.addTag(t) })),
+      setPublic: () => this.setField('visibility', 'Public'), setPrivate: () => this.setField('visibility', 'Private'),
+      publicBg: s.visibility === 'Public' ? 'var(--itutor-green)' : '#fff', publicFg: s.visibility === 'Public' ? '#fff' : 'var(--ink)', publicBorder: s.visibility === 'Public' ? 'var(--itutor-green)' : 'var(--surface-border)',
+      privateBg: s.visibility === 'Private' ? 'var(--itutor-green)' : '#fff', privateFg: s.visibility === 'Private' ? '#fff' : 'var(--ink)', privateBorder: s.visibility === 'Private' ? 'var(--itutor-green)' : 'var(--surface-border)',
+      visibilityLower: s.visibility.toLowerCase(),
+      duration: s.duration, onDuration: e => this.setField('duration', e.target.value),
+      continueToBuilder: () => this.continueToBuilder(),
+      showCourseSettings: s.showCourseSettings, toggleCourseSettings: () => this.setState(s2 => ({ showCourseSettings: !s2.showCourseSettings })),
+      timeline,
+      saveDraft: () => this.saveDraft(), previewCourse: () => this.previewCourse(), goReview: () => this.setState({ screen: 3 }),
+      showSavedToast: s.showSavedToast, showPreviewToast: s.showPreviewToast,
+      blockCount: s.blocks.length, quizCount, estimatedDuration,
+      reviewRows, noBlocks: s.blocks.length === 0,
+      notPublished: !s.published, isPublished: s.published,
+      publish: () => this.publish(),
+      passingScoreOptions: [60, 70, 80, 90],
+      retakeOptions: ['inherit', 'unlimited', 'one', 'none'],
+
+      setNavBack: () => this.setNavDefault('back'), setNavLock: () => this.setNavDefault('lock'),
+      navBackActive: s.quizNavDefault === 'back', navLockActive: s.quizNavDefault === 'lock',
+      navBackBg: s.quizNavDefault === 'back' ? 'var(--itutor-green)' : '#fff', navBackFg: s.quizNavDefault === 'back' ? '#fff' : 'var(--ink)', navBackBorder: s.quizNavDefault === 'back' ? 'var(--itutor-green)' : 'var(--surface-border)',
+      navLockBg: s.quizNavDefault === 'lock' ? 'var(--itutor-green)' : '#fff', navLockFg: s.quizNavDefault === 'lock' ? '#fff' : 'var(--ink)', navLockBorder: s.quizNavDefault === 'lock' ? 'var(--itutor-green)' : 'var(--surface-border)',
+      courseRetriesLocked: s.quizNavDefault === 'lock', courseRetriesActive: s.quizNavDefault === 'back',
+      retryMax: s.retryMax || 3, onRetryMax: e => this.setState({ retryMax: Number(e.target.value) }),
+      retryCooldown: s.retryCooldown, onRetryCooldown: e => this.setState({ retryCooldown: e.target.value }),
+      cooldownOptions: [{ v: 'none', label: 'None' }, { v: '1h', label: '1 hour' }, { v: '24h', label: '24 hours' }],
+
+      previewOpen: s.previewOpen,
+      openPreview: () => this.openPreview('sequence'),
+      closePreview: () => this.closePreview(),
+      previewMarketplace: s.previewView === 'marketplace', previewCourseView: s.previewView === 'course',
+      setPreviewMarketplace: () => this.setState({ previewView: 'marketplace' }),
+      setPreviewCourseView: () => this.setState({ previewView: 'course', previewBlockId: s.previewBlockId || (s.blocks[0] && s.blocks[0].id) || null }),
+      previewIsPrivate: s.visibility === 'Private',
+      previewRail, previewHasBlocks: previewRail.length > 0, previewNoBlocks: previewRail.length === 0,
+      previewBlockVM, previewHasBlock: !!previewBlockVM,
+      previewProgressLabel: previewIndex >= 0 ? ('Block ' + (previewIndex + 1) + ' of ' + s.blocks.length) : '',
+      tags: s.tags, visibility: s.visibility,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

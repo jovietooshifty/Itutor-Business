@@ -1,0 +1,85 @@
+:root{
+  /* ── Raw brand palette (tailwind.config.ts) ───────────────────────── */
+  --itutor-green:#199356;      /* legacy brand hex, still used in dashboards */
+  --itutor-black:#000000;
+  --itutor-white:#F4F4F4;
+  --itutor-card:#0F0F0F;
+  --itutor-border:#1C1C1C;
+  --itutor-muted:#BDBDBD;
+  --green-deep:#052e1a;
+
+  /* ── Brand greens ─────────────────────────────────────────────────── */
+  --brand:oklch(0.74 0.19 145);   /* primary action green */
+  --brand-dark:#15803d;
+  --brand-light:#dcfce7;
+  --brand-accent:#22c55e;
+  --brand-soft:oklch(0.95 0.07 150);
+  --brand-deep:oklch(0.55 0.16 150);
+
+  /* ── Neutrals / ink ───────────────────────────────────────────────── */
+  --ink:oklch(0.18 0.02 240);
+  --ink-muted:oklch(0.5 0.02 240);
+  --forest:oklch(0.24 0.04 155);
+
+  /* ── Accents (pastel wash + coral highlight) ──────────────────────── */
+  --coral:oklch(0.74 0.18 40);
+  --coral-soft:oklch(0.94 0.06 50);
+  --mint:oklch(0.97 0.04 150);
+  --mint-deep:oklch(0.93 0.05 150);
+  --lavender:oklch(0.92 0.05 295);
+  --peach:oklch(0.93 0.06 65);
+  --sky:oklch(0.92 0.05 230);
+
+  /* ── Surfaces ─────────────────────────────────────────────────────── */
+  --surface:#ffffff;
+  --surface-soft:#f5faf7;
+  --surface-border:#e5e7eb;
+  --bg:#f3f4f6;
+
+  /* ── Dark app sidebar ─────────────────────────────────────────────── */
+  --sidebar:#0f1a14;
+  --sidebar-fg:#e5e7eb;
+  --sidebar-muted:#9ca3af;
+  --sidebar-active:#22c55e;
+
+  /* ── Semantic aliases (shadcn-compatible; used by the app shells) ─── */
+  --background:#ffffff;
+  --foreground:var(--ink);
+  --card:#ffffff;
+  --muted:oklch(0.96 0.005 150);
+  --muted-foreground:var(--ink-muted);
+  --border:oklch(0.92 0.01 150);
+
+  --text-body:var(--ink);
+  --text-subtle:var(--ink-muted);
+  --text-on-brand:#ffffff;
+  --surface-card:var(--card);
+  --surface-page:var(--background);
+  --surface-inset:#f9fafb;
+
+  /* ── Status colours (as used across sessions / groups / banners) ──── */
+  --success:var(--brand);
+  --success-bg:#dcfce7;
+  --success-fg:#15803d;
+  --warning-bg:#fff7ed;    /* orange-50 */
+  --warning-fg:#ea580c;
+  --danger-bg:#fef2f2;     /* red-50 */
+  --danger-fg:#dc2626;
+  --info-bg:#eff6ff;       /* blue-50 */
+  --info-fg:#2563eb;
+  --progress-bg:#faf5ff;   /* purple-50, "In Progress" */
+  --progress-fg:#9333ea;
+  --neutral-bg:#f3f4f6;
+  --neutral-fg:#6b7280;
+  --star:#fbbf24;          /* amber-400 rating stars */
+}
+
+/* Dark scope — the app sidebar renders inside <aside class="dark"> */
+.dark{
+  --background:oklch(0.15 0.01 240);
+  --foreground:oklch(0.95 0.01 240);
+  --muted:oklch(0.22 0.01 240);
+  --muted-foreground:oklch(0.6 0.01 240);
+  --border:oklch(0.28 0.01 240);
+  --card:oklch(0.18 0.01 240);
+}

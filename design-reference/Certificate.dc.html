@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/effects.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/base.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/_ds_bundle.js"></script>
+<style>body{margin:0}a{color:var(--brand-deep)}a:hover{color:var(--brand-dark)}</style>
+</helmet>
+
+<main style="min-height:100vh;background:var(--gradient-mint-wash);font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;padding:32px">
+  <div style="max-width:560px;width:100%;background:#fff;border-radius:var(--radius-2xl);box-shadow:var(--shadow-card);padding:44px;text-align:center">
+    <span style="width:56px;height:56px;border-radius:9999px;background:var(--brand-light);color:var(--itutor-green);display:grid;place-items:center;margin:0 auto 20px">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="award" size="{{ 26 }}" hint-size="26px,26px"></x-import>
+    </span>
+    <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:var(--itutor-green);text-transform:uppercase;letter-spacing:0.08em">Certificate of completion</p>
+    <h1 style="font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--ink);margin:0 0 4px">{{ courseTitle }}</h1>
+    <p style="margin:0 0 24px;color:var(--ink-muted);font-size:var(--text-sm)">Issued to</p>
+    <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink);margin:0 0 24px">{{ learnerName }}</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#f3f4f6;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px">
+      <div style="background:#fff;padding:16px"><p style="margin:0 0 4px;font-size:11px;color:#9ca3af">Business</p><p style="margin:0;font-size:13px;font-weight:600;color:var(--ink)">{{ providerName }}</p></div>
+      <div style="background:#fff;padding:16px"><p style="margin:0 0 4px;font-size:11px;color:#9ca3af">Completed</p><p style="margin:0;font-size:13px;font-weight:600;color:var(--ink)">{{ completionDate }}</p></div>
+      <div style="background:#fff;padding:16px"><p style="margin:0 0 4px;font-size:11px;color:#9ca3af">Score</p><p style="margin:0;font-size:13px;font-weight:700;color:var(--itutor-green)">{{ score }}%</p></div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <image-slot id="cert-stamp" shape="circle" placeholder="Stamp" style="width:56px;height:56px;opacity:0.7"></image-slot>
+    </div>
+
+    <p style="margin:0 0 24px;font-size:11px;color:#9ca3af">Certificate ID: {{ certId }}</p>
+
+    <div style="display:flex;gap:10px;justify-content:center">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" onClick="{{ copyLink }}" hint-size="130px,42px">{{ copyLabel }}</x-import>
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" hint-size="120px,42px">Download</x-import>
+    </div>
+
+    <p style="margin-top:28px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:var(--ink-muted)">
+      <a href="Learner Portfolio.dc.html">View {{ learnerName }}'s full portfolio →</a>
+    </p>
+  </div>
+</main>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;courseTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Food Safety &amp; Sanitation Basics&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;learnerName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Jovan Goodluck&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;providerName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Northshore Culinary Group&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;completionDate&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Aug 12, 2026&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;score&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:92,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { copied: false };
+  copyLink() { this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 2000); }
+  renderVals() {
+    return {
+      courseTitle: this.props.courseTitle || 'Food Safety & Sanitation Basics',
+      learnerName: this.props.learnerName || 'Jovan Goodluck',
+      providerName: this.props.providerName || 'Northshore Culinary Group',
+      completionDate: this.props.completionDate || 'Aug 12, 2026',
+      score: this.props.score ?? 92,
+      certId: 'ITB-2026-7F3K9Q',
+      copyLabel: this.state.copied ? 'Copied' : 'Copy link',
+      copyLink: () => this.copyLink(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

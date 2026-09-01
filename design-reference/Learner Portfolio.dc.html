@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/effects.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/base.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>body{margin:0}a{color:var(--brand-deep)}a:hover{color:var(--brand-dark)}</style>
+</helmet>
+
+<header style="border-bottom:1px solid var(--border);background:#fff;padding:14px 32px;display:flex;align-items:center;gap:22px">
+  <a href="Landing Page.dc.html" style="display:flex;align-items:center;gap:8px;text-decoration:none">
+    <span style="width:28px;height:28px;border-radius:8px;background:var(--itutor-green);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 15 }}" color="#fff" hint-size="15px,15px"></x-import></span>
+    <span style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink)">iTutor <span style="font-weight:500;color:var(--ink-muted)">Business</span></span>
+  </a>
+  <a href="Learner Sign-Up.dc.html" style="font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);text-decoration:none">Browse courses</a>
+</header>
+<main style="min-height:100vh;background:var(--surface-soft);font-family:var(--font-sans);padding:56px 24px 40px">
+  <div style="max-width:720px;margin:0 auto">
+    <div style="background:#fff;border-radius:var(--radius-2xl);box-shadow:var(--shadow-card);padding:36px;text-align:center">
+      <image-slot id="portfolio-avatar" shape="circle" placeholder="Photo" style="width:96px;height:96px;margin:0 auto 18px"></image-slot>
+      <h1 style="font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--ink);margin:0 0 6px">{{ learnerName }}</h1>
+      <p style="max-width:440px;margin:0 auto 18px;color:var(--ink-muted);font-size:var(--text-sm);line-height:1.6">{{ bio }}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+        <sc-for list="{{ skills }}" as="sk" hint-placeholder-count="3"><span style="font-size:12px;color:#6b7280;background:var(--neutral-bg);padding:5px 12px;border-radius:9999px">{{ sk }}</span></sc-for>
+      </div>
+    </div>
+
+    <h2 style="font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--ink);margin:36px 0 16px">Certificates</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+      <sc-for list="{{ certificates }}" as="c" hint-placeholder-count="2">
+        <a href="Certificate.dc.html" style="display:block;background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:20px;text-decoration:none;box-shadow:var(--shadow-sm)">
+          <span style="width:36px;height:36px;border-radius:9999px;background:var(--brand-light);color:var(--itutor-green);display:grid;place-items:center;margin-bottom:12px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="award" size="{{ 17 }}" hint-size="17px,17px"></x-import></span>
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:var(--ink)">{{ c.title }}</p>
+          <p style="margin:0 0 10px;font-size:12px;color:#9ca3af">{{ c.provider }} · {{ c.date }}</p>
+          <p style="margin:0;font-size:13px;font-weight:700;color:var(--itutor-green)">{{ c.score }}% score</p>
+        </a>
+      </sc-for>
+    </div>
+    <sc-if value="{{ noCertificates }}" hint-placeholder-val="{{ false }}"><p style="text-align:center;color:#9ca3af;font-size:var(--text-sm);padding:24px 0">No public certificates yet.</p></sc-if>
+
+    <div style="text-align:center;margin-top:40px">
+      <a href="Landing Page.dc.html" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;text-decoration:none">
+        <span style="width:20px;height:20px;border-radius:6px;background:var(--itutor-green);display:grid;place-items:center"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 11 }}" color="#fff" hint-size="11px,11px"></x-import></span>
+        Powered by iTutor
+      </a>
+    </div>
+  </div>
+</main>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;learnerName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Jovan Goodluck&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bio&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Line cook with four years in commercial kitchens, focused on prep and food safety.&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const certificates = [
+      { title: 'Food Safety & Sanitation Basics', provider: 'Northshore Culinary Group', date: 'Aug 12, 2026', score: 92 },
+      { title: 'Allergen Awareness for Frontline Staff', provider: 'Northshore Culinary Group', date: 'Aug 20, 2026', score: 88 },
+      { title: 'Customer Service Excellence', provider: 'Bright Path Retail', date: 'Jul 30, 2026', score: 85 },
+    ];
+    return {
+      learnerName: this.props.learnerName || 'Jovan Goodluck',
+      bio: this.props.bio || 'Line cook with four years in commercial kitchens, focused on prep and food safety.',
+      skills: ['Food Safety', 'Knife Skills', 'Customer Service'],
+      certificates, noCertificates: certificates.length === 0,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

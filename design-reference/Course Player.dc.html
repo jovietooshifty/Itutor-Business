@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/effects.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/base.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>body{margin:0}a{color:var(--brand-deep)}a:hover{color:var(--brand-dark)}</style>
+</helmet>
+
+<sc-if value="{{ screenLanding }}" hint-placeholder-val="{{ true }}">
+<main style="font-family:var(--font-sans);background:#fff">
+  <header style="border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;gap:22px">
+    <a href="Learner Sign-Up.dc.html" style="display:flex;align-items:center;gap:8px;text-decoration:none">
+      <span style="width:28px;height:28px;border-radius:8px;background:var(--coral);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 15 }}" color="#fff" hint-size="15px,15px"></x-import></span>
+      <span style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink)">iTutor <span style="font-weight:500;color:var(--ink-muted)">Business</span></span>
+    </a>
+    <a href="Learner Sign-Up.dc.html" style="font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);text-decoration:none">Courses</a>
+    <a href="Learner Portfolio.dc.html" style="font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);text-decoration:none">My Portfolio</a>
+  </header>
+  <image-slot id="course-player-banner" shape="rect" placeholder="Course banner" style="width:100%;height:240px;display:block"></image-slot>
+  <div style="max-width:1100px;margin:0 auto;padding:32px 24px 80px;display:grid;grid-template-columns:1fr 320px;gap:40px;align-items:start">
+    <div>
+      <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-muted)">{{ course.provider }}</p>
+      <h1 style="font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--ink);margin:0 0 12px">{{ course.title }}</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+        <sc-for list="{{ course.tags }}" as="t" hint-placeholder-count="2"><span style="font-size:12px;color:#6b7280;background:var(--neutral-bg);padding:4px 10px;border-radius:9999px">{{ t }}</span></sc-for>
+      </div>
+      <p style="font-size:var(--text-base);color:var(--ink);line-height:1.7;margin:0 0 24px">{{ course.description }}</p>
+      <h3 style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--ink);margin:0 0 12px">What you'll learn</h3>
+      <ul style="margin:0;padding:0 0 0 20px;display:grid;gap:8px;color:var(--ink);font-size:var(--text-sm);line-height:1.6">
+        <sc-for list="{{ course.learningPoints }}" as="lp" hint-placeholder-count="3"><li>{{ lp }}</li></sc-for>
+      </ul>
+    </div>
+    <aside style="position:sticky;top:24px;background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:24px;box-shadow:var(--shadow-card)">
+      <p style="margin:0 0 4px;font-size:13px;color:var(--ink-muted)">Duration</p>
+      <p style="margin:0 0 14px;font-size:var(--text-sm);font-weight:600;color:var(--ink)">{{ course.duration }}</p>
+      <p style="margin:0 0 4px;font-size:13px;color:var(--ink-muted)">Contents</p>
+      <p style="margin:0 0 20px;font-size:var(--text-sm);font-weight:600;color:var(--ink)">{{ lessonSummary }}</p>
+
+      <sc-if value="{{ stateNotEnrolled }}" hint-placeholder-val="{{ true }}">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" full-width="{{ true }}" onClick="{{ startPlayer }}" hint-size="100%,48px">Enroll</x-import>
+      </sc-if>
+      <sc-if value="{{ stateNotStarted }}" hint-placeholder-val="{{ false }}">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" full-width="{{ true }}" onClick="{{ startPlayer }}" hint-size="100%,48px">Start course</x-import>
+      </sc-if>
+      <sc-if value="{{ stateInProgress }}" hint-placeholder-val="{{ false }}">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" full-width="{{ true }}" onClick="{{ startPlayer }}" hint-size="100%,48px">Continue</x-import>
+        <div style="margin-top:12px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.ProgressBar" value="{{ progressPct }}" hint-size="100%,8px"></x-import></div>
+        <p style="margin:6px 0 0;font-size:12px;color:#9ca3af">{{ progressCaption }}</p>
+      </sc-if>
+      <sc-if value="{{ stateCompleted }}" hint-placeholder-val="{{ false }}">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" size="lg" full-width="{{ true }}" onClick="{{ startPlayer }}" hint-size="100%,48px">Review course</x-import>
+        <div style="margin-top:12px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Badge" tone="success" hint-size="auto,24px">Completed</x-import></div>
+      </sc-if>
+    </aside>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ screenPlayerOrResult }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;background:var(--surface-soft);font-family:var(--font-sans);display:flex;flex-direction:column">
+  <header style="height:56px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 20px">
+    <span onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--ink);flex-shrink:0">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="arrow-left" size="{{ 16 }}" hint-size="16px,16px"></x-import>
+      <span style="font-size:13px;font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ course.title }}</span>
+    </span>
+    <div style="flex:1;display:flex;align-items:center;gap:12px">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-muted);white-space:nowrap">{{ headerBlockLabel }}</span>
+      <div style="flex:1"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.ProgressBar" value="{{ progressPct }}" hint-size="100%,6px"></x-import></div>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;overflow:hidden">
+    <div style="width:260px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);padding:14px;overflow-y:auto">
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="4">
+        <div onClick="{{ r.onClick }}" title="{{ r.tooltip }}" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--radius-md);cursor:{{ r.cursor }};background:{{ r.bg }};margin-bottom:2px">
+          <span style="width:22px;height:22px;border-radius:9999px;display:grid;place-items:center;flex-shrink:0;background:{{ r.iconBg }};color:{{ r.iconColor }}">
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ r.icon }}" size="{{ 12 }}" hint-size="12px,12px"></x-import>
+          </span>
+          <span style="flex:1;font-size:12.5px;font-weight:{{ r.weight }};color:{{ r.color }}">{{ r.title }}</span>
+          <sc-if value="{{ r.isQuiz }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="help-circle" size="{{ 12 }}" color="#9ca3af" hint-size="12px,12px"></x-import></sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:36px">
+      <sc-if value="{{ screenPlayer }}" hint-placeholder-val="{{ true }}">
+      <div style="max-width:720px;margin:0 auto">
+        <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink);margin:0 0 18px">{{ currentBlock.title }}</h2>
+
+        <sc-if value="{{ blockIsVideo }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#000;border-radius:var(--radius-lg);overflow:hidden">
+            <div style="height:320px;display:grid;place-items:center;color:#fff">
+              <span onClick="{{ togglePlay }}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px">
+                <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ playIcon }}" size="{{ 48 }}" hint-size="48px,48px"></x-import>
+                <span style="font-size:12px;color:rgba(255,255,255,0.6)">{{ videoFileLabel }}</span>
+              </span>
+            </div>
+            <div onClick="{{ onSeek }}" style="height:8px;background:#333;cursor:{{ seekCursor }}">
+              <div style="height:100%;width:{{ videoProgress }}%;background:var(--itutor-green);transition:width 0.3s linear"></div>
+            </div>
+          </div>
+          <p style="margin:8px 0 0;font-size:12px;color:#9ca3af">{{ scrubHint }}</p>
+        </sc-if>
+
+        <sc-if value="{{ blockIsText }}" hint-placeholder-val="{{ false }}">
+          <div onScroll="{{ onTextScroll }}" style="max-width:720px;height:340px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;font-size:var(--text-sm);color:var(--ink);line-height:1.8;white-space:pre-wrap">{{ currentBlock.content }}</div>
+          <sc-if value="{{ textNotScrolled }}" hint-placeholder-val="{{ true }}"><p style="margin:8px 0 0;font-size:12px;color:#9ca3af">Scroll to the end to continue</p></sc-if>
+        </sc-if>
+
+        <sc-if value="{{ blockIsWebsite }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;display:flex;gap:14px;align-items:center">
+            <span style="width:44px;height:44px;border-radius:var(--radius-lg);background:var(--neutral-bg);display:grid;place-items:center;flex-shrink:0"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="globe" size="{{ 20 }}" color="#6b7280" hint-size="20px,20px"></x-import></span>
+            <div style="flex:1;min-width:0">
+              <p style="margin:0;font-size:var(--text-sm);font-weight:700;color:var(--ink)">{{ currentBlock.title }}</p>
+              <p style="margin:2px 0 0;font-size:12px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ currentBlock.url }}</p>
+            </div>
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" onClick="{{ visitSite }}" hint-size="120px,38px">Visit site</x-import>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ blockIsQuiz }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0 0 14px;font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em">Question {{ quizQNum }} of {{ quizQTotal }}</p>
+          <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px">
+            <p style="margin:0 0 16px;font-size:var(--text-base);font-weight:700;color:var(--ink)">{{ quizQ.text }}</p>
+            <div style="display:grid;gap:10px">
+              <sc-for list="{{ quizQ.options }}" as="opt" hint-placeholder-count="4">
+                <div onClick="{{ opt.onPick }}" style="padding:14px 16px;border-radius:var(--radius-lg);border:2px solid {{ opt.border }};background:{{ opt.bg }};cursor:pointer;font-size:var(--text-sm);color:var(--ink)">{{ opt.text }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:20px">
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="secondary" disabled="{{ quizBackDisabled }}" onClick="{{ quizBack }}" hint-size="90px,42px">Back</x-import>
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" disabled="{{ quizNextDisabled }}" onClick="{{ quizNext }}" hint-size="130px,42px">{{ quizNextLabel }}</x-import>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showBlockContinue }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:24px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" onClick="{{ continueBlock }}" hint-size="140px,46px">{{ continueLabel }}</x-import></div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ screenResult }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:520px;margin:60px auto;text-align:center">
+        <sc-if value="{{ resultPass }}" hint-placeholder-val="{{ false }}">
+          <span style="width:60px;height:60px;border-radius:9999px;background:var(--brand-light);color:var(--itutor-green);display:grid;place-items:center;margin:0 auto 16px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check-circle" size="{{ 28 }}" hint-size="28px,28px"></x-import></span>
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 6px">{{ resultScoreLabel }}</h2>
+          <p style="margin:0 0 20px;color:var(--ink-muted)">Nice work — you passed this quiz.</p>
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" onClick="{{ continueAfterPass }}" hint-size="140px,46px">Continue</x-import>
+        </sc-if>
+        <sc-if value="{{ resultFailRetry }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 6px">{{ resultScoreLabel }}</h2>
+          <p style="margin:0 0 6px;color:var(--ink-muted)">You didn't pass this time.</p>
+          <p style="margin:0 0 20px;font-size:13px;color:#9ca3af">{{ attemptsRemainingLabel }}</p>
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" onClick="{{ retryQuiz }}" hint-size="130px,46px">Try again</x-import>
+        </sc-if>
+        <sc-if value="{{ resultCooldown }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 6px">{{ resultScoreLabel }}</h2>
+          <p style="margin:0 0 6px;color:var(--ink-muted)">You didn't pass this time.</p>
+          <p style="margin:0 0 20px;font-size:13px;color:#9ca3af">You can retry in {{ cooldownLabel }}</p>
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" disabled="{{ true }}" hint-size="130px,46px">Try again</x-import>
+        </sc-if>
+        <sc-if value="{{ resultTerminal }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 6px">{{ resultScoreLabel }}</h2>
+          <p style="margin:0 0 20px;color:var(--ink-muted)">You've reached the maximum attempts for this quiz.</p>
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Button" variant="primary" size="lg" hint-size="220px,46px">Message your training administrator</x-import>
+        </sc-if>
+        <sc-if value="{{ resultShowReview }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:left;margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
+            <span onClick="{{ toggleReview }}" style="font-size:13px;font-weight:600;color:var(--itutor-green);cursor:pointer">{{ reviewToggleLabel }}</span>
+            <sc-if value="{{ reviewOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;gap:12px;margin-top:14px">
+                <sc-for list="{{ reviewRows }}" as="rr" hint-placeholder-count="4">
+                  <div style="padding:12px 14px;border-radius:var(--radius-md);background:#fff;border:1px solid var(--border)">
+                    <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink)">{{ rr.text }}</p>
+                    <p style="margin:0;font-size:12.5px;color:{{ rr.color }}">Your answer: {{ rr.yourAnswer }} {{ rr.mark }}</p>
+                    <sc-if value="{{ rr.showCorrect }}" hint-placeholder-val="{{ false }}"><p style="margin:2px 0 0;font-size:12.5px;color:#16a34a">Correct answer: {{ rr.correctAnswer }}</p></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenComplete }}" hint-placeholder-val="{{ false }}">
+<main style="min-height:100vh;background:var(--surface-soft);font-family:var(--font-sans);display:flex;align-items:center;justify-content:center">
+  <div style="max-width:480px;text-align:center;padding:40px">
+    <span style="width:64px;height:64px;border-radius:9999px;background:var(--brand-light);color:var(--itutor-green);display:grid;place-items:center;margin:0 auto 20px"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="award" size="{{ 30 }}" hint-size="30px,30px"></x-import></span>
+    <h1 style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--ink);margin:0 0 8px">Course complete</h1>
+    <p style="margin:0 0 24px;color:var(--ink-muted)">You've finished {{ course.title }}.</p>
+    <div style="display:grid;gap:10px;margin-bottom:28px">
+      <sc-for list="{{ quizSummaryRows }}" as="qs" hint-placeholder-count="1">
+        <div style="display:flex;justify-content:space-between;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg)">
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">{{ qs.title }}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--itutor-green)">{{ qs.scoreLabel }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <a href="Learner Sign-Up.dc.html" style="display:inline-block;padding:12px 28px;border-radius:var(--radius-lg);border:1px solid var(--surface-border);font-size:14px;font-weight:700;color:var(--ink);text-decoration:none">Back to marketplace</a>
+      <a href="Learner Portfolio.dc.html" style="display:inline-block;padding:12px 28px;border-radius:var(--radius-lg);background:var(--itutor-green);font-size:14px;font-weight:700;color:#fff;text-decoration:none">View my portfolio</a>
+    </div>
+  </div>
+</main>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;enrollState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;notEnrolled&quot;,&quot;options&quot;:[&quot;notEnrolled&quot;,&quot;notStarted&quot;,&quot;inProgress&quot;,&quot;completed&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;quizNavMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;lock&quot;,&quot;options&quot;:[&quot;back&quot;,&quot;lock&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;maxAttempts&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:1,&quot;max&quot;:5,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;},&quot;revealAnswers&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const SAMPLE_QUESTIONS = [
+  { text: 'What temperature range is considered the food-safety "danger zone"?', options: ['40°F–140°F', '0°F–32°F', '140°F–212°F', 'Below 0°F'], correct: 0 },
+  { text: 'How often should hand-washing occur during a shift?', options: ['Once at the start of the shift', 'Only after using the restroom', 'Before, during and after food handling tasks', 'Only when hands look dirty'], correct: 2 },
+  { text: 'Which of these is an example of cross-contamination?', options: ['Washing produce before use', 'Using the same cutting board for raw chicken and vegetables without cleaning', 'Storing raw meat on the bottom shelf', 'Labeling leftovers with a date'], correct: 1 },
+  { text: 'What should you do if you notice a coworker skipping a safety procedure?', options: ['Ignore it', 'Report it to a supervisor', 'Wait until the shift ends', 'Fix it without saying anything'], correct: 1 },
+];
+
+const COURSE = {
+  title: 'Food Safety & Sanitation Basics', provider: 'Northshore Culinary Group', duration: '2 hrs',
+  tags: ['Food Safety', 'Sanitation'],
+  description: 'Core food handling, storage and sanitation practices for commercial kitchens. Covers the danger zone, hand hygiene, and cross-contamination prevention.',
+  learningPoints: ['Identify the food-safety danger zone and why it matters', 'Follow correct hand-washing and sanitation routines', 'Recognize and prevent cross-contamination'],
+  blocks: [
+    { id: 1, type: 'video', title: 'Kitchen Safety Walkthrough', fileName: 'kitchen-safety.mp4' },
+    { id: 2, type: 'text', title: 'Sanitation Checklist', content: 'Before every shift:\n\n1. Wash hands for at least 20 seconds before handling any food.\n2. Sanitize all prep surfaces and cutting boards.\n3. Check refrigerator temperatures are at or below 40°F.\n4. Separate raw proteins from ready-to-eat items at all times.\n5. Label and date all stored leftovers.\n\nDuring service:\n\n6. Re-wash hands after handling raw meat, trash, or cleaning chemicals.\n7. Use color-coded cutting boards where available.\n8. Report any pest sightings to a supervisor immediately.\n\nEnd of shift:\n\n9. Deep-clean all prep stations.\n10. Log any temperature or sanitation issues in the shift report.' },
+    { id: 3, type: 'website', title: 'Official Food Safety Guidelines', url: 'https://health.gov.tt/food-safety-guidelines' },
+    { id: 4, type: 'quiz', title: 'Knowledge Check', questions: SAMPLE_QUESTIONS, cooldownSeconds: 15 },
+  ],
+};
+
+class Component extends DCLogic {
+  state = {
+    screen: 'landing', currentBlockIndex: 0,
+    completedIds: [],
+    videoPlaying: false, videoProgress: 0, videoWatchedOnce: {},
+    textScrolledEnd: {},
+    websiteVisited: {},
+    quizQIndex: 0, quizAnswers: {}, attemptsUsed: {}, cooldownLeft: {},
+    lastResult: null, reviewOpen: false,
+  };
+
+  goLanding() { this.setState({ screen: 'landing' }); }
+  startPlayer() {
+    const firstIncomplete = COURSE.blocks.findIndex(b => !this.state.completedIds.includes(b.id));
+    const idx = firstIncomplete === -1 ? 0 : firstIncomplete;
+    this.setState({ screen: 'block', currentBlockIndex: idx, quizQIndex: 0, quizAnswers: {} });
+  }
+  selectBlock(idx) {
+    this.setState({ screen: 'block', currentBlockIndex: idx, quizQIndex: 0, quizAnswers: {}, reviewOpen: false });
+  }
+  markDone(id) { if (!this.state.completedIds.includes(id)) this.setState(s => ({ completedIds: [...s.completedIds, id] })); }
+  continueBlock() {
+    const nextIdx = this.state.currentBlockIndex + 1;
+    if (nextIdx >= COURSE.blocks.length) this.setState({ screen: 'complete' });
+    else this.setState({ screen: 'block', currentBlockIndex: nextIdx, quizQIndex: 0, quizAnswers: {} });
+  }
+
+  togglePlay() {
+    if (this.state.videoPlaying) { this.setState({ videoPlaying: false }); return; }
+    this.setState({ videoPlaying: true });
+    const id = COURSE.blocks[this.state.currentBlockIndex].id;
+    const tick = () => {
+      if (!this.state.videoPlaying) return;
+      const next = Math.min(100, this.state.videoProgress + 6);
+      this.setState({ videoProgress: next });
+      if (next >= 100) { this.setState(s => ({ videoPlaying: false, videoWatchedOnce: { ...s.videoWatchedOnce, [id]: true } })); this.markDone(id); }
+      else setTimeout(tick, 250);
+    };
+    setTimeout(tick, 250);
+  }
+  onSeek(e) {
+    const id = COURSE.blocks[this.state.currentBlockIndex].id;
+    if (!this.state.videoWatchedOnce[id]) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    this.setState({ videoProgress: Math.max(0, Math.min(100, pct)) });
+  }
+  onTextScroll(e) {
+    const id = COURSE.blocks[this.state.currentBlockIndex].id;
+    const el = e.target;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
+      if (!this.state.textScrolledEnd[id]) { this.setState(s => ({ textScrolledEnd: { ...s.textScrolledEnd, [id]: true } })); this.markDone(id); }
+    }
+  }
+  visitSite() {
+    const b = COURSE.blocks[this.state.currentBlockIndex];
+    try { window.open(b.url, '_blank'); } catch (e) {}
+    this.setState(s => ({ websiteVisited: { ...s.websiteVisited, [b.id]: true } }));
+    this.markDone(b.id);
+  }
+
+  pickAnswer(qIdx, optIdx) { this.setState(s => ({ quizAnswers: { ...s.quizAnswers, [qIdx]: optIdx } })); }
+  quizBack() { this.setState(s => ({ quizQIndex: Math.max(0, s.quizQIndex - 1) })); }
+  quizNext() {
+    const b = COURSE.blocks[this.state.currentBlockIndex];
+    if (this.state.quizQIndex < b.questions.length - 1) this.setState(s => ({ quizQIndex: s.quizQIndex + 1 }));
+    else this.submitQuiz(b);
+  }
+  effectiveNavMode() { return (this.props.quizNavMode === 'back') ? 'back' : 'lock'; }
+  submitQuiz(b) {
+    const s = this.state;
+    const score = b.questions.filter((q, i) => s.quizAnswers[i] === q.correct).length;
+    const total = b.questions.length;
+    const passed = score / total >= 0.7;
+    const navMode = this.effectiveNavMode();
+    const maxAttempts = navMode === 'lock' ? 1 : (Number(this.props.maxAttempts) || 2);
+    const used = (s.attemptsUsed[b.id] || 0) + 1;
+    const attemptsUsed = { ...s.attemptsUsed, [b.id]: used };
+    if (passed) {
+      this.markDone(b.id);
+      this.setState({ attemptsUsed, screen: 'result', lastResult: { blockId: b.id, score, total, kind: 'pass' } });
+      return;
+    }
+    const remaining = maxAttempts - used;
+    if (remaining <= 0) {
+      this.setState({ attemptsUsed, screen: 'result', lastResult: { blockId: b.id, score, total, kind: 'terminal' } });
+    } else if (b.cooldownSeconds > 0) {
+      this.setState({ attemptsUsed, screen: 'result', lastResult: { blockId: b.id, score, total, kind: 'cooldown', remaining } });
+      this.startCooldown(b.id, b.cooldownSeconds);
+    } else {
+      this.setState({ attemptsUsed, screen: 'result', lastResult: { blockId: b.id, score, total, kind: 'retry', remaining } });
+    }
+  }
+  startCooldown(id, seconds) {
+    this.setState(s => ({ cooldownLeft: { ...s.cooldownLeft, [id]: seconds } }));
+    const tick = () => {
+      const left = (this.state.cooldownLeft[id] || 0) - 1;
+      this.setState(s => ({ cooldownLeft: { ...s.cooldownLeft, [id]: Math.max(0, left) } }));
+      if (left > 0) setTimeout(tick, 1000);
+      else this.setState(s => ({ lastResult: s.lastResult && s.lastResult.blockId === id ? { ...s.lastResult, kind: 'retry' } : s.lastResult }));
+    };
+    setTimeout(tick, 1000);
+  }
+  retryQuiz(id) { this.setState({ screen: 'block', quizQIndex: 0, quizAnswers: {}, reviewOpen: false }); }
+  continueAfterPass() { this.continueBlock(); }
+  toggleReview() { this.setState(s => ({ reviewOpen: !s.reviewOpen })); }
+
+  renderVals() {
+    const s = this.state;
+    const blocks = COURSE.blocks;
+    const navMode = this.effectiveNavMode();
+    const firstIncompleteIdx = (() => { const i = blocks.findIndex(b => !s.completedIds.includes(b.id)); return i === -1 ? blocks.length : i; })();
+    const currentBlock = blocks[s.currentBlockIndex] || blocks[0];
+    const backLockActive = s.screen === 'block' && currentBlock.type === 'quiz' && navMode === 'lock' && !s.completedIds.includes(currentBlock.id);
+
+    const rail = blocks.map((b, i) => {
+      const completed = s.completedIds.includes(b.id);
+      const isCurrent = i === s.currentBlockIndex && (s.screen === 'block' || s.screen === 'result');
+      const lockedByBack = backLockActive && i < s.currentBlockIndex;
+      const locked = (i > firstIncompleteIdx) || lockedByBack;
+      const icon = b.type === 'video' ? 'video' : b.type === 'text' ? 'file-text' : b.type === 'website' ? 'globe' : 'help-circle';
+      return {
+        title: b.title, icon: completed ? 'check' : locked ? 'lock' : icon, isQuiz: false,
+        iconBg: completed ? 'rgba(25,147,86,0.15)' : isCurrent ? 'var(--itutor-green)' : locked ? 'var(--neutral-bg)' : 'var(--neutral-bg)',
+        iconColor: completed ? 'var(--itutor-green)' : isCurrent ? '#fff' : locked ? '#9ca3af' : '#6b7280',
+        color: locked ? '#9ca3af' : completed ? '#6b7280' : 'var(--ink)', weight: isCurrent ? 700 : 500,
+        bg: isCurrent ? 'var(--brand-light)' : 'transparent', cursor: locked ? 'not-allowed' : 'pointer',
+        tooltip: locked ? "Complete the current quiz to continue" : '',
+        onClick: locked ? (() => {}) : (() => this.selectBlock(i)),
+      };
+    });
+
+    const completedCount = s.completedIds.length;
+    const progressPct = (completedCount / blocks.length) * 100;
+    const quizCount = blocks.filter(b => b.type === 'quiz').length;
+    const lessonSummary = (blocks.length - quizCount) + ' lessons · ' + quizCount + ' quiz' + (quizCount !== 1 ? 'zes' : '');
+
+    const enrollState = this.props.enrollState || 'notEnrolled';
+
+    let quizVals = {};
+    if (currentBlock.type === 'quiz') {
+      const q = currentBlock.questions[s.quizQIndex];
+      quizVals = {
+        quizQNum: s.quizQIndex + 1, quizQTotal: currentBlock.questions.length,
+        quizQ: {
+          text: q.text,
+          options: q.options.map((opt, oi) => ({
+            text: opt, onPick: () => this.pickAnswer(s.quizQIndex, oi),
+            border: s.quizAnswers[s.quizQIndex] === oi ? 'var(--itutor-green)' : 'var(--surface-border)',
+            bg: s.quizAnswers[s.quizQIndex] === oi ? 'var(--brand-light)' : '#fff',
+          })),
+        },
+        quizBackDisabled: s.quizQIndex === 0,
+        quizNextDisabled: s.quizAnswers[s.quizQIndex] === undefined,
+        quizNextLabel: s.quizQIndex === currentBlock.questions.length - 1 ? 'Submit quiz' : 'Next',
+        quizBack: () => this.quizBack(), quizNext: () => this.quizNext(),
+      };
+    }
+
+    let resultVals = {};
+    if (s.screen === 'result' && s.lastResult) {
+      const r = s.lastResult;
+      const block = blocks.find(b => b.id === r.blockId);
+      const cooldownNow = s.cooldownLeft[r.blockId];
+      const kind = r.kind === 'cooldown' && cooldownNow === 0 ? 'retry' : r.kind;
+      const mm = cooldownNow != null ? Math.floor(cooldownNow / 60) : 0;
+      const ss = cooldownNow != null ? cooldownNow % 60 : 0;
+      resultVals = {
+        resultPass: kind === 'pass', resultFailRetry: kind === 'retry', resultCooldown: kind === 'cooldown', resultTerminal: kind === 'terminal',
+        resultScoreLabel: r.score + '/' + r.total + ' — ' + Math.round((r.score / r.total) * 100) + '%',
+        attemptsRemainingLabel: r.remaining + ' of ' + (navMode === 'lock' ? 1 : (Number(this.props.maxAttempts) || 2)) + ' attempts used',
+        cooldownLabel: mm + ':' + (ss < 10 ? '0' : '') + ss,
+        retryQuiz: () => this.retryQuiz(r.blockId),
+        resultShowReview: (this.props.revealAnswers ?? true) && kind !== 'pass',
+        reviewOpen: s.reviewOpen, toggleReview: () => this.toggleReview(),
+        reviewToggleLabel: s.reviewOpen ? 'Hide answers' : 'Review answers',
+        reviewRows: block ? block.questions.map((q, qi) => {
+          const your = s.quizAnswers[qi];
+          const correct = your === q.correct;
+          return { text: q.text, yourAnswer: your != null ? q.options[your] : '(no answer)', mark: correct ? '✓' : '✗', color: correct ? '#16a34a' : '#dc2626', showCorrect: !correct, correctAnswer: q.options[q.correct] };
+        }) : [],
+      };
+    }
+
+    return {
+      screenLanding: s.screen === 'landing', screenPlayerOrResult: s.screen === 'block' || s.screen === 'result', screenPlayer: s.screen === 'block', screenResult: s.screen === 'result', screenComplete: s.screen === 'complete',
+      course: COURSE, lessonSummary,
+      stateNotEnrolled: enrollState === 'notEnrolled', stateNotStarted: enrollState === 'notStarted', stateInProgress: enrollState === 'inProgress', stateCompleted: enrollState === 'completed',
+      progressPct, progressCaption: completedCount + ' of ' + blocks.length + ' complete',
+      startPlayer: () => this.startPlayer(), goLanding: () => this.goLanding(),
+      headerBlockLabel: 'Block ' + (s.currentBlockIndex + 1) + ' of ' + blocks.length,
+      rail, currentBlock,
+      blockIsVideo: currentBlock.type === 'video', blockIsText: currentBlock.type === 'text', blockIsWebsite: currentBlock.type === 'website', blockIsQuiz: currentBlock.type === 'quiz',
+      playIcon: s.videoPlaying ? 'pause-circle' : 'play-circle',
+      videoFileLabel: currentBlock.type === 'video' ? currentBlock.fileName : '',
+      videoProgress: s.videoProgress, togglePlay: () => this.togglePlay(), onSeek: e => this.onSeek(e),
+      seekCursor: currentBlock.type === 'video' && s.videoWatchedOnce[currentBlock.id] ? 'pointer' : 'default',
+      scrubHint: currentBlock.type === 'video' ? (s.videoWatchedOnce[currentBlock.id] ? 'You can scrub freely now that you\u2019ve watched this once.' : 'Scrubbing is locked until you\u2019ve watched this once.') : '',
+      onTextScroll: e => this.onTextScroll(e),
+      textNotScrolled: currentBlock.type === 'text' && !s.textScrolledEnd[currentBlock.id],
+      visitSite: () => this.visitSite(),
+      showBlockContinue: currentBlock.type !== 'quiz' && s.completedIds.includes(currentBlock.id),
+      continueLabel: 'Continue', continueBlock: () => this.continueBlock(),
+      quizSummaryRows: blocks.filter(b => b.type === 'quiz').map(b => {
+        const best = s.attemptsUsed[b.id] ? (s.lastResult && s.lastResult.blockId === b.id ? s.lastResult.score + '/' + s.lastResult.total : '—') : '—';
+        return { title: b.title, scoreLabel: best };
+      }),
+      continueAfterPass: () => this.continueAfterPass(),
+      ...quizVals, ...resultVals,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

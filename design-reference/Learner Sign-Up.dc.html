@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/effects.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/tokens/base.css">
+<link rel="stylesheet" href="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="_ds/itutor-design-system-e4581d85-47cb-42fe-a1e3-b2c1a21087d2/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+a{color:var(--brand-deep)}
+a:hover{color:var(--brand-dark)}
+</style>
+</helmet>
+
+<sc-if value="{{ showShell }}" hint-placeholder-val="{{ true }}">
+<main style="min-height:100vh;background:linear-gradient(135deg, oklch(0.14 0.03 40) 0%, oklch(0.19 0.05 40) 50%, oklch(0.13 0.03 40) 100%);display:flex;align-items:center;justify-content:center;padding:32px;font-family:var(--font-sans)">
+  <div style="width:100%;max-width:var(--container-marketing);display:flex;gap:24px">
+    <aside style="width:55%;display:flex;flex-direction:column;justify-content:space-between;border-radius:var(--radius-3xl);padding:40px;background-color:oklch(0.16 0.04 40);color:#fff">
+      <a href="Landing Page.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <span style="width:36px;height:36px;border-radius:10px;background:var(--coral);display:grid;place-items:center;flex-shrink:0">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 18 }}" color="#fff" hint-size="18px,18px"></x-import>
+        </span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:20px;color:#fff">iTutor <span style="font-weight:500;color:rgba(255,255,255,0.6)">Business</span></span>
+      </a>
+      <div style="display:grid;gap:24px">
+        <h1 style="font-family:var(--font-display);font-size:44px;font-weight:700;line-height:1.1;letter-spacing:var(--tracking-heading);margin:0">Build skills that<br/><span style="color:var(--coral)">move you forward.</span></h1>
+        <p style="margin:0;max-width:420px;color:rgba(255,255,255,0.7);font-size:15px;line-height:1.6">Browse courses from real businesses and independent instructors, and track every certificate you earn.</p>
+        <ul style="margin:0;padding:0;list-style:none;display:grid;gap:12px;font-size:var(--text-sm);color:rgba(255,255,255,0.85)">
+          <li style="display:flex;gap:12px;align-items:flex-start">
+            <span style="margin-top:2px;width:20px;height:20px;flex-shrink:0;display:grid;place-items:center;border-radius:9999px;background:rgba(255,255,255,0.15);color:var(--coral)">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 12 }}" stroke-width="{{ 3 }}" hint-size="12px,12px"></x-import>
+            </span>
+            Learn at your own pace, on any device
+          </li>
+          <li style="display:flex;gap:12px;align-items:flex-start">
+            <span style="margin-top:2px;width:20px;height:20px;flex-shrink:0;display:grid;place-items:center;border-radius:9999px;background:rgba(255,255,255,0.15);color:var(--coral)">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 12 }}" stroke-width="{{ 3 }}" hint-size="12px,12px"></x-import>
+            </span>
+            Track certificates and completions in one place
+          </li>
+          <li style="display:flex;gap:12px;align-items:flex-start">
+            <span style="margin-top:2px;width:20px;height:20px;flex-shrink:0;display:grid;place-items:center;border-radius:9999px;background:rgba(255,255,255,0.15);color:var(--coral)">
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 12 }}" stroke-width="{{ 3 }}" hint-size="12px,12px"></x-import>
+            </span>
+            Get matched to courses from businesses that invite you
+          </li>
+        </ul>
+      </div>
+      <p style="margin:0;font-size:var(--text-xs);color:rgba(255,255,255,0.4)">© 2026 iTutor Business</p>
+    </aside>
+
+    <section style="flex:1;display:flex">
+      <div style="margin:0 auto;width:100%;max-width:576px;display:flex;flex-direction:column;border-radius:var(--radius-3xl);background:#fff;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);padding:44px 40px">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:26px;height:26px;border-radius:9999px;background:var(--coral);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0">1</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--weight-semibold);color:var(--ink)">Account</span>
+            </div>
+            <div style="flex:1;height:2px;background:#e5e7eb"></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:26px;height:26px;border-radius:9999px;background:#e5e7eb;color:#9ca3af;display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0">2</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#9ca3af">Profile</span>
+            </div>
+          </div>
+          <h2 style="font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:var(--tracking-heading);color:var(--ink);margin:0">Create your account</h2>
+          <p style="margin:6px 0 24px;font-size:var(--text-sm);color:#6b7280">Step 1 of 2 — let's start with the basics.</p>
+          <div style="display:grid;gap:16px">
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Email" type="email" placeholder="you@example.com" value="{{ email }}" onChange="{{ onEmail }}" error="{{ errEmail }}" hint-size="100%,64px"></x-import>
+            <div>
+              <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Password" type="password" placeholder="At least 8 characters" value="{{ password }}" onChange="{{ onPassword }}" error="{{ errPassword }}" hint-size="100%,64px"></x-import>
+              <sc-if value="{{ showStrength }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:4px;margin-top:8px">
+                  <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="4">
+                    <span style="flex:1;height:4px;border-radius:2px;background:{{ seg.color }}"></span>
+                  </sc-for>
+                </div>
+                <p style="margin:4px 0 0;font-size:11px;font-weight:600;color:#6b7280">{{ strengthLabel }}</p>
+              </sc-if>
+            </div>
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Confirm password" type="password" placeholder="Re-enter your password" value="{{ confirmPassword }}" onChange="{{ onConfirmPassword }}" error="{{ errConfirmPassword }}" hint-size="100%,64px"></x-import>
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Date of birth" type="date" value="{{ dob }}" onChange="{{ onDob }}" error="{{ errDob }}" hint-size="100%,64px"></x-import>
+          </div>
+          <div style="margin-top:24px">
+            <button disabled="{{ submitting }}" onClick="{{ submitAccount }}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 28px;font-size:var(--text-base);font-family:var(--font-sans);font-weight:700;color:#fff;background:var(--coral);border:none;border-radius:var(--radius-lg);cursor:pointer;opacity:{{ submitOpacity }}">
+              <sc-if value="{{ submitting }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:9999px;display:inline-block;animation:spin 0.6s linear infinite"></span></sc-if>
+              {{ ctaLabel }}
+            </button>
+          </div>
+          <p style="margin-top:20px;text-align:center;font-size:var(--text-sm);color:#6b7280">Already have an account? <a href="#" style="font-weight:600;color:var(--coral);text-decoration:underline">Log in</a></p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ step2 }}" hint-placeholder-val="{{ false }}">
+<main style="min-height:100vh;background:radial-gradient(60% 50% at 80% 0%, color-mix(in oklab, var(--coral) 18%, transparent) 0%, transparent 60%), radial-gradient(50% 60% at 0% 30%, color-mix(in oklab, var(--brand) 10%, transparent) 0%, transparent 60%), var(--peach);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;font-family:var(--font-sans)">
+  <a href="Landing Page.dc.html" style="position:absolute;top:32px;left:40px;display:flex;align-items:center;gap:10px;text-decoration:none">
+    <span style="width:32px;height:32px;border-radius:10px;background:var(--coral);display:grid;place-items:center;flex-shrink:0">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 17 }}" color="#fff" hint-size="17px,17px"></x-import>
+    </span>
+    <span style="font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--ink)">iTutor <span style="font-weight:500;color:var(--ink-muted)">Business</span></span>
+  </a>
+  <div style="max-width:440px;width:100%;background:#fff;border-radius:var(--radius-3xl);box-shadow:var(--shadow-card);padding:44px 40px;text-align:center">
+    <span style="width:64px;height:64px;border-radius:var(--radius-2xl);background:var(--coral-soft);color:var(--coral);display:grid;place-items:center;margin:0 auto 24px;position:relative">
+      <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="mail" size="{{ 28 }}" hint-size="28px,28px"></x-import>
+      <span style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;border-radius:9999px;background:var(--coral);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 3px #fff">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 13 }}" stroke-width="{{ 3 }}" hint-size="13px,13px"></x-import>
+      </span>
+    </span>
+    <h2 style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--ink);margin:0 0 10px">Check your inbox</h2>
+    <p style="margin:0 0 28px;font-size:var(--text-sm);color:#6b7280;line-height:1.6">We sent a 6-digit code to <strong style="color:var(--ink)">{{ email }}</strong>. Enter it below to verify your account.</p>
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:12px">
+      <input id="learner-code-0" value="{{ code0 }}" onChange="{{ setCode0 }}" maxLength="{{ 1 }}" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;font-family:var(--font-sans);color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+      <input id="learner-code-1" value="{{ code1 }}" onChange="{{ setCode1 }}" maxLength="{{ 1 }}" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;font-family:var(--font-sans);color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+      <input id="learner-code-2" value="{{ code2 }}" onChange="{{ setCode2 }}" maxLength="{{ 1 }}" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;font-family:var(--font-sans);color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+      <input id="learner-code-3" value="{{ code3 }}" onChange="{{ setCode3 }}" maxLength="{{ 1 }}" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;font-family:var(--font-sans);color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+      <input id="learner-code-4" value="{{ code4 }}" onChange="{{ setCode4 }}" maxLength="{{ 1 }}" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;font-family:var(--font-sans);color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+      <input id="learner-code-5" value="{{ code5 }}" onChange="{{ setCode5 }}" maxLength="{{ 1 }}" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;font-family:var(--font-sans);color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+    </div>
+    <sc-if value="{{ resent }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 16px;font-size:12px;color:var(--coral);font-weight:600">Code resent!</p></sc-if>
+    <sc-if value="{{ notResent }}" hint-placeholder-val="{{ true }}"><p style="margin:0 0 16px;font-size:12px;color:#9ca3af">Didn't get it? <span onClick="{{ resend }}" style="cursor:pointer;color:var(--coral);font-weight:600;text-decoration:underline">Resend email</span></p></sc-if>
+    <button disabled="{{ verifyDisabled }}" onClick="{{ submitVerify }}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 28px;font-size:var(--text-base);font-family:var(--font-sans);font-weight:700;color:#fff;background:var(--coral);border:none;border-radius:var(--radius-lg);cursor:pointer;opacity:{{ verifyOpacity }}">
+      <sc-if value="{{ verifying }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:9999px;display:inline-block;animation:spin 0.6s linear infinite"></span></sc-if>
+      {{ verifyLabel }}
+    </button>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ step3 }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;background:var(--surface-soft);font-family:var(--font-sans);padding-bottom:110px">
+  <header style="position:sticky;top:0;z-index:30;background:rgba(255,255,255,0.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:12px">
+      <a href="Landing Page.dc.html" style="display:flex;align-items:center;gap:8px;text-decoration:none">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--coral);display:grid;place-items:center;flex-shrink:0">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 15 }}" color="#fff" hint-size="15px,15px"></x-import>
+        </span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--ink)">iTutor <span style="font-weight:500;color:var(--ink-muted)">Business</span></span>
+      </a>
+      <span style="margin-left:auto;font-size:var(--text-sm);color:var(--ink-muted)">Step 2 of 2 — Your Profile</span>
+    </div>
+  </header>
+
+  <div style="max-width:1200px;margin:0 auto;padding:32px 24px;display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:start">
+    <div style="display:grid;gap:24px;min-width:0">
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <p style="margin:0 0 16px;font-size:var(--text-xs);font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.06em">Your profile</p>
+        <div style="display:flex;gap:20px;align-items:flex-start">
+          <image-slot id="learner-avatar-upload" shape="circle" placeholder="Photo" style="width:88px;height:88px;flex-shrink:0"></image-slot>
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Full name" placeholder="e.g. Maya Persad" value="{{ fullName }}" onChange="{{ onFullName }}" hint-size="100%,64px"></x-import>
+            <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Input" label="Date of birth" type="date" value="{{ dob }}" onChange="{{ onDob }}" hint-size="100%,64px"></x-import>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin:0">About you</h3>
+        <div style="margin-top:16px">
+          <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:4px">Bio</label>
+          <p style="font-size:12px;color:#9ca3af;margin:0 0 8px;line-height:1.5">Tell us about your role and experience — helps trainers understand your background. Around 40 words is a good length, but it's not required.</p>
+          <textarea value="{{ bio }}" onChange="{{ onBio }}" rows="{{ 4 }}" placeholder="Tell us a bit about yourself..." style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);resize:vertical;outline:none;box-sizing:border-box"></textarea>
+          <div style="text-align:right;margin-top:4px"><span style="font-size:12px;font-weight:600;color:{{ bioWordColor }}">{{ bioWordCount }} words</span></div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin:0">Role &amp; experience</h3>
+        <p style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;margin:18px 0 10px">Are you currently employed?</p>
+        <div style="display:flex;gap:10px;max-width:320px">
+          <button onClick="{{ setEmployedYes }}" style="flex:1;padding:12px;border-radius:var(--radius-md);font-size:var(--text-sm);font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ yesBorder }};background:{{ yesBg }};color:{{ yesFg }}">Yes</button>
+          <button onClick="{{ setEmployedNo }}" style="flex:1;padding:12px;border-radius:var(--radius-md);font-size:var(--text-sm);font-family:inherit;font-weight:700;cursor:pointer;border:1px solid {{ noBorder }};background:{{ noBg }};color:{{ noFg }}">No</button>
+        </div>
+        <sc-if value="{{ employedNoSelected }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:14px 0 0;font-size:12px;color:#9ca3af">No problem — you can update this anytime from your profile.</p>
+        </sc-if>
+        <sc-if value="{{ employedYesSelected }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">
+          <div style="position:relative">
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Current job title</label>
+            <input value="{{ positionQuery }}" onChange="{{ onPositionQuery }}" onFocus="{{ onPositionFocus }}" onBlur="{{ onPositionBlur }}" placeholder="Search or select a role…" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+            <sc-if value="{{ showRoleDropdown }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);max-height:230px;overflow-y:auto;z-index:20">
+                <sc-for list="{{ filteredRoles }}" as="role" hint-placeholder-count="6">
+                  <div onMouseDown="{{ role.onPick }}" style="padding:10px 14px;font-size:var(--text-sm);color:var(--ink)" style-hover="background:var(--surface-inset)">{{ role.label }}</div>
+                </sc-for>
+                <sc-if value="{{ noRoleMatches }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 14px;font-size:var(--text-sm);color:#9ca3af">No matches</div></sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showOtherInput }}" hint-placeholder-val="{{ false }}">
+              <input value="{{ position }}" onChange="{{ onOtherPosition }}" placeholder="Please specify your role" style="width:100%;margin-top:8px;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+            </sc-if>
+          </div>
+          <div>
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Years of experience</label>
+            <select value="{{ yearsExperience }}" onChange="{{ onYearsExperience }}" style="width:100%;padding:10px 12px;height:42px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box">
+              <option value="">Select</option>
+              <sc-for list="{{ yearsOptions }}" as="opt" hint-placeholder-count="4"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+            </select>
+          </div>
+          <div style="grid-column:1 / -1">
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Employer / business name</label>
+            <input value="{{ employerValue }}" readOnly="{{ employerLocked }}" onChange="{{ onEmployer }}" placeholder="e.g. Riverside Catering Co." style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:{{ employerBg }};border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+            <sc-if value="{{ employerLocked }}" hint-placeholder-val="{{ false }}"><p style="font-size:12px;color:#9ca3af;margin:6px 0 0">Auto-filled — you were invited by this business.</p></sc-if>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin:0">Skills &amp; interests</h3>
+        <p style="font-size:12px;color:#9ca3af;margin:4px 0 0">e.g. Food Safety, Knife Skills, Customer Service, Inventory Management</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+          <sc-for list="{{ suggestedSkillChips }}" as="sugg" hint-placeholder-count="6">
+            <span onClick="{{ sugg.onAdd }}" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:9999px;border:1px dashed #d1d5db;color:#6b7280;font-size:12px;font-weight:600;cursor:pointer">+ {{ sugg.label }}</span>
+          </sc-for>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <input value="{{ skillInput }}" onChange="{{ onSkillInput }}" onKeyDown="{{ onSkillKeyDown }}" placeholder="Type a skill and press Enter" style="flex:1;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+          <span onClick="{{ addSkill }}" style="padding:10px 18px;font-size:var(--text-sm);font-weight:600;color:#fff;background:var(--coral);border-radius:var(--radius-md);cursor:pointer">Add</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+          <sc-for list="{{ skillChips }}" as="chip" hint-placeholder-count="2">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:var(--coral-soft);color:#9a3412;font-size:13px;font-weight:600">{{ chip.label }}<span onClick="{{ chip.onRemove }}" style="cursor:pointer">×</span></span>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin:0">Contact &amp; preferences</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">
+          <div>
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Email</label>
+            <input value="{{ email }}" readOnly="{{ true }}" style="width:100%;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:var(--surface-inset);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+            <p style="font-size:11px;color:#9ca3af;margin:4px 0 0">Your login email — visible to businesses that invite you.</p>
+          </div>
+          <div>
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Phone <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
+            <div style="display:flex;gap:8px">
+              <select value="{{ phoneCountry }}" onChange="{{ onPhoneCountry }}" style="width:130px;padding:0 6px;height:42px;font-size:12px;font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+                <sc-for list="{{ countryOptions }}" as="opt" hint-placeholder-count="10"><option value="{{ opt.code }}">{{ opt.label }}</option></sc-for>
+              </select>
+              <input value="{{ phone }}" onChange="{{ onPhone }}" placeholder="622 1234" style="flex:1;padding:10px 12px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box"/>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Preferred language</label>
+            <select value="{{ preferredLanguage }}" onChange="{{ onPreferredLanguage }}" style="width:100%;padding:10px 12px;height:42px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box">
+              <option value="">Select</option>
+              <sc-for list="{{ languageOptions }}" as="opt" hint-placeholder-count="6"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:var(--text-sm);font-weight:var(--weight-medium);color:#374151;display:block;margin-bottom:6px">Timezone</label>
+            <select value="{{ timezone }}" onChange="{{ onTimezone }}" style="width:100%;padding:10px 12px;height:42px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none;box-sizing:border-box">
+              <option value="">Select</option>
+              <sc-for list="{{ timezoneOptions }}" as="opt" hint-placeholder-count="6"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin:0">Certifications held <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em">optional</span></h3>
+        <p style="font-size:12px;color:#9ca3af;margin:4px 0 0">Visible to any business that invites you to their courses.</p>
+        <div style="display:grid;gap:10px;margin-top:16px">
+          <sc-for list="{{ certifications }}" as="cert" hint-placeholder-count="0">
+            <div style="display:flex;gap:10px;align-items:center;border:1px solid var(--surface-border);border-radius:var(--radius-lg);padding:10px 14px">
+              <input value="{{ cert.name }}" onChange="{{ cert.onName }}" placeholder="Certification name" style="flex:1;padding:8px 0;font-size:var(--text-sm);font-family:inherit;color:var(--ink);border:none;outline:none"/>
+              <label style="font-size:12px;font-weight:600;color:#9a3412;cursor:pointer;white-space:nowrap;padding:6px 10px;border-radius:var(--radius-sm);background:var(--coral-soft)">
+                {{ cert.fileLabel }}
+                <input type="file" onChange="{{ cert.onFile }}" style="display:none"/>
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:#6b7280;white-space:nowrap;cursor:pointer">
+                <input type="checkbox" checked="{{ cert.showOnPortfolio }}" onChange="{{ cert.onTogglePortfolio }}"/>Show on portfolio
+              </label>
+              <span onClick="{{ cert.onRemove }}" style="font-size:12px;color:#9ca3af;cursor:pointer">Remove</span>
+            </div>
+          </sc-for>
+        </div>
+        <span onClick="{{ addCertification }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:var(--text-sm);font-weight:600;color:var(--coral);cursor:pointer">+ Add certification</span>
+      </div>
+
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:28px;box-shadow:var(--shadow-sm)">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin:0">Privacy</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+          <div>
+            <p style="margin:0;font-size:var(--text-sm);font-weight:600;color:var(--ink)">Public portfolio</p>
+            <p style="margin:2px 0 0;font-size:12px;color:#9ca3af">A shareable page showing your bio, skills and visible certificates — no login required to view.</p>
+          </div>
+          <button onClick="{{ togglePortfolio }}" style="width:44px;height:26px;border-radius:9999px;border:none;cursor:pointer;position:relative;background:{{ portfolioToggleBg }};flex-shrink:0">
+            <span style="position:absolute;top:2px;left:{{ portfolioKnobLeft }};width:22px;height:22px;border-radius:9999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.15s"></span>
+          </button>
+        </div>
+        <sc-if value="{{ publicPortfolio }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <input value="{{ portfolioUrl }}" readOnly="{{ true }}" style="flex:1;padding:9px 12px;font-size:12.5px;font-family:inherit;color:var(--ink);background:var(--surface-inset);border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none"/>
+            <button onClick="{{ copyPortfolioLink }}" style="padding:9px 16px;font-size:12.5px;font-weight:700;color:#fff;background:var(--coral);border:none;border-radius:var(--radius-md);cursor:pointer;white-space:nowrap">{{ portfolioCopyLabel }}</button>
+          </div>
+          <p style="margin-top:10px"><a href="Learner Portfolio.dc.html" style="font-size:13px;font-weight:600;color:var(--coral)">View public page →</a></p>
+        </sc-if>
+      </div>
+
+    </div>
+
+    <aside style="position:sticky;top:76px;display:grid;gap:16px">
+      <div style="background:#fff;border:1px solid #f3f4f6;border-radius:var(--radius-xl);padding:24px;box-shadow:var(--shadow-sm)">
+        <h4 style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);margin:0">Profile Strength</h4>
+        <p style="margin:10px 0 6px"><span style="font-size:30px;font-weight:800;color:var(--coral)">{{ strengthDone }}</span><span style="font-size:16px;color:#9ca3af;font-weight:600">/{{ strengthTotal }}</span></p>
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.ProgressBar" value="{{ strengthPct }}" tone="coral" hint-size="100%,10px"></x-import>
+        <div style="display:grid;gap:10px;margin-top:20px">
+          <sc-for list="{{ strengthItems }}" as="item" hint-placeholder-count="11">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:{{ item.color }}">
+              <span style="width:16px;height:16px;border-radius:9999px;background:{{ item.bg }};color:{{ item.fg }};display:grid;place-items:center;flex-shrink:0">
+                <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 10 }}" stroke-width="{{ 3 }}" hint-size="10px,10px"></x-import>
+              </span>
+              {{ item.label }}
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:18px;padding-top:14px;border-top:1px solid #f3f4f6;font-size:12px;color:#9ca3af">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="check" size="{{ 12 }}" hint-size="12px,12px"></x-import> Autosaved as you go
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -4px 20px rgba(0,0,0,0.06);z-index:30">
+    <div style="max-width:1200px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <span style="font-size:var(--text-sm);color:var(--ink-muted)">{{ strengthDone }}/{{ strengthTotal }} sections complete</span>
+      <button disabled="{{ submitting }}" onClick="{{ submitProfile }}" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;font-size:var(--text-base);font-family:var(--font-sans);font-weight:700;color:#fff;background:var(--coral);border:none;border-radius:var(--radius-lg);cursor:pointer;opacity:{{ submitOpacity }}">
+        <sc-if value="{{ submitting }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:9999px;display:inline-block;animation:spin 0.6s linear infinite"></span></sc-if>
+        {{ profileCtaLabel }}
+      </button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ step4 }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;background:var(--surface-soft);font-family:var(--font-sans)">
+  <header style="background:#fff;border-bottom:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;justify-content:space-between">
+    <a href="Landing Page.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span style="width:32px;height:32px;border-radius:10px;background:var(--coral);display:grid;place-items:center;flex-shrink:0">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="graduation-cap" size="{{ 17 }}" color="#fff" hint-size="17px,17px"></x-import>
+      </span>
+      <span style="font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--ink)">iTutor <span style="font-weight:500;color:var(--ink-muted)">Business</span></span>
+    </a>
+    <nav style="display:flex;gap:22px;margin-left:8px">
+      <span style="font-size:var(--text-sm);font-weight:700;color:var(--ink)">Courses</span>
+      <a href="Learner Portfolio.dc.html" style="font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);text-decoration:none">My Portfolio</a>
+    </nav>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+      <span style="font-size:var(--text-sm);color:var(--ink-muted)">Signed in as {{ signedInLabel }}</span>
+      <span onClick="{{ editProfile }}" style="font-size:var(--text-sm);font-weight:600;color:var(--coral);cursor:pointer">Edit profile</span>
+    </div>
+  </header>
+
+  <main style="max-width:var(--container-marketing);margin:0 auto;padding:40px">
+    <h1 style="font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--ink);margin:0 0 6px">Browse courses</h1>
+    <p style="margin:0 0 28px;color:var(--ink-muted);font-size:var(--text-base)">Explore what's available, or continue where you left off.</p>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px">
+      <div style="flex:1;min-width:220px">
+        <x-import component-from-global-scope="ITutorDesignSystem_e4581d.SearchField" shape="rect" placeholder="Search courses…" value="{{ search }}" onChange="{{ onSearch }}" hint-size="100%,40px"></x-import>
+      </div>
+      <select value="{{ category }}" onChange="{{ onCategory }}" style="padding:0 12px;height:40px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+        <sc-for list="{{ categoryOptions }}" as="opt" hint-placeholder-count="6"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+      </select>
+      <select value="{{ provider }}" onChange="{{ onProvider }}" style="padding:0 12px;height:40px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+        <sc-for list="{{ providerOptions }}" as="opt" hint-placeholder-count="5"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+      </select>
+      <select value="{{ duration }}" onChange="{{ onDuration }}" style="padding:0 12px;height:40px;font-size:var(--text-sm);font-family:inherit;color:var(--ink);background:#fff;border:1px solid var(--surface-border);border-radius:var(--radius-md);outline:none">
+        <sc-for list="{{ durationOptions }}" as="opt" hint-placeholder-count="4"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+      </select>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:32px">
+      <span style="font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em">Filter by skill</span>
+      <sc-for list="{{ skillTagChips }}" as="tag" hint-placeholder-count="6">
+        <span onClick="{{ tag.onToggle }}" style="padding:6px 14px;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;background:{{ tag.bg }};color:{{ tag.fg }};border:1px solid {{ tag.border }}">{{ tag.label }}</span>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ showInvited }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-bottom:40px">
+      <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:var(--radius-xl);background:var(--coral-soft);border:1px solid color-mix(in oklab, var(--coral) 30%, transparent);margin-bottom:20px">
+        <span style="width:40px;height:40px;border-radius:9999px;background:var(--coral);color:#fff;display:grid;place-items:center;flex-shrink:0">
+          <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="building-2" size="{{ 18 }}" hint-size="18px,18px"></x-import>
+        </span>
+        <p style="margin:0;font-size:var(--text-base);color:#7c2d12"><strong>You've been invited</strong> to {{ invitedCompanyName }}'s courses — pinned below.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <sc-for list="{{ invitedCourses }}" as="course" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:var(--radius-card);overflow:hidden;transition:transform var(--dur-slow) var(--ease-out),box-shadow var(--dur-slow) var(--ease-out)" style-hover="transform:translateY(-4px);box-shadow:var(--shadow-hover-card)">
+            <div style="position:relative;height:120px;background:{{ course.iconBg }};display:flex;align-items:center;justify-content:center">
+              <span style="color:{{ course.iconColor }}"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ course.icon }}" size="{{ 40 }}" stroke-width="{{ 1.6 }}" hint-size="40px,40px"></x-import></span>
+              <span style="position:absolute;top:10px;left:10px;padding:3px 10px;border-radius:9999px;background:var(--coral);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Invited</span>
+            </div>
+            <div style="padding:18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Badge" tone="neutral" hint-size="auto,22px">{{ course.category }}</x-import>
+                <span style="font-size:12px;color:#9ca3af">{{ course.durationLabel }}</span>
+              </div>
+              <h3 style="font-size:16px;font-weight:700;color:var(--ink);margin:0 0 6px;line-height:1.3">{{ course.title }}</h3>
+              <p style="font-size:12px;color:#6b7280;margin:0 0 8px">{{ course.provider }}</p>
+              <p style="font-size:13px;color:#6b7280;line-height:1.5;margin:0 0 12px">{{ course.description }}</p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+                <sc-for list="{{ course.skills }}" as="sk" hint-placeholder-count="2"><span style="font-size:11px;color:#9ca3af;background:var(--neutral-bg);padding:3px 8px;border-radius:9999px">{{ sk }}</span></sc-for>
+              </div>
+              <a href="Course Player.dc.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;width:100%;padding:10px 16px;font-size:var(--text-sm);font-family:inherit;font-weight:700;color:#fff;background:var(--coral);border:none;border-radius:var(--radius-lg);cursor:pointer">Enroll</a>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <h2 style="font-size:20px;font-weight:700;color:var(--ink);margin:0 0 20px">All courses <span style="color:#9ca3af;font-weight:500">({{ resultCount }})</span></h2>
+    <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <sc-for list="{{ filteredCourses }}" as="course" hint-placeholder-count="8">
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:var(--radius-card);overflow:hidden;transition:transform var(--dur-slow) var(--ease-out),box-shadow var(--dur-slow) var(--ease-out)" style-hover="transform:translateY(-4px);box-shadow:var(--shadow-hover-card)">
+            <div style="position:relative;height:110px;background:{{ course.iconBg }};display:flex;align-items:center;justify-content:center">
+              <span style="color:{{ course.iconColor }}"><x-import component-from-global-scope="ITutorDesignSystem_e4581d.Icon" name="{{ course.icon }}" size="{{ 34 }}" stroke-width="{{ 1.6 }}" hint-size="34px,34px"></x-import></span>
+            </div>
+            <div style="padding:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <x-import component-from-global-scope="ITutorDesignSystem_e4581d.Badge" tone="neutral" hint-size="auto,22px">{{ course.category }}</x-import>
+                <span style="font-size:11px;color:#9ca3af">{{ course.durationLabel }}</span>
+              </div>
+              <h3 style="font-size:15px;font-weight:700;color:var(--ink);margin:0 0 6px;line-height:1.3">{{ course.title }}</h3>
+              <p style="font-size:12px;color:#6b7280;margin:0 0 8px">{{ course.provider }}</p>
+              <p style="font-size:12px;color:#6b7280;line-height:1.5;margin:0 0 10px">{{ course.description }}</p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+                <sc-for list="{{ course.skills }}" as="sk" hint-placeholder-count="2"><span style="font-size:11px;color:#9ca3af;background:var(--neutral-bg);padding:3px 8px;border-radius:9999px">{{ sk }}</span></sc-for>
+              </div>
+              <a href="Course Player.dc.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;width:100%;padding:9px 16px;font-size:13px;font-family:inherit;font-weight:700;color:#fff;background:var(--coral);border:none;border-radius:var(--radius-lg);cursor:pointer">Enroll</a>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+      <p style="text-align:center;padding:48px 0;color:#9ca3af;font-size:var(--text-sm)">No courses match your filters.</p>
+    </sc-if>
+  </main>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;initialStep&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:4,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;},&quot;showInvitedBanner&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;invitedCompanyName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Northshore Culinary Group&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const LEARNER_ROLES = ['Owner / Founder', 'General Manager', 'Operations Manager', 'Regional / District Manager', 'Franchise Owner', 'HR Manager', 'Training Coordinator', 'Compliance / Food Safety Officer', 'Executive Chef', 'Kitchen Manager', 'Shift Supervisor', 'Health & Safety Officer', 'Other'];
+const SUGGESTED_SKILLS = ['Food Safety', 'Sanitation', 'Allergen Awareness', 'Customer Service', 'Cash Handling', 'Safety', 'Inventory Management', 'Leadership', 'Loss Prevention', 'Conflict Resolution'];
+const COUNTRY_CODES = [
+  { name: 'Trinidad & Tobago', code: '+1 868' },
+  { name: 'Jamaica', code: '+1 876' },
+  { name: 'Barbados', code: '+1 246' },
+  { name: 'Bahamas', code: '+1 242' },
+  { name: 'Guyana', code: '+592' },
+  { name: 'Saint Lucia', code: '+1 758' },
+  { name: 'Grenada', code: '+1 473' },
+  { name: 'Canada', code: '+1' },
+  { name: 'United Kingdom', code: '+44' },
+  { name: 'United States', code: '+1' },
+];
+
+const LEARNER_COURSES = [
+  { id: 1, title: 'Food Safety & Sanitation Basics', provider: 'Northshore Culinary Group', category: 'Food & Beverage', durationMin: 120, durationLabel: '2 hrs', icon: 'utensils', iconBg: '#dcfce7', iconColor: '#16a34a', invited: true, skills: ['Food Safety', 'Sanitation'], description: 'Core food handling, storage and sanitation practices for commercial kitchens.' },
+  { id: 2, title: 'Allergen Awareness for Frontline Staff', provider: 'Northshore Culinary Group', category: 'Food & Beverage', durationMin: 45, durationLabel: '45 min', icon: 'shield-alert', iconBg: '#dcfce7', iconColor: '#16a34a', invited: true, skills: ['Food Safety', 'Allergen Awareness'], description: 'Spot the most common allergens and respond correctly when a guest asks.' },
+  { id: 3, title: 'Point of Sale & Payment Handling', provider: 'Northshore Culinary Group', category: 'Retail', durationMin: 60, durationLabel: '1 hr', icon: 'credit-card', iconBg: '#fce7f3', iconColor: '#db2777', invited: true, skills: ['Customer Service', 'Cash Handling'], description: 'Running a register, processing payments, and handling refunds accurately.' },
+  { id: 4, title: 'Customer Service Excellence', provider: 'Bright Path Retail', category: 'Retail', durationMin: 90, durationLabel: '1.5 hrs', icon: 'smile', iconBg: '#fce7f3', iconColor: '#db2777', invited: false, skills: ['Customer Service'], description: 'Practical scripts and techniques for handling everyday customer interactions.' },
+  { id: 5, title: 'Warehouse Safety Fundamentals', provider: 'Anchor Logistics', category: 'Logistics', durationMin: 150, durationLabel: '2.5 hrs', icon: 'package', iconBg: '#ffedd5', iconColor: '#ea580c', invited: false, skills: ['Safety', 'Inventory Management'], description: 'Safe lifting, equipment use and hazard awareness for warehouse floors.' },
+  { id: 6, title: 'Leadership for New Supervisors', provider: 'Elevate Training Co.', category: 'Professional Development', durationMin: 180, durationLabel: '3 hrs', icon: 'users', iconBg: '#ede9fe', iconColor: '#7c3aed', invited: false, skills: ['Leadership'], description: 'Delegation, feedback and scheduling skills for first-time supervisors.' },
+  { id: 7, title: 'Cash Handling & Loss Prevention', provider: 'Bright Path Retail', category: 'Retail', durationMin: 60, durationLabel: '1 hr', icon: 'shield-check', iconBg: '#fce7f3', iconColor: '#db2777', invited: false, skills: ['Cash Handling', 'Loss Prevention'], description: 'Till procedures and everyday loss-prevention habits for retail staff.' },
+  { id: 8, title: 'De-escalation & Conflict Resolution', provider: 'Elevate Training Co.', category: 'Hospitality', durationMin: 90, durationLabel: '1.5 hrs', icon: 'message-circle', iconBg: '#dbeafe', iconColor: '#2563eb', invited: false, skills: ['Customer Service', 'Conflict Resolution'], description: 'Staying calm and defusing tension with upset customers or guests.' },
+];
+
+class Component extends DCLogic {
+  state = {
+    step: (Number(this.props.initialStep) >= 1 && Number(this.props.initialStep) <= 4) ? Number(this.props.initialStep) : 1,
+    email: '', password: '', confirmPassword: '', dob: '', errors: {}, submitting: false,
+    code: ['', '', '', '', '', ''], verifying: false, resent: false,
+    fullName: '', bio: '',
+    position: '', positionQuery: '', showRoleDropdown: false, showOtherInput: false,
+    yearsExperience: '', employer: '',
+    skills: [], skillInput: '', employed: null,
+    phone: '', phoneCountry: '+1 868', preferredLanguage: '', timezone: '',
+    certifications: [],
+    search: '', category: 'All categories', provider: 'All providers', duration: 'Any duration',
+    selectedSkills: [],
+    publicPortfolio: false, portfolioCopied: false,
+  };
+
+  setField(name, value) {
+    this.setState(s => ({ [name]: value, errors: { ...s.errors, [name]: undefined } }));
+  }
+
+  strength(pw) {
+    if (!pw) return { score: 0, label: '', color: '#e5e7eb' };
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['#e5e7eb', '#dc2626', '#ea580c', '#ca8a04', '#c2410c'];
+    return { score, label: labels[score], color: colors[score] };
+  }
+
+  pickRole(r) {
+    if (r === 'Other') {
+      this.setState({ position: '', positionQuery: 'Other', showOtherInput: true, showRoleDropdown: false });
+    } else {
+      this.setState({ position: r, positionQuery: r, showOtherInput: false, showRoleDropdown: false });
+    }
+  }
+
+  submitAccount() {
+    const s = this.state;
+    const errors = {};
+    if (!/^\S+@\S+\.\S+$/.test(s.email)) errors.email = 'Enter a valid email address';
+    if (s.password.length < 8) errors.password = 'Use at least 8 characters';
+    if (s.confirmPassword !== s.password) errors.confirmPassword = "Passwords don't match";
+    if (!s.dob) errors.dob = 'Enter your date of birth';
+    if (Object.keys(errors).length) { this.setState({ errors }); return; }
+    this.setState({ submitting: true });
+    setTimeout(() => this.setState({ submitting: false, step: 2 }), 900);
+  }
+
+  setCode(i, val) {
+    val = val.replace(/[^0-9]/g, '').slice(-1);
+    const code = [...this.state.code]; code[i] = val;
+    this.setState({ code });
+    if (val && i < 5) { const next = document.getElementById('learner-code-' + (i + 1)); if (next) next.focus(); }
+  }
+
+  resend() {
+    this.setState({ resent: true });
+    setTimeout(() => this.setState({ resent: false }), 2500);
+  }
+
+  submitVerify() {
+    this.setState({ verifying: true });
+    setTimeout(() => this.setState({ verifying: false, step: 3 }), 700);
+  }
+
+  addSkill() {
+    const v = this.state.skillInput.trim();
+    if (!v) return;
+    this.setState(s => ({ skills: [...s.skills, v], skillInput: '' }));
+  }
+  removeSkill(i) {
+    this.setState(s => ({ skills: s.skills.filter((_, idx) => idx !== i) }));
+  }
+  addSkillTag(tag) {
+    if (this.state.skills.includes(tag)) return;
+    this.setState(s => ({ skills: [...s.skills, tag] }));
+  }
+
+  updateCert(i, field, value) {
+    const certifications = this.state.certifications.map((c, idx) => idx === i ? { ...c, [field]: value } : c);
+    this.setState({ certifications });
+  }
+  addCertification() {
+    this.setState(s => ({ certifications: [...s.certifications, { name: '', fileName: '', showOnPortfolio: true }] }));
+  }
+  removeCertification(i) {
+    this.setState(s => ({ certifications: s.certifications.filter((_, idx) => idx !== i) }));
+  }
+  togglePortfolio() { this.setState(s => ({ publicPortfolio: !s.publicPortfolio })); }
+  copyPortfolioLink() { this.setState({ portfolioCopied: true }); setTimeout(() => this.setState({ portfolioCopied: false }), 2000); }
+
+  submitProfile() {
+    this.setState({ submitting: true });
+    setTimeout(() => this.setState({ submitting: false, step: 4 }), 900);
+  }
+
+  toggleSkillTag(tag) {
+    this.setState(s => ({ selectedSkills: s.selectedSkills.includes(tag) ? s.selectedSkills.filter(t => t !== tag) : [...s.selectedSkills, tag] }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const strength = this.strength(s.password);
+    const invited = this.props.showInvitedBanner ?? true;
+    const invitedCompanyName = this.props.invitedCompanyName || 'Northshore Culinary Group';
+    const showInvited = invited && LEARNER_COURSES.some(c => c.invited);
+    const q = s.positionQuery.toLowerCase();
+    const filteredRolesRaw = LEARNER_ROLES.filter(r => r.toLowerCase().includes(q));
+    const bioWc = s.bio.trim() ? s.bio.trim().split(/\s+/).length : 0;
+
+    const employerValue = invited ? invitedCompanyName : s.employer;
+
+    const strengthItemsRaw = [
+      { label: 'Full name', done: !!s.fullName.trim() },
+      { label: 'Date of birth', done: !!s.dob },
+      { label: 'Bio (~40 words)', done: bioWc >= 40 },
+      { label: 'Employment status answered', done: s.employed !== null },
+      { label: 'Job title', done: s.employed === false ? true : !!s.position.trim() },
+      { label: 'Years of experience', done: s.employed === false ? true : !!s.yearsExperience },
+      { label: 'Employer / business name', done: s.employed === false ? true : (invited ? true : !!s.employer.trim()) },
+      { label: 'A skill or interest added', done: s.skills.length > 0 },
+      { label: 'Phone', done: !!s.phone.trim() },
+      { label: 'Preferred language', done: !!s.preferredLanguage },
+      { label: 'Timezone', done: !!s.timezone },
+      { label: 'A certification added', done: s.certifications.some(c => c.name.trim()) },
+    ];
+    const strengthItems = strengthItemsRaw.map(it => ({ ...it, bg: it.done ? 'rgba(194,65,12,0.12)' : 'var(--neutral-bg)', fg: it.done ? 'var(--coral)' : '#d1d5db', color: it.done ? 'var(--ink)' : '#9ca3af' }));
+    const strengthDone = strengthItems.filter(i => i.done).length;
+
+    const bucket = (min) => min < 60 ? 'Under 1 hour' : (min <= 120 ? '1-2 hours' : '2+ hours');
+    const filtered = LEARNER_COURSES.filter(c => {
+      if (c.invited) return false;
+      if (s.category !== 'All categories' && c.category !== s.category) return false;
+      if (s.provider !== 'All providers' && c.provider !== s.provider) return false;
+      if (s.duration !== 'Any duration' && bucket(c.durationMin) !== s.duration) return false;
+      if (s.selectedSkills.length && !c.skills.some(sk => s.selectedSkills.includes(sk))) return false;
+      const qq = s.search.trim().toLowerCase();
+      if (qq && !(c.title.toLowerCase().includes(qq) || c.provider.toLowerCase().includes(qq))) return false;
+      return true;
+    });
+
+    const allSkillTags = [...new Set(LEARNER_COURSES.flatMap(c => c.skills))];
+
+    return {
+      showShell: s.step === 1,
+      step1: s.step === 1, step2: s.step === 2, step3: s.step === 3, step4: s.step === 4,
+      email: s.email, password: s.password, confirmPassword: s.confirmPassword, dob: s.dob,
+      onEmail: e => this.setField('email', e.target.value),
+      onPassword: e => this.setField('password', e.target.value),
+      onConfirmPassword: e => this.setField('confirmPassword', e.target.value),
+      onDob: e => this.setField('dob', e.target.value),
+      errEmail: s.errors.email, errPassword: s.errors.password, errConfirmPassword: s.errors.confirmPassword, errDob: s.errors.dob,
+      showStrength: s.password.length > 0,
+      segments: [0, 1, 2, 3].map(i => ({ color: i < strength.score ? strength.color : '#e5e7eb' })),
+      strengthLabel: strength.label,
+      submitting: s.submitting, submitOpacity: s.submitting ? 0.6 : 1,
+      ctaLabel: s.submitting ? 'Setting up…' : 'Continue',
+      submitAccount: () => this.submitAccount(),
+      code0: s.code[0], code1: s.code[1], code2: s.code[2], code3: s.code[3], code4: s.code[4], code5: s.code[5],
+      setCode0: e => this.setCode(0, e.target.value), setCode1: e => this.setCode(1, e.target.value),
+      setCode2: e => this.setCode(2, e.target.value), setCode3: e => this.setCode(3, e.target.value),
+      setCode4: e => this.setCode(4, e.target.value), setCode5: e => this.setCode(5, e.target.value),
+      resent: s.resent, notResent: !s.resent, resend: () => this.resend(),
+      verifying: s.verifying, verifyLabel: s.verifying ? 'Verifying…' : 'Continue',
+      verifyDisabled: s.verifying || !s.code.every(c => c !== ''),
+      verifyOpacity: (s.verifying || !s.code.every(c => c !== '')) ? 0.6 : 1,
+      submitVerify: () => this.submitVerify(),
+
+      fullName: s.fullName, onFullName: e => this.setField('fullName', e.target.value),
+      bio: s.bio, onBio: e => this.setField('bio', e.target.value),
+      bioWordCount: bioWc, bioWordColor: bioWc >= 40 ? '#16a34a' : '#9ca3af',
+
+      positionQuery: s.positionQuery,
+      onPositionQuery: e => this.setState({ positionQuery: e.target.value, position: '', showRoleDropdown: true, showOtherInput: false }),
+      onPositionFocus: () => this.setState({ showRoleDropdown: true }),
+      onPositionBlur: () => setTimeout(() => this.setState({ showRoleDropdown: false }), 150),
+      showRoleDropdown: s.showRoleDropdown,
+      filteredRoles: filteredRolesRaw.map(r => ({ label: r, onPick: () => this.pickRole(r) })),
+      noRoleMatches: filteredRolesRaw.length === 0,
+      showOtherInput: s.showOtherInput,
+      position: s.position,
+      onOtherPosition: e => this.setState({ position: e.target.value }),
+
+      employedYesSelected: s.employed === true, employedNoSelected: s.employed === false,
+      setEmployedYes: () => this.setState({ employed: true }), setEmployedNo: () => this.setState({ employed: false }),
+      yesBg: s.employed === true ? 'var(--coral)' : '#fff', yesFg: s.employed === true ? '#fff' : 'var(--ink)', yesBorder: s.employed === true ? 'var(--coral)' : 'var(--surface-border)',
+      noBg: s.employed === false ? 'var(--coral)' : '#fff', noFg: s.employed === false ? '#fff' : 'var(--ink)', noBorder: s.employed === false ? 'var(--coral)' : 'var(--surface-border)',
+
+      yearsExperience: s.yearsExperience, onYearsExperience: e => this.setField('yearsExperience', e.target.value),
+      yearsOptions: ['<1 year', '1-3 years', '4-7 years', '8+ years'],
+      employerValue, employerLocked: invited, employerBg: invited ? 'var(--surface-inset)' : '#fff',
+      onEmployer: e => this.setField('employer', e.target.value),
+
+      skillInput: s.skillInput, onSkillInput: e => this.setState({ skillInput: e.target.value }),
+      onSkillKeyDown: e => { if (e.key === 'Enter') { e.preventDefault(); this.addSkill(); } },
+      addSkill: () => this.addSkill(),
+      skillChips: s.skills.map((sk, i) => ({ label: sk, onRemove: () => this.removeSkill(i) })),
+      suggestedSkillChips: SUGGESTED_SKILLS.filter(t => !s.skills.includes(t)).map(t => ({ label: t, onAdd: () => this.addSkillTag(t) })),
+
+      phone: s.phone, onPhone: e => { const digits = e.target.value.replace(/[^0-9]/g, '').slice(0, 7); this.setState({ phone: digits.length > 3 ? digits.slice(0, 3) + ' ' + digits.slice(3) : digits }); },
+      phoneCountry: s.phoneCountry, onPhoneCountry: e => this.setField('phoneCountry', e.target.value),
+      countryOptions: COUNTRY_CODES.map(c => ({ code: c.code, label: c.code + ' ' + c.name })),
+      preferredLanguage: s.preferredLanguage, onPreferredLanguage: e => this.setField('preferredLanguage', e.target.value),
+      languageOptions: ['English', 'Spanish', 'French', 'Haitian Creole', 'Portuguese', 'Mandarin', 'Other'],
+      timezone: s.timezone, onTimezone: e => this.setField('timezone', e.target.value),
+      timezoneOptions: ['Eastern Time (ET)', 'Central Time (CT)', 'Mountain Time (MT)', 'Pacific Time (PT)', 'Atlantic Time (AT)', 'GMT/UTC', 'Other'],
+
+      certifications: s.certifications.map((c, i) => ({
+        ...c, fileLabel: c.fileName || 'Attach file',
+        onName: e => this.updateCert(i, 'name', e.target.value),
+        onFile: e => this.updateCert(i, 'fileName', (e.target.files && e.target.files[0] ? e.target.files[0].name : '')),
+        onRemove: () => this.removeCertification(i),
+        onTogglePortfolio: e => this.updateCert(i, 'showOnPortfolio', e.target.checked),
+      })),
+      addCertification: () => this.addCertification(),
+      publicPortfolio: s.publicPortfolio, togglePortfolio: () => this.togglePortfolio(),
+      portfolioToggleBg: s.publicPortfolio ? 'var(--coral)' : '#d1d5db', portfolioKnobLeft: s.publicPortfolio ? '22px' : '2px',
+      portfolioUrl: 'myitutor.com/p/' + (s.fullName.trim() ? s.fullName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'you'),
+      copyPortfolioLink: () => this.copyPortfolioLink(), portfolioCopyLabel: s.portfolioCopied ? 'Copied' : 'Copy link',
+
+      strengthItems, strengthDone, strengthTotal: strengthItems.length,
+      strengthPct: (strengthDone / strengthItems.length) * 100,
+      profileCtaLabel: s.submitting ? 'Setting up…' : 'Finish & Explore Courses',
+      submitProfile: () => this.submitProfile(),
+
+      signedInLabel: s.fullName.trim() || s.email.trim() || 'you',
+      editProfile: () => this.setState({ step: 3 }),
+      search: s.search, onSearch: e => this.setState({ search: e.target.value }),
+      category: s.category, onCategory: e => this.setState({ category: e.target.value }),
+      provider: s.provider, onProvider: e => this.setState({ provider: e.target.value }),
+      duration: s.duration, onDuration: e => this.setState({ duration: e.target.value }),
+      categoryOptions: ['All categories', 'Food & Beverage', 'Retail', 'Logistics', 'Professional Development', 'Hospitality'],
+      providerOptions: ['All providers', 'Northshore Culinary Group', 'Bright Path Retail', 'Anchor Logistics', 'Elevate Training Co.'],
+      durationOptions: ['Any duration', 'Under 1 hour', '1-2 hours', '2+ hours'],
+      skillTagChips: allSkillTags.map(tag => {
+        const on = s.selectedSkills.includes(tag);
+        return { label: tag, onToggle: () => this.toggleSkillTag(tag), bg: on ? 'var(--coral)' : '#fff', fg: on ? '#fff' : 'var(--ink-muted)', border: on ? 'var(--coral)' : 'var(--surface-border)' };
+      }),
+      showInvited, invitedCompanyName,
+      invitedCourses: LEARNER_COURSES.filter(c => c.invited),
+      filteredCourses: filtered,
+      resultCount: filtered.length,
+      hasResults: filtered.length > 0,
+      noResults: filtered.length === 0,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

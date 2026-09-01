@@ -1,0 +1,5 @@
+body{margin:0;font-family:var(--font-sans);color:var(--ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1,h2,h3,h4,h5,h6{font-family:var(--font-display);letter-spacing:var(--tracking-heading);margin:0}
+a{color:var(--brand-deep);text-decoration:none}
+a:hover{color:var(--brand-dark)}
+*{box-sizing:border-box}

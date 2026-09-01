@@ -1,0 +1,48 @@
+:root{
+  /* ── Shadows ──────────────────────────────────────────────────────── */
+  --shadow-pop:0 20px 50px -20px rgba(25,147,86,0.4);        /* green glow on primary CTAs */
+  --shadow-card:0 10px 30px -12px rgba(17,24,39,0.18);       /* floating marketing card */
+  --shadow-sm:0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,0.1);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,0.1);
+  --shadow-hover-card:0 10px 30px rgba(0,0,0,0.08),0 4px 8px rgba(0,0,0,0.04);
+  --shadow-glass:0 8px 32px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.8);
+  --shadow-brand-glow:0 0 0 6px rgba(22,163,74,0.12);
+  --shadow-button-green:0 4px 14px rgba(34,197,94,0.4),inset 0 1px 0 rgba(255,255,255,0.3);
+
+  /* ── Gradients ────────────────────────────────────────────────────── */
+  --gradient-brand:linear-gradient(135deg,#22c55e,#16a34a); /* @kind other */
+  --gradient-brand-text:linear-gradient(95deg,var(--brand) 0%,var(--brand-deep) 60%,var(--coral) 120%); /* @kind other */
+  --gradient-cta-band:linear-gradient(120deg,oklch(0.74 0.19 145) 0%,oklch(0.6 0.18 145) 50%,oklch(0.74 0.18 40) 100%); /* @kind other */
+  --gradient-auth:linear-gradient(135deg,#071a0e 0%,#0d2318 50%,#0a1e14 100%); /* @kind other */
+  --gradient-mint-wash:radial-gradient(60% 50% at 80% 0%,color-mix(in oklab,var(--brand) 18%,transparent) 0%,transparent 60%),radial-gradient(50% 60% at 0% 30%,color-mix(in oklab,var(--coral) 12%,transparent) 0%,transparent 60%),var(--mint); /* @kind other */
+
+  /* ── Motion ───────────────────────────────────────────────────────── */
+  --ease-out:cubic-bezier(0,0,0.2,1); /* @kind other */
+  --ease-in-out:cubic-bezier(0.4,0,0.2,1); /* @kind other */
+  --dur-fast:150ms; /* @kind other */
+  --dur-base:200ms; /* @kind other */   /* card hover / nav */
+  --dur-slow:300ms; /* @kind other */   /* card lift, accordion */
+  --dur-reveal:600ms; /* @kind other */ /* framer-motion scroll reveals */
+  --hover-lift:-4px; /* @kind other */         /* hover:-translate-y-1 */
+  --hover-lift-sm:-2px; /* @kind other */      /* hover:-translate-y-0.5 */
+  --hover-scale:1.04; /* @kind other */        /* marketing CTA */
+  --press-scale:0.95; /* @kind other */        /* active:scale-95 */
+  --blur-glass:24px; /* @kind other */         /* header backdrop-blur */
+  --saturate-glass:180%; /* @kind other */
+}
+
+/* Reusable brand effects (kept as utilities because the app defines them so) */
+.bg-mint-wash{background:var(--gradient-mint-wash)}
+.text-gradient-brand{background:var(--gradient-brand-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.shadow-pop{box-shadow:var(--shadow-pop)}
+.shadow-card{box-shadow:var(--shadow-card)}
+.marquee-mask{-webkit-mask-image:linear-gradient(to right,transparent,black 8%,black 92%,transparent);mask-image:linear-gradient(to right,transparent,black 8%,black 92%,transparent)}
+
+@keyframes blob{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.08)}66%{transform:translate(-25px,30px) scale(0.95)}}
+@keyframes float-y{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes marquee-reverse{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.animate-blob{animation:blob 18s ease-in-out infinite}
+.animate-float-y{animation:float-y 6s ease-in-out infinite}
+.animate-marquee{animation:marquee 55s linear infinite}
