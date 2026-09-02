@@ -440,8 +440,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          duration_label: string | null
           id: string
           quiz_navigation_default: Database["public"]["Enums"]["quiz_navigation"]
+          quiz_retry_cooldown_hours_default: number | null
+          quiz_retry_max_default: number | null
           share_token: string
           tagline: string | null
           thumbnail_url: string | null
@@ -455,8 +458,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          duration_label?: string | null
           id?: string
           quiz_navigation_default?: Database["public"]["Enums"]["quiz_navigation"]
+          quiz_retry_cooldown_hours_default?: number | null
+          quiz_retry_max_default?: number | null
           share_token?: string
           tagline?: string | null
           thumbnail_url?: string | null
@@ -470,8 +476,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          duration_label?: string | null
           id?: string
           quiz_navigation_default?: Database["public"]["Enums"]["quiz_navigation"]
+          quiz_retry_cooldown_hours_default?: number | null
+          quiz_retry_max_default?: number | null
           share_token?: string
           tagline?: string | null
           thumbnail_url?: string | null
