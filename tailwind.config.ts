@@ -132,6 +132,15 @@ const config: Config = {
       },
       keyframes: {
         spin: { to: { transform: 'rotate(360deg)' } },
+        // Drifting background blobs behind the marketing hero.
+        blob: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(24px, -32px) scale(1.08)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.94)' },
+        },
+      },
+      animation: {
+        blob: 'blob 18s var(--ease-in-out) infinite',
       },
     },
   },

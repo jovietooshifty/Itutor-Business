@@ -186,3 +186,16 @@
   .bg-auth-panel { background-color: oklch(0.16 0.04 155); }
   .bg-auth-panel-learner { background-color: oklch(0.16 0.04 40); }
 }
+
+/* Honour the OS "reduce motion" setting. The marketing hero's drifting blobs
+   are decoration only, so they stop entirely rather than being sped up. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
