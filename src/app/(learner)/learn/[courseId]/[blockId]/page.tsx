@@ -5,7 +5,14 @@ import { ArrowLeft } from 'lucide-react'
 import { ProgressBar } from '@/components/ui'
 import { BlockPlayer } from '@/components/learner/block-player'
 import { QuizPlayer, type QuizQuestion } from '@/components/learner/quiz-player'
-import { blockTypeMeta, effectiveNavigation, type BlockType } from '@/lib/course'
+import {
+  MATERIAL_BUCKET,
+  asText,
+  asVideo,
+  blockTypeMeta,
+  effectiveNavigation,
+  type BlockType,
+} from '@/lib/course'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Lesson — iTutor' }
@@ -72,6 +79,30 @@ export default async function Page({
   const completedCount = (progress ?? []).filter((p) => p.status === 'completed').length
   const percent = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0
   const meta = blockTypeMeta(block.type as BlockType)
+
+  /* ── Uploaded material is behind a private bucket ────────────────────── */
+
+  /**
+   * The `course-material` bucket is not public, so the file is reached through
+   * a short-lived signed URL minted here — for a learner who has already
+   * cleared the enrolment check above and the bucket's own can_read_course
+   * policy. An hour outlasts any lesson while keeping a copied URL from
+   * becoming a permanent back door into a private course.
+   */
+  let materialUrl: string | null = null
+  const materialPath =
+    block.type === 'video'
+      ? asVideo(block.content_ref).path
+      : block.type === 'text'
+        ? asText(block.content_ref).path
+        : null
+
+  if (materialPath) {
+    const { data: signed } = await supabase.storage
+      .from(MATERIAL_BUCKET)
+      .createSignedUrl(materialPath, 60 * 60)
+    materialUrl = signed?.signedUrl ?? null
+  }
 
   /* ── Quiz blocks need their config, questions and attempt history ────── */
 
@@ -166,6 +197,7 @@ export default async function Page({
           type={block.type as Exclude<BlockType, 'quiz'>}
           content={block.content_ref}
           completed={status === 'completed'}
+          materialUrl={materialUrl}
         />
       )}
     </main>

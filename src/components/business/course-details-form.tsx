@@ -26,15 +26,20 @@ export function CourseDetailsForm({
   initial,
   hasQuiz,
   blockCount,
+  variant = 'wizard',
 }: {
   courseId: string
   initial: CourseDetails
   hasQuiz: boolean
   blockCount: number
+  /** 'settings' is the same fields on the Settings tab — see CourseBasicsForm. */
+  variant?: 'wizard' | 'settings'
 }) {
+  const isWizard = variant === 'wizard'
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [error, setError] = React.useState<string | null>(null)
+  const [saved, setSaved] = React.useState(false)
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
 
   const [durationLabel, setDurationLabel] = React.useState(initial.durationLabel)
@@ -61,6 +66,7 @@ export function CourseDetailsForm({
 
   function save(then: () => void) {
     setError(null)
+    setSaved(false)
     setFieldErrors({})
 
     startTransition(async () => {
@@ -80,18 +86,24 @@ export function CourseDetailsForm({
     })
   }
 
-  return (
-    <main className="mx-auto max-w-[880px] p-6 md:p-10">
-      <CourseSteps current="details" courseId={courseId} />
+  const Wrapper = isWizard ? 'main' : 'div'
 
-      <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">Course details</h1>
-      <p className="m-0 mb-8 text-sm text-ink-muted">
-        {blockCount === 0
-          ? 'This course has no material yet — go back and add some first.'
-          : `Now that the material is in place (${blockCount} ${
-              blockCount === 1 ? 'block' : 'blocks'
-            }), set how it runs.`}
-      </p>
+  return (
+    <Wrapper className={isWizard ? 'mx-auto max-w-[880px] p-6 md:p-10' : undefined}>
+      {isWizard && (
+        <>
+          <CourseSteps current="details" courseId={courseId} />
+
+          <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">Course details</h1>
+          <p className="m-0 mb-8 text-sm text-ink-muted">
+            {blockCount === 0
+              ? 'This course has no material yet — go back and add some first.'
+              : `Now that the material is in place (${blockCount} ${
+                  blockCount === 1 ? 'block' : 'blocks'
+                }), set how it runs.`}
+          </p>
+        </>
+      )}
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-6 shadow-sm md:p-7">
         <Field
@@ -186,28 +198,49 @@ export function CourseDetailsForm({
         <p className="mt-4 rounded-md bg-danger-bg px-4 py-3 text-sm text-danger-fg">{error}</p>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        {/* Saves before stepping back, so nothing typed here is lost. */}
-        <Button
-          variant="ghost"
-          loading={pending}
-          onClick={() => save(() => router.push(`/courses/${courseId}`))}
-        >
-          <ArrowLeft size={15} /> Back to content
-        </Button>
-        <div className="flex items-center gap-3">
-          <Link href="/courses" className="no-underline">
-            <Button variant="secondary">Exit</Button>
-          </Link>
+      {!isWizard ? (
+        <div className="mt-6 flex justify-end">
           <Button
             size="lg"
             loading={pending}
-            onClick={() => save(() => router.push(`/courses/${courseId}/publish`))}
+            onClick={() =>
+              save(() => {
+                setSaved(true)
+                router.refresh()
+              })
+            }
           >
-            Continue to publish
+            Save changes
           </Button>
         </div>
-      </div>
-    </main>
+      ) : (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          {/* Saves before stepping back, so nothing typed here is lost. */}
+          <Button
+            variant="ghost"
+            loading={pending}
+            onClick={() => save(() => router.push(`/courses/${courseId}`))}
+          >
+            <ArrowLeft size={15} /> Back to content
+          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/courses" className="no-underline">
+              <Button variant="secondary">Exit</Button>
+            </Link>
+            <Button
+              size="lg"
+              loading={pending}
+              onClick={() => save(() => router.push(`/courses/${courseId}/publish`))}
+            >
+              Continue to publish
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {saved && (
+        <p className="mt-2.5 text-right text-xs font-semibold text-[var(--itutor-green)]">Saved</p>
+      )}
+    </Wrapper>
   )
 }

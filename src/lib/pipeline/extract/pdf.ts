@@ -42,12 +42,25 @@ export async function extractFromPdf(filePath: string): Promise<PdfExtraction> {
     throw new ExtractionError('pdf', `Could not read PDF at ${filePath}`, { cause })
   }
 
+  return extractFromPdfBuffer(buffer, filePath)
+}
+
+/* The same extraction, from bytes already in hand. Uploaded course material
+   arrives from Supabase Storage as a Blob, and writing it to a temp file just
+   to read it back is a round trip with nothing to show for it.
+
+   `label` is whatever names the source in an error message — a path for the
+   local pipeline, a file name for an upload. */
+export async function extractFromPdfBuffer(
+  buffer: Uint8Array,
+  label: string,
+): Promise<PdfExtraction> {
   /* Checked before handing anything to pdfjs, because a mislabelled file is
      common in practice (a .docx saved as .pdf) and pdfjs only reports it as
      "Invalid PDF structure", which sends you looking for the wrong problem. */
-  const misnamed = detectMisnamedFile(buffer)
+  const misnamed = detectMisnamedFile(Buffer.from(buffer))
   if (misnamed) {
-    throw new ExtractionError('pdf', `${filePath} is not a PDF — it looks like ${misnamed}`)
+    throw new ExtractionError('pdf', `${label} is not a PDF — it looks like ${misnamed}`)
   }
 
   /* pdfjs mutates the buffer it is handed, so it gets a copy — otherwise a
@@ -84,7 +97,7 @@ export async function extractFromPdf(filePath: string): Promise<PdfExtraction> {
         : name === 'InvalidPDFException'
           ? 'the file is not a structurally valid PDF'
           : ((cause as { message?: string })?.message ?? 'unknown error')
-    throw new ExtractionError('pdf', `Could not parse PDF: ${detail} (${filePath})`, { cause })
+    throw new ExtractionError('pdf', `Could not parse PDF: ${detail} (${label})`, { cause })
   } finally {
     /* Releases the pdfjs worker. Without this the process keeps a live worker
        per document, which matters once this runs inside a long-lived server. */

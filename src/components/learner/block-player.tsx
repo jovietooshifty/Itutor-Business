@@ -2,14 +2,14 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Lightbulb, Target } from 'lucide-react'
 import { Button, Card, Checkbox } from '@/components/ui'
 import { completeBlock } from '@/app/(learner)/actions'
-import type { BlockType, TextContent, VideoContent, WebsiteContent } from '@/lib/course'
+import { asText, asVideo, type BlockType } from '@/lib/course'
 
 /** True for a file we can play ourselves and therefore actually gate on. */
 function isDirectVideo(url: string) {
-  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url)
+  return /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url)
 }
 
 /**
@@ -17,8 +17,12 @@ function isDirectVideo(url: string) {
  *
  * The gating is deliberately honest: it only claims to know you finished
  * something when it can actually tell. A video file we play ourselves fires
- * `ended`; a YouTube link in an iframe tells us nothing, so that case asks for
- * a confirmation instead of pretending to have watched along.
+ * `ended`; a legacy YouTube link in an iframe tells us nothing, so that case
+ * asks for a confirmation instead of pretending to have watched along.
+ *
+ * The authored framing — guidelines, notes, pointers, summary — is placed
+ * around the material rather than appended to it. "Take notes as you watch"
+ * after the video has finished is not guidance, it is a postmortem.
  */
 export function BlockPlayer({
   courseId,
@@ -26,12 +30,15 @@ export function BlockPlayer({
   type,
   content,
   completed,
+  materialUrl,
 }: {
   courseId: string
   blockId: string
   type: Exclude<BlockType, 'quiz'>
   content: unknown
   completed: boolean
+  /** Signed URL for the uploaded file, minted server-side. Null if there is none. */
+  materialUrl: string | null
 }) {
   const router = useRouter()
   const [done, setDone] = React.useState(false)
@@ -57,24 +64,20 @@ export function BlockPlayer({
 
   return (
     <>
-      <Card className="p-6 md:p-8">
-        {type === 'video' && (
-          <VideoBlock content={content} onWatched={() => setDone(true)} />
-        )}
-        {type === 'text' && <TextBlock content={content} onRead={() => setDone(true)} />}
-        {type === 'website' && <WebsiteBlock content={content} />}
-      </Card>
+      {type === 'video' ? (
+        <VideoLesson
+          content={content}
+          materialUrl={materialUrl}
+          onWatched={() => setDone(true)}
+        />
+      ) : (
+        <TextLesson content={content} materialUrl={materialUrl} onRead={() => setDone(true)} />
+      )}
 
       {!canComplete && (
         <div className="mt-4 rounded-lg border border-surface-border bg-white px-4 py-3.5">
           <Checkbox
-            label={
-              type === 'video'
-                ? "I've watched this video"
-                : type === 'website'
-                  ? "I've read the linked page"
-                  : "I've read this"
-            }
+            label={type === 'video' ? "I've watched this video" : "I've read this"}
             checked={confirmed}
             onChange={(e) => setConfirmed(e.target.checked)}
           />
@@ -94,12 +97,94 @@ export function BlockPlayer({
   )
 }
 
+/* ── Framing ───────────────────────────────────────────────────────────── */
+
+/** The author's instruction, above the material because that is when it helps. */
+function Guidance({ icon: Icon, label, body }: { icon: typeof Target; label: string; body: string }) {
+  if (!body.trim()) return null
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-lg border border-coral-soft bg-coral-soft px-4 py-3.5">
+      <Icon size={16} className="mt-0.5 shrink-0 text-coral" aria-hidden />
+      <div className="min-w-0">
+        <p className="m-0 text-xs font-bold uppercase tracking-wide text-[#9a3412]">{label}</p>
+        <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink">{body}</p>
+      </div>
+    </div>
+  )
+}
+
+/** Supporting material, below. */
+function Aside({ label, body }: { label: string; body: string }) {
+  if (!body.trim()) return null
+  return (
+    <div className="mt-4 rounded-lg border border-surface-border bg-surface-inset px-4 py-3.5">
+      <p className="m-0 text-xs font-bold uppercase tracking-wide text-[#9ca3af]">{label}</p>
+      <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink">{body}</p>
+    </div>
+  )
+}
+
 /* ── Video ─────────────────────────────────────────────────────────────── */
 
-function VideoBlock({ content, onWatched }: { content: unknown; onWatched: () => void }) {
-  const value = (content ?? {}) as Partial<VideoContent>
-  const url = value.url
+function VideoLesson({
+  content,
+  materialUrl,
+  onWatched,
+}: {
+  content: unknown
+  materialUrl: string | null
+  onWatched: () => void
+}) {
+  const value = asVideo(content)
 
+  return (
+    <>
+      <Guidance icon={Target} label="Before you start" body={value.guidelines} />
+
+      <Card className="p-6 md:p-8">
+        <VideoSurface value={value} materialUrl={materialUrl} onWatched={onWatched} />
+        <Aside label="Notes" body={value.notes} />
+      </Card>
+    </>
+  )
+}
+
+function VideoSurface({
+  value,
+  materialUrl,
+  onWatched,
+}: {
+  value: ReturnType<typeof asVideo>
+  materialUrl: string | null
+  onWatched: () => void
+}) {
+  // An uploaded file is one we serve and can therefore gate on honestly.
+  if (value.path && materialUrl) {
+    return (
+      // eslint-disable-next-line jsx-a11y/media-has-caption
+      <video
+        src={materialUrl}
+        controls
+        onEnded={onWatched}
+        className="w-full rounded-lg bg-black"
+        // Seeking past the end would otherwise fire `ended` immediately.
+        controlsList="nodownload"
+      />
+    )
+  }
+
+  if (value.path) {
+    return (
+      <p className="m-0 text-sm text-ink-muted">
+        This video could not be loaded. Try again, or let the course owner know.
+      </p>
+    )
+  }
+
+  /* Everything below is legacy: courses authored when a video could be a link.
+     The builder no longer writes these, but a course that has one still has to
+     play. */
+  const url = value.url
   if (!url) {
     return <p className="m-0 text-sm text-ink-muted">This lesson has no video yet.</p>
   }
@@ -112,7 +197,6 @@ function VideoBlock({ content, onWatched }: { content: unknown; onWatched: () =>
         controls
         onEnded={onWatched}
         className="w-full rounded-lg bg-black"
-        // Seeking past the end would otherwise fire `ended` immediately.
         controlsList="nodownload"
       />
     )
@@ -155,11 +239,57 @@ function toEmbedUrl(url: string): string | null {
 
 /* ── Text ──────────────────────────────────────────────────────────────── */
 
-function TextBlock({ content, onRead }: { content: unknown; onRead: () => void }) {
-  const value = (content ?? {}) as Partial<TextContent>
+function TextLesson({
+  content,
+  materialUrl,
+  onRead,
+}: {
+  content: unknown
+  materialUrl: string | null
+  onRead: () => void
+}) {
+  const value = asText(content)
 
+  return (
+    <>
+      <Guidance icon={Target} label="What to look for" body={value.pointers} />
+
+      <Card className="p-6 md:p-8">
+        <TextSurface value={value} materialUrl={materialUrl} onRead={onRead} />
+      </Card>
+
+      {value.summary.trim() && (
+        <div className="mt-4 flex items-start gap-3 rounded-lg border border-[color:var(--itutor-green)] bg-brand-light px-4 py-3.5">
+          <Lightbulb
+            size={16}
+            className="mt-0.5 shrink-0 text-[var(--itutor-green)]"
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <p className="m-0 text-xs font-bold uppercase tracking-wide text-[var(--itutor-green)]">
+              The takeaway
+            </p>
+            <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink">
+              {value.summary}
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function TextSurface({
+  value,
+  materialUrl,
+  onRead,
+}: {
+  value: ReturnType<typeof asText>
+  materialUrl: string | null
+  onRead: () => void
+}) {
   // Scroll-to-end gating, per the handoff. Only meaningful for text we render
-  // ourselves — an uploaded file or a URL is read somewhere we cannot observe.
+  // ourselves — an uploaded file is read somewhere we cannot observe.
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
@@ -179,15 +309,20 @@ function TextBlock({ content, onRead }: { content: unknown; onRead: () => void }
     return () => el.removeEventListener('scroll', check)
   }, [onRead])
 
-  if (value.mode === 'url' || value.mode === 'upload') {
-    return value.url ? (
-      <ExternalContent url={value.url} label={value.fileName ?? 'Open the document'} />
+  if (value.mode === 'upload') {
+    if (!value.path) {
+      return <p className="m-0 text-sm text-ink-muted">This lesson has no document yet.</p>
+    }
+    return materialUrl ? (
+      <ExternalContent url={materialUrl} label={value.fileName ?? 'Open the document'} />
     ) : (
-      <p className="m-0 text-sm text-ink-muted">This lesson has no document yet.</p>
+      <p className="m-0 text-sm text-ink-muted">
+        This document could not be loaded. Try again, or let the course owner know.
+      </p>
     )
   }
 
-  if (!value.body?.trim()) {
+  if (!value.body.trim()) {
     return <p className="m-0 text-sm text-ink-muted">This lesson has no content yet.</p>
   }
 
@@ -198,17 +333,6 @@ function TextBlock({ content, onRead }: { content: unknown; onRead: () => void }
     >
       {value.body}
     </div>
-  )
-}
-
-/* ── Website ───────────────────────────────────────────────────────────── */
-
-function WebsiteBlock({ content }: { content: unknown }) {
-  const value = (content ?? {}) as Partial<WebsiteContent>
-  return value.url ? (
-    <ExternalContent url={value.url} label="Open the page" />
-  ) : (
-    <p className="m-0 text-sm text-ink-muted">This lesson has no link yet.</p>
   )
 }
 

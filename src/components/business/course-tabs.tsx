@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
 
-export type CourseTab = 'overview' | 'sequence' | 'learners'
+export type CourseTab = 'overview' | 'sequence' | 'learners' | 'settings'
 
 /**
  * Course management tabs. Every one of them stays inside the tab set — the
@@ -14,6 +14,7 @@ export function CourseTabs({ courseId, active }: { courseId: string; active: Cou
     { key: 'overview', label: 'Overview', href: `/courses/${courseId}/manage` },
     { key: 'sequence', label: 'Sequence', href: `/courses/${courseId}/manage/sequence` },
     { key: 'learners', label: 'Learners', href: `/courses/${courseId}/manage/learners` },
+    { key: 'settings', label: 'Settings', href: `/courses/${courseId}/manage/settings` },
   ]
 
   return (

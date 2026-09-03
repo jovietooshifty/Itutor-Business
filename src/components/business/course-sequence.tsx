@@ -1,38 +1,23 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
-  Plus,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Clock, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { Button, cn } from '@/components/ui'
 import { CourseSteps } from '@/components/business/course-steps'
 import {
-  QuizConfig,
-  TextConfig,
-  VideoConfig,
-  WebsiteConfig,
-  type QuizState,
-} from '@/components/business/block-config'
-import type { EditableQuestion } from '@/components/business/question-editor'
-import {
   BLOCK_TYPES,
-  EMPTY_CONTENT,
   blockTypeMeta,
+  type BlockSourceStatus,
   type BlockType,
-  type QuizNavigationOverride,
 } from '@/lib/course'
 import {
   addBlock,
   deleteBlock,
+  recordBuildProgress,
   reorderBlocks,
   updateBlock,
-  updateQuizConfig,
 } from '@/app/(business)/courses/actions'
 
 /**
@@ -42,42 +27,33 @@ import {
 export type BuilderCourse = {
   id: string
   title: string
-  retryMaxDefault: number | null
-  retryCooldownHoursDefault: number | null
 }
 
 export type BuilderBlock = {
   id: string
   type: BlockType
   title: string
-  content: unknown
-  navigationOverride: QuizNavigationOverride
-  quiz: QuizState | null
-  /** Only ever populated for quiz blocks. */
-  questions: EditableQuestion[]
-}
-
-const DEFAULT_QUIZ: QuizState = {
-  passingScore: 80,
-  scope: 'preceding_block',
-  scopeBlockIds: [],
-  revealAnswers: false,
-  retryMax: null,
-  retryCooldownHours: null,
+  /** Whether this block has material a later quiz could be generated from. */
+  sourceStatus: BlockSourceStatus
+  /** Quiz blocks only: how many questions are on it so far. */
+  questionCount: number
 }
 
 /**
- * Course Builder step 2 — the lesson sequence.
+ * Course Builder step 2a — planning the sequence.
  *
- * Structural edits (add, delete, reorder) hit the server as they happen because
- * they need real row ids and positions. Field edits stay local and are flushed
- * by "Save draft", which is the model the design draws: a save button and a
- * "Draft saved" confirmation, not an autosave.
+ * This screen decides WHAT the course contains and in WHAT ORDER, and nothing
+ * else. Picking "Video" adds a video slot; it does not ask for a file. Filling
+ * each block in is step 2b, one page per block, walked in the order set here.
  *
- * Course-level settings are deliberately NOT here. Title and the rest are step
- * 1 ("Back"), duration and quiz defaults are step 3 ("Continue") — asking for
- * them beside the sequence is what made the old settings panel a dead end: its
- * fields never marked the draft dirty, so Save draft stayed disabled.
+ * The split is the whole point of the rework. The old screen expanded each row
+ * into a configuration panel, so planning a ten-block course meant ten
+ * accordions of half-answered forms, and the ordering — the thing this screen
+ * is actually for — was buried under them.
+ *
+ * Structural edits (add, delete, reorder) hit the server as they happen
+ * because they need real row ids and positions. Titles stay local and are
+ * flushed by "Save changes", or by moving on.
  */
 export function CourseSequence({
   course,
@@ -89,17 +65,16 @@ export function CourseSequence({
   initialBlocks: BuilderBlock[]
   canDelete: boolean
   /**
-   * 'wizard' is the build flow — step rail, Back to basics, Continue to
-   * details. 'manage' is the Sequence tab of an existing course, where that
-   * chrome would be wrong: you are editing one thing, not walking a path. The
-   * editor itself is identical, which is the point of the split.
+   * 'wizard' is the build flow — step rail, Back to basics, Continue into the
+   * walkthrough. 'manage' is the Sequence tab of an existing course, where
+   * that chrome would be wrong: you are rearranging one thing, not walking a
+   * path, and each row links straight to its own page.
    */
   variant?: 'wizard' | 'manage'
 }) {
   const isWizard = variant === 'wizard'
   const router = useRouter()
   const [blocks, setBlocks] = React.useState(initialBlocks)
-  const [expanded, setExpanded] = React.useState<string | null>(null)
   const [insertAt, setInsertAt] = React.useState<number | null>(null)
   const [dragging, setDragging] = React.useState<string | null>(null)
   const [dirty, setDirty] = React.useState<Set<string>>(new Set())
@@ -108,14 +83,17 @@ export function CourseSequence({
   const [error, setError] = React.useState<string | null>(null)
   const [saved, setSaved] = React.useState(false)
 
-  function markDirty(id: string) {
+  // Leaving from here and coming back should land here. Bookkeeping only —
+  // a failure changes nothing on screen, so it is not surfaced.
+  React.useEffect(() => {
+    if (!isWizard) return
+    void recordBuildProgress(course.id, 'sequence', null)
+  }, [isWizard, course.id])
+
+  function renameBlock(id: string, title: string) {
+    setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, title } : b)))
     setDirty((prev) => new Set(prev).add(id))
     setSaved(false)
-  }
-
-  function patchBlock(id: string, patch: Partial<BuilderBlock>) {
-    setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)))
-    markDirty(id)
   }
 
   /* ── Structural edits ───────────────────────────────────────────────── */
@@ -135,22 +113,10 @@ export function CourseSequence({
         id: result.data!.id,
         type,
         title: '',
-        content: EMPTY_CONTENT[type],
-        navigationOverride: 'inherit',
-        questions: [],
-        quiz:
-          type === 'quiz'
-            ? {
-                ...DEFAULT_QUIZ,
-                retryMax: course.retryMaxDefault,
-                retryCooldownHours:
-                  course.retryMaxDefault === null ? null : course.retryCooldownHoursDefault,
-              }
-            : null,
+        sourceStatus: 'empty',
+        questionCount: 0,
       }
-
       setBlocks((prev) => [...prev.slice(0, index), created, ...prev.slice(index)])
-      setExpanded(created.id)
     })
   }
 
@@ -206,39 +172,20 @@ export function CourseSequence({
   /* ── Saving ─────────────────────────────────────────────────────────── */
 
   /**
-   * Flushes pending field edits. `then` runs only on a clean save, so stepping
-   * away never silently drops what the user typed.
+   * Flushes renamed blocks. `then` runs only on a clean save, so stepping away
+   * never silently drops what was typed.
    */
-  function saveDraft(then?: () => void) {
+  function saveTitles(then?: () => void) {
     setError(null)
     startTransition(async () => {
       for (const id of dirty) {
         const block = blocks.find((b) => b.id === id)
         if (!block) continue
 
-        const blockResult = await updateBlock(course.id, block.id, {
-          title: block.title,
-          content: block.content,
-        })
-        if (!blockResult.ok) {
-          setError(blockResult.error)
+        const result = await updateBlock(course.id, block.id, { title: block.title })
+        if (!result.ok) {
+          setError(result.error)
           return
-        }
-
-        if (block.type === 'quiz' && block.quiz) {
-          const quizResult = await updateQuizConfig(course.id, block.id, {
-            passingScore: block.quiz.passingScore,
-            scope: block.quiz.scope,
-            scopeBlockIds: block.quiz.scopeBlockIds,
-            revealAnswers: block.quiz.revealAnswers,
-            navigationOverride: block.navigationOverride,
-            retryMax: block.quiz.retryMax,
-            retryCooldownHours: block.quiz.retryCooldownHours,
-          })
-          if (!quizResult.ok) {
-            setError(quizResult.error)
-            return
-          }
         }
       }
 
@@ -247,6 +194,8 @@ export function CourseSequence({
       then?.()
     })
   }
+
+  const firstBlockId = blocks[0]?.id ?? null
 
   return (
     <div className={isWizard ? 'mx-auto max-w-[880px] p-6 md:p-10' : ''}>
@@ -258,7 +207,8 @@ export function CourseSequence({
             {course.title.trim() || 'Untitled course'}
           </h1>
           <p className="m-0 mb-8 text-sm text-ink-muted">
-            Add the material, in the order learners should work through it.
+            Plan the running order first — what learners work through, and in what sequence. You
+            will fill each one in next, one page at a time.
           </p>
         </>
       )}
@@ -281,16 +231,10 @@ export function CourseSequence({
             <BlockRow
               block={block}
               index={index}
-              expanded={expanded === block.id}
               dragging={dragging === block.id}
               canDelete={canDelete}
-              courseId={course.id}
-              priorBlocks={blocks.slice(0, index).map((b) => ({
-                id: b.id,
-                label: b.title.trim() || `${blockTypeMeta(b.type).label} block`,
-              }))}
-              onToggleExpand={() => setExpanded(expanded === block.id ? null : block.id)}
-              onPatch={(patch) => patchBlock(block.id, patch)}
+              editHref={`/courses/${course.id}/content/${block.id}${isWizard ? '' : '?from=manage'}`}
+              onRename={(title) => renameBlock(block.id, title)}
               onDelete={() => handleDelete(block.id)}
               onDragStart={() => setDragging(block.id)}
               onDragEnd={() => setDragging(null)}
@@ -310,12 +254,12 @@ export function CourseSequence({
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        {/* Both moves flush pending edits first — see saveDraft(). */}
+        {/* Both moves flush pending renames first — see saveTitles(). */}
         {isWizard ? (
           <Button
             variant="ghost"
             loading={pending}
-            onClick={() => saveDraft(() => router.push(`/courses/${course.id}/basics`))}
+            onClick={() => saveTitles(() => router.push(`/courses/${course.id}/basics`))}
           >
             <ArrowLeft size={15} /> Back to basics
           </Button>
@@ -327,7 +271,7 @@ export function CourseSequence({
           <Button
             variant={isWizard ? 'secondary' : 'primary'}
             size={isWizard ? 'md' : 'lg'}
-            onClick={() => saveDraft()}
+            onClick={() => saveTitles()}
             loading={pending}
             disabled={dirty.size === 0}
           >
@@ -337,13 +281,24 @@ export function CourseSequence({
             <Button
               size="lg"
               loading={pending}
-              onClick={() => saveDraft(() => router.push(`/courses/${course.id}/details`))}
+              disabled={!firstBlockId}
+              title={firstBlockId ? undefined : 'Add at least one block first'}
+              onClick={() =>
+                saveTitles(() => router.push(`/courses/${course.id}/content/${firstBlockId}`))
+              }
             >
-              Continue to details
+              Continue <ArrowRight size={15} />
             </Button>
           )}
         </div>
       </div>
+
+      {isWizard && blocks.length > 0 && (
+        <p className="mt-2.5 text-right text-xs text-[#9ca3af]">
+          Next: {blocks.length} {blocks.length === 1 ? 'page' : 'pages'}, one per block, in this
+          order.
+        </p>
+      )}
 
       {saved && (
         <p className="mt-2.5 text-right text-xs font-semibold text-[var(--itutor-green)]">
@@ -387,7 +342,7 @@ function InsertRow({
       </div>
 
       {open && (
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {BLOCK_TYPES.map((meta) => {
             const Icon = meta.icon
             return (
@@ -418,16 +373,30 @@ function InsertRow({
 
 /* ── One block ─────────────────────────────────────────────────────────── */
 
+/**
+ * What the row says about a block's state. Not a nag — the point is that after
+ * the walkthrough you can look down the sequence and see, in one pass, which
+ * blocks still need something.
+ */
+function statusHint(block: BuilderBlock): { label: string; tone: 'ok' | 'wait' | 'todo' } {
+  if (block.type === 'quiz') {
+    return block.questionCount > 0
+      ? { label: `${block.questionCount} question${block.questionCount === 1 ? '' : 's'}`, tone: 'ok' }
+      : { label: 'No questions yet', tone: 'todo' }
+  }
+  if (block.sourceStatus === 'ready') return { label: 'Ready', tone: 'ok' }
+  if (block.sourceStatus === 'pending') return { label: 'Needs a transcript', tone: 'wait' }
+  if (block.sourceStatus === 'failed') return { label: 'Could not be read', tone: 'wait' }
+  return { label: 'Empty', tone: 'todo' }
+}
+
 function BlockRow({
   block,
   index,
-  expanded,
   dragging,
   canDelete,
-  courseId,
-  priorBlocks,
-  onToggleExpand,
-  onPatch,
+  editHref,
+  onRename,
   onDelete,
   onDragStart,
   onDragEnd,
@@ -435,13 +404,10 @@ function BlockRow({
 }: {
   block: BuilderBlock
   index: number
-  expanded: boolean
   dragging: boolean
   canDelete: boolean
-  courseId: string
-  priorBlocks: { id: string; label: string }[]
-  onToggleExpand: () => void
-  onPatch: (patch: Partial<BuilderBlock>) => void
+  editHref: string
+  onRename: (title: string) => void
   onDelete: () => void
   onDragStart: () => void
   onDragEnd: () => void
@@ -449,6 +415,8 @@ function BlockRow({
 }) {
   const meta = blockTypeMeta(block.type)
   const Icon = meta.icon
+  const hint = statusHint(block)
+  const HintIcon = hint.tone === 'ok' ? Check : hint.tone === 'wait' ? Clock : AlertTriangle
 
   return (
     <div
@@ -480,11 +448,29 @@ function BlockRow({
 
         <input
           value={block.title}
-          onChange={(e) => onPatch({ title: e.target.value })}
+          onChange={(e) => onRename(e.target.value)}
           placeholder={`${meta.label} block ${index + 1}`}
           aria-label={`Title for ${meta.label.toLowerCase()} block ${index + 1}`}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-semibold text-ink outline-none placeholder:font-normal placeholder:text-[#9ca3af]"
         />
+
+        <span
+          className={cn(
+            'hidden shrink-0 items-center gap-1.5 text-xs font-semibold sm:inline-flex',
+            hint.tone === 'ok' && 'text-[var(--itutor-green)]',
+            hint.tone === 'wait' && 'text-[#b45309]',
+            hint.tone === 'todo' && 'text-[#9ca3af]'
+          )}
+        >
+          <HintIcon size={12} aria-hidden /> {hint.label}
+        </span>
+
+        <Link
+          href={editHref}
+          className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-ink-muted no-underline transition-colors duration-fast hover:bg-surface-inset hover:text-ink"
+        >
+          Open
+        </Link>
 
         <button
           type="button"
@@ -496,41 +482,7 @@ function BlockRow({
         >
           <Trash2 size={14} />
         </button>
-
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Collapse block' : 'Configure block'}
-          className="shrink-0 text-ink-muted hover:text-ink"
-        >
-          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
       </div>
-
-      {expanded && (
-        <div className="border-t border-surface-border p-4">
-          {block.type === 'video' && (
-            <VideoConfig content={block.content} onChange={(content) => onPatch({ content })} />
-          )}
-          {block.type === 'text' && (
-            <TextConfig content={block.content} onChange={(content) => onPatch({ content })} />
-          )}
-          {block.type === 'website' && (
-            <WebsiteConfig content={block.content} onChange={(content) => onPatch({ content })} />
-          )}
-          {block.type === 'quiz' && block.quiz && (
-            <QuizConfig
-              quiz={block.quiz}
-              priorBlocks={priorBlocks}
-              onChange={(quiz) => onPatch({ quiz })}
-              courseId={courseId}
-              blockId={block.id}
-              questions={block.questions}
-            />
-          )}
-        </div>
-      )}
     </div>
   )
 }

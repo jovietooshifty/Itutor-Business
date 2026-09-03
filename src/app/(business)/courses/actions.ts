@@ -6,16 +6,22 @@ import { getBusinessContext } from '@/lib/business'
 import {
   DEFAULT_COURSE_DETAILS,
   EMPTY_CONTENT,
+  MATERIAL_BUCKET,
+  asText,
+  asVideo,
   effectiveNavigation,
   retriesAllowed,
 } from '@/lib/course'
 import type {
+  BlockSourceStatus,
   BlockType,
   CourseBasics,
+  CourseBuildStage,
   CourseDetails,
   QuizNavigationOverride,
   QuizScope,
 } from '@/lib/course'
+import { MAX_QUESTIONS } from '@/lib/pipeline/quiz/schema'
 import type { Database } from '@/lib/types/database'
 import type { ActionResult } from '@/app/(auth)/actions'
 
@@ -33,6 +39,16 @@ export type QuizConfigInput = {
   navigationOverride: QuizNavigationOverride
   retryMax: number | null
   retryCooldownHours: number | null
+  /** `null` is "no specific number" — the model decides. See quizzes.generation_count. */
+  generationCount: number | null
+}
+
+/** One walkthrough page's worth of edits. */
+export type BlockPageInput = {
+  title: string
+  /** VideoContent or TextContent. Ignored for quiz blocks, which carry none. */
+  content?: unknown
+  quiz?: QuizConfigInput
 }
 
 /**
@@ -130,6 +146,9 @@ export async function createCourse(
       quiz_navigation_default: DEFAULT_COURSE_DETAILS.quizNavigationDefault,
       quiz_retry_max_default: DEFAULT_COURSE_DETAILS.retryMaxDefault,
       quiz_retry_cooldown_hours_default: DEFAULT_COURSE_DETAILS.retryCooldownHoursDefault,
+      // Basics are done the moment the course exists, so an abandoned draft
+      // resumes at the sequence rather than back at the form just completed.
+      build_stage: 'sequence',
     })
     .select('id')
     .single()
@@ -218,6 +237,9 @@ export async function updateCourseDetails(
       quiz_navigation_default: input.quizNavigationDefault,
       quiz_retry_max_default: input.retryMaxDefault,
       quiz_retry_cooldown_hours_default: input.retryCooldownHoursDefault,
+      // Details answered — the only thing left in the flow is Publish.
+      build_stage: 'publish',
+      build_block_id: null,
     })
     .eq('id', courseId)
 
@@ -494,6 +516,223 @@ export async function deleteBlock(courseId: string, blockId: string): Promise<Ac
   return { ok: true }
 }
 
+/* ── The walkthrough ───────────────────────────────────────────────────── */
+
+/**
+ * Remembers where the builder was left, so an abandoned draft resumes instead
+ * of restarting. Called on entering a screen as well as on save: someone who
+ * opens page three and closes the tab meant to be on page three.
+ *
+ * Deliberately silent about failure. This is bookkeeping for a convenience —
+ * blocking a page render or a save on it would trade something that works for
+ * something that only sometimes helps.
+ */
+export async function recordBuildProgress(
+  courseId: string,
+  stage: CourseBuildStage,
+  blockId: string | null = null
+): Promise<ActionResult> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('courses')
+    .update({ build_stage: stage, build_block_id: blockId })
+    .eq('id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/** The three source columns, decided together — see saveBlockPage. */
+type DerivedSource = {
+  source_text: string | null
+  source_status: BlockSourceStatus
+  source_error: string | null
+}
+
+/**
+ * Pulls the text out of an uploaded document so a quiz can be generated from
+ * it. Storage holds the file; the parsers read bytes.
+ *
+ * Both the download and the parse are allowed to fail without failing the
+ * save. An author who has just uploaded a scanned PDF should still keep their
+ * title, their pointers and their summary — the block simply records that its
+ * material could not be read, and the quiz page says so.
+ */
+async function extractUploadedSource(
+  path: string,
+  fileName: string | null
+): Promise<{ derived: DerivedSource; warnings: string[] }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.storage.from(MATERIAL_BUCKET).download(path)
+
+  if (error || !data) {
+    return {
+      derived: {
+        source_text: null,
+        source_status: 'failed',
+        source_error: `Could not open the uploaded file (${error?.message ?? 'not found'}).`,
+      },
+      warnings: [],
+    }
+  }
+
+  try {
+    // Dynamic, for the reason spelled out at the top of extract/upload.ts: a
+    // static import puts pdfjs and mammoth on every builder action's module
+    // graph, and one of them failing to load takes all of them down.
+    const { extractFromUpload } = await import('@/lib/pipeline/extract/upload')
+    const bytes = new Uint8Array(await data.arrayBuffer())
+    const extracted = await extractFromUpload(bytes, fileName ?? path, data.type || null)
+
+    if (!extracted.text.trim()) {
+      return {
+        derived: {
+          source_text: null,
+          source_status: 'failed',
+          source_error:
+            extracted.warnings[0] ??
+            'No readable text came out of that file. A scanned document needs OCR, which this does not do yet.',
+        },
+        warnings: extracted.warnings,
+      }
+    }
+
+    return {
+      derived: {
+        source_text: extracted.text,
+        source_status: 'ready',
+        // A thin-text warning is worth keeping around: it is the difference
+        // between a quiz that reads the material and one that guesses.
+        source_error: extracted.warnings[0] ?? null,
+      },
+      warnings: extracted.warnings,
+    }
+  } catch (cause) {
+    return {
+      derived: {
+        source_text: null,
+        source_status: 'failed',
+        source_error: cause instanceof Error ? cause.message : 'That file could not be read.',
+      },
+      warnings: [],
+    }
+  }
+}
+
+/**
+ * Saves one walkthrough page: the block's title, its content, and — for a quiz
+ * page — its configuration, in a single call.
+ *
+ * It also decides what the block's `source_text` now is, because that is a
+ * consequence of the content rather than a separate thing to ask about:
+ *
+ *   rich text   the body IS the source, ready immediately
+ *   document    extracted here, on the way in
+ *   video       'pending'. The builder cannot transcribe — that is the
+ *               faster-whisper step in scripts/ — so it says so rather than
+ *               pretending, and an author who has a transcript can paste it.
+ */
+export async function saveBlockPage(
+  courseId: string,
+  blockId: string,
+  input: BlockPageInput
+): Promise<ActionResult<{ warnings: string[] }>> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { data: block, error: loadError } = await supabase
+    .from('course_blocks')
+    .select('id, type, content_ref, source_text, source_status')
+    .eq('id', blockId)
+    .eq('course_id', courseId)
+    .maybeSingle()
+
+  if (loadError) return { ok: false, error: loadError.message }
+  if (!block) return { ok: false, error: 'That block no longer exists.' }
+
+  const update: Database['public']['Tables']['course_blocks']['Update'] = {
+    title: input.title.trim() || null,
+  }
+  const warnings: string[] = []
+
+  /** Nothing to say about the source — a quiz block, or a document left alone. */
+  const unchanged = null
+
+  const empty: DerivedSource = { source_text: null, source_status: 'empty', source_error: null }
+  let derived: DerivedSource | null = unchanged
+
+  if (block.type === 'video') {
+    const video = asVideo(input.content)
+    const transcript = video.transcript.trim()
+
+    update.content_ref = video as never
+    derived = transcript
+      ? { source_text: transcript, source_status: 'ready', source_error: null }
+      : video.path
+        ? // The one thing the builder cannot do for itself. Recorded as
+          // pending rather than failed: nothing is wrong, it is just not done.
+          { source_text: null, source_status: 'pending', source_error: null }
+        : empty
+  } else if (block.type === 'text') {
+    const text = asText(input.content)
+    update.content_ref = text as never
+
+    if (text.mode === 'rich') {
+      derived = text.body.trim()
+        ? { source_text: text.body, source_status: 'ready', source_error: null }
+        : empty
+    } else if (!text.path) {
+      derived = empty
+    } else {
+      const previousPath = asText(block.content_ref).path
+      // Re-extract when the file changed, and when the last attempt did not
+      // end in usable text — which makes plain "Save" the retry for a document
+      // that failed, without a separate button to go and find.
+      const needsExtraction = previousPath !== text.path || block.source_status !== 'ready'
+
+      if (needsExtraction) {
+        const result = await extractUploadedSource(text.path, text.fileName)
+        derived = result.derived
+        warnings.push(...result.warnings)
+      }
+    }
+  }
+
+  if (derived) {
+    update.source_text = derived.source_text
+    update.source_status = derived.source_status
+    update.source_error = derived.source_error
+  }
+
+  const { error } = await supabase
+    .from('course_blocks')
+    .update(update)
+    .eq('id', blockId)
+    .eq('course_id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+
+  if (block.type === 'quiz' && input.quiz) {
+    const quizResult = await updateQuizConfig(courseId, blockId, input.quiz)
+    if (!quizResult.ok) return quizResult
+  }
+
+  await recordBuildProgress(courseId, 'walkthrough', blockId)
+
+  revalidatePath(`/courses/${courseId}`)
+  return { ok: true, data: { warnings } }
+}
+
 /* ── Quiz configuration ────────────────────────────────────────────────── */
 
 export async function updateQuizConfig(
@@ -533,6 +772,17 @@ export async function updateQuizConfig(
     return { ok: false, error: 'Pick at least one block for the quiz to cover.' }
   }
 
+  // null is a legitimate value here — "no specific number" — so only an actual
+  // number is range-checked. The database CHECK says the same thing.
+  if (
+    input.generationCount !== null &&
+    (!Number.isInteger(input.generationCount) ||
+      input.generationCount < 1 ||
+      input.generationCount > MAX_QUESTIONS)
+  ) {
+    return { ok: false, error: `Ask for between 1 and ${MAX_QUESTIONS} questions, or no specific number.` }
+  }
+
   const supabase = await createClient()
 
   // Retries must be cleared before the override tightens, or the block trigger
@@ -561,6 +811,7 @@ export async function updateQuizConfig(
       reveal_answers: input.revealAnswers,
       retry_max: input.retryMax,
       retry_cooldown_hours: input.retryMax === null ? null : input.retryCooldownHours,
+      generation_count: input.generationCount,
     })
     .eq('block_id', blockId)
 

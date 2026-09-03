@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, RefreshCw, Sparkles, Trash2, Upload } from 'lucide-react'
-import { Button, Field, Input, Select, Textarea, cn } from '@/components/ui'
+import { Button, Field, SegmentedControl, Input, Select, Textarea, cn } from '@/components/ui'
+import { GENERATION_COUNT_CHOICES } from '@/lib/course'
 import {
   addQuestion,
   deleteQuestion,
@@ -41,10 +42,28 @@ export function QuestionEditor({
   courseId,
   blockId,
   questions,
+  generationCount,
+  onGenerationCountChange,
+  onBeforeGenerate,
+  sourceSummary,
+  canGenerate = true,
 }: {
   courseId: string
   blockId: string
   questions: EditableQuestion[]
+  /** `null` is "no specific number" — see quizzes.generation_count. */
+  generationCount: number | null
+  onGenerationCountChange: (next: number | null) => void
+  /**
+   * Flushes the page holding this editor before generating. Generation reads
+   * the quiz's scope from the database, so an unsaved scope change would
+   * otherwise produce questions about the wrong material.
+   */
+  onBeforeGenerate?: () => Promise<boolean>
+  /** What this quiz will read from, worked out by the page above. */
+  sourceSummary?: React.ReactNode
+  /** False when nothing in scope has readable material yet. */
+  canGenerate?: boolean
 }) {
   const router = useRouter()
   const [mode, setMode] = React.useState<Mode>('idle')
@@ -52,7 +71,10 @@ export function QuestionEditor({
   const [error, setError] = React.useState<string | null>(null)
   const [notice, setNotice] = React.useState<string | null>(null)
 
-  const [count, setCount] = React.useState(5)
+  /* The count field keeps its value while "no specific number" is selected, so
+     switching back does not lose what was set. That is why the last chosen
+     number lives here rather than being derived from `generationCount`. */
+  const [lastCount, setLastCount] = React.useState(generationCount ?? 5)
   const [csv, setCsv] = React.useState('')
   const [draft, setDraft] = React.useState<QuestionInput>(emptyDraft)
   const [editingId, setEditingId] = React.useState<string | null>(null)
@@ -79,14 +101,25 @@ export function QuestionEditor({
     setError(null)
     setNotice(null)
     startTransition(async () => {
-      const result = await generateQuestions(courseId, blockId, count)
+      if (onBeforeGenerate && !(await onBeforeGenerate())) return
+
+      const result = await generateQuestions(
+        courseId,
+        blockId,
+        generationCount === null ? 'auto' : generationCount
+      )
       if (!result.ok) {
         setError(result.error)
         return
       }
-      const { added, warnings } = result.data!
+      const { added, blocksUsed, warnings } = result.data!
+      /* Saying which blocks were read matters most in "no specific number"
+         mode: without it, seven questions is a number with no explanation, and
+         there is no way to tell the model's judgement from a failure to find
+         more material. */
       setNotice(
-        `Added ${added} question${added === 1 ? '' : 's'}.` +
+        `Generated ${added} question${added === 1 ? '' : 's'} from ${blocksUsed} ` +
+          `${blocksUsed === 1 ? 'block' : 'blocks'}.` +
           (warnings.length ? ` ${warnings.join(' ')}` : '')
       )
       setMode('idle')
@@ -137,26 +170,63 @@ export function QuestionEditor({
 
       {mode === 'generate' && (
         <div className="mt-4 rounded-md border border-surface-border bg-white p-4">
-          <p className="m-0 mb-3 text-xs leading-relaxed text-ink-muted">
-            Questions are written from the material this quiz covers, following its scope setting
-            above. Video blocks need the transcription step and are skipped.
-          </p>
+          {sourceSummary ?? (
+            <p className="m-0 mb-3 text-xs leading-relaxed text-ink-muted">
+              Questions are written from the material this quiz covers, following its scope
+              setting above.
+            </p>
+          )}
+
+          <div className="mt-3">
+            <span className="mb-1.5 block text-sm font-medium text-[#374151]">
+              How many questions
+            </span>
+            <SegmentedControl
+              options={[
+                { value: 'auto', label: 'No specific number' },
+                { value: 'fixed', label: 'Specific number' },
+              ]}
+              value={generationCount === null ? 'auto' : 'fixed'}
+              onChange={(next) =>
+                onGenerationCountChange(next === 'auto' ? null : lastCount)
+              }
+            />
+            <p className="m-0 mb-3 mt-1.5 text-xs text-[#9ca3af]">
+              {generationCount === null
+                ? 'Coverage decides: one question per distinct point in the material, up to 20.'
+                : 'Exactly this many, whatever the material covers.'}
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="How many" htmlFor="generate-count">
+            {/* Disabled rather than hidden, so the relationship between the two
+                controls stays visible — the same pattern the Details step uses
+                for retries under forward-only navigation. */}
+            <Field label="Number of questions" htmlFor="generate-count">
               <Select
                 id="generate-count"
-                value={count}
-                onChange={(e) => setCount(Number(e.target.value))}
-                className="w-[100px]"
+                value={generationCount ?? lastCount}
+                disabled={generationCount === null}
+                onChange={(e) => {
+                  const next = Number(e.target.value)
+                  setLastCount(next)
+                  onGenerationCountChange(next)
+                }}
+                className="w-[110px]"
               >
-                {[3, 5, 10, 15, 20].map((n) => (
+                {GENERATION_COUNT_CHOICES.map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Button loading={pending} onClick={generate}>
+            <Button
+              loading={pending}
+              disabled={!canGenerate}
+              title={canGenerate ? undefined : 'Nothing in this quiz’s scope is readable yet'}
+              onClick={generate}
+            >
               Generate questions
             </Button>
           </div>

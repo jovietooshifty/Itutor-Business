@@ -1,5 +1,5 @@
 import type { SourceType } from '../extract/types'
-import { OPTIONS_PER_QUESTION, type Question } from './schema'
+import { MAX_QUESTIONS, OPTIONS_PER_QUESTION, type Question } from './schema'
 
 /* A cost and latency bound on pathological inputs (an hours-long transcript),
    not a context-window limit — deepseek-v4-flash could take far more. Roughly
@@ -45,7 +45,7 @@ Rules:
 export function buildQuizPrompt(
   sourceText: string,
   sourceType: SourceType,
-  numQuestions: number,
+  numQuestions: number | 'auto',
 ): PromptPair {
   const { text, truncated } = clampSource(sourceText)
 
@@ -54,11 +54,33 @@ export function buildQuizPrompt(
       'You write multiple-choice comprehension questions for workplace training courses in the food industry. ' +
       `You always reply with a single valid json object.\n\n${SHAPE_RULES}`,
     user:
-      `Write ${numQuestions} multiple-choice question${numQuestions === 1 ? '' : 's'} based on the following ` +
-      `${SOURCE_LABELS[sourceType]}.` +
+      (numQuestions === 'auto' ? autoCountInstruction(text) : fixedCountInstruction(numQuestions)) +
+      ` Base them on the following ${SOURCE_LABELS[sourceType]}.` +
       (truncated ? ' (The source was truncated; use only what is given.)' : '') +
       `\n\n--- SOURCE START ---\n${text}\n--- SOURCE END ---`,
   }
+}
+
+function fixedCountInstruction(numQuestions: number): string {
+  return `Write ${numQuestions} multiple-choice question${numQuestions === 1 ? '' : 's'}.`
+}
+
+/* "You decide" is not the same as "unbounded". Without a floor, a ceiling, and
+   a stated rule for what earns a question, the model anchors on whatever count
+   feels conventional and returns five for anything — which is the behaviour
+   this mode exists to escape. The word count is included because the model has
+   no other way to judge the scale of what it was handed against the range it
+   is choosing within. */
+function autoCountInstruction(text: string): string {
+  const words = text.split(/\s+/).filter(Boolean).length
+
+  return (
+    'Write as many multiple-choice questions as this material actually warrants — you decide how many. ' +
+    'Count the distinct teachable points in the source: one question per point, no padding, and no two ' +
+    'questions testing the same fact in different words. Thin material earns few questions; dense ' +
+    `material earns many. Write at least 1 and never more than ${MAX_QUESTIONS}. For scale, the ` +
+    `source below is roughly ${words.toLocaleString('en-US')} words.`
+  )
 }
 
 /* `avoid` carries the other questions already in the quiz. Without it the model

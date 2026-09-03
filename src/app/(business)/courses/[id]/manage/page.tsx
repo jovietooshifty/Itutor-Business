@@ -5,6 +5,7 @@ import { Badge, Button, Card } from '@/components/ui'
 import { CourseTabs } from '@/components/business/course-tabs'
 import { DeleteCourse } from '@/components/business/delete-course'
 import { getBusinessContext } from '@/lib/business'
+import { resumeHref } from '@/lib/course'
 import { loadCourseLearners } from '@/lib/learners'
 import { createClient } from '@/lib/supabase/server'
 
@@ -21,7 +22,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const [{ data: course }, { data: blocks }, learners] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, business_id, title, description, visibility, status, duration_label')
+      .select('id, business_id, title, description, visibility, status, duration_label, build_stage, build_block_id')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('course_blocks').select('id, type').eq('course_id', id),
@@ -95,6 +96,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {course.duration_label ? ` · ${course.duration_label}` : ''}
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
+          {/* A draft is a course someone walked away from part way through, so
+              the first thing offered is the screen they were on — not the top
+              of a four-step flow they have already been through. */}
+          {course.status === 'draft' && (
+            <Link
+              href={resumeHref(course.id, course.build_stage, course.build_block_id)}
+              className="no-underline"
+            >
+              <Button>Resume building</Button>
+            </Link>
+          )}
           <Link href={`/courses/${course.id}/manage/sequence`} className="no-underline">
             <Button variant="secondary">Edit the sequence</Button>
           </Link>

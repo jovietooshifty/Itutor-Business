@@ -2,15 +2,31 @@ import * as mammoth from 'mammoth'
 import { ExtractionError, THIN_TEXT_CHARS, type ExtractedContent } from './types'
 
 export async function extractFromDocx(filePath: string): Promise<ExtractedContent> {
+  return readDocx({ path: filePath }, filePath)
+}
+
+/* The same extraction from bytes already in hand — see extractFromPdfBuffer
+   for why uploads do not go via a temp file. */
+export async function extractFromDocxBuffer(
+  buffer: Uint8Array,
+  label: string,
+): Promise<ExtractedContent> {
+  return readDocx({ buffer: Buffer.from(buffer) }, label)
+}
+
+async function readDocx(
+  input: { path: string } | { buffer: Buffer },
+  label: string,
+): Promise<ExtractedContent> {
   /* mammoth uses `export =` and does not export its Result interface, so the
      type is taken from the function itself. */
   let result: Awaited<ReturnType<typeof mammoth.extractRawText>>
   try {
     /* extractRawText rather than convertToHtml: the quiz prompt wants prose,
        and markup would just spend tokens. */
-    result = await mammoth.extractRawText({ path: filePath })
+    result = await mammoth.extractRawText(input)
   } catch (cause) {
-    throw new ExtractionError('docx', `Could not read or parse .docx at ${filePath}`, { cause })
+    throw new ExtractionError('docx', `Could not read or parse .docx at ${label}`, { cause })
   }
 
   const text = result.value.replace(/[ \t]+/g, ' ').trim()

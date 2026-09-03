@@ -1,7 +1,9 @@
-import { FileText, Globe, HelpCircle, Video, type LucideIcon } from 'lucide-react'
+import { FileText, HelpCircle, Video, type LucideIcon } from 'lucide-react'
 import type { Database } from '@/lib/types/database'
 
 export type BlockType = Database['public']['Enums']['block_type']
+export type BlockSourceStatus = Database['public']['Enums']['block_source_status']
+export type CourseBuildStage = Database['public']['Enums']['course_build_stage']
 export type QuizScope = Database['public']['Enums']['quiz_scope']
 export type QuizNavigation = Database['public']['Enums']['quiz_navigation']
 export type QuizNavigationOverride = Database['public']['Enums']['quiz_navigation_override']
@@ -19,11 +21,17 @@ export type BlockTypeMeta = {
   iconColor: string
 }
 
+/**
+ * There is no website block. A link cannot be fetched reliably enough to
+ * generate questions from — paywalls, consent walls, client-rendered pages and
+ * pages that simply change — so authored material is uploaded or typed, and
+ * the quiz always has something real to read.
+ */
 export const BLOCK_TYPES: BlockTypeMeta[] = [
   {
     type: 'video',
     label: 'Video',
-    description: 'Upload a video or paste a link',
+    description: 'A video file, with notes and guidance',
     icon: Video,
     iconBg: '#fce7f3',
     iconColor: '#db2777',
@@ -31,18 +39,10 @@ export const BLOCK_TYPES: BlockTypeMeta[] = [
   {
     type: 'text',
     label: 'Text',
-    description: 'Rich text, a document, or a URL',
+    description: 'Written material or a document',
     icon: FileText,
     iconBg: '#ede9fe',
     iconColor: '#7c3aed',
-  },
-  {
-    type: 'website',
-    label: 'Website',
-    description: 'Link out to an external page',
-    icon: Globe,
-    iconBg: '#dbeafe',
-    iconColor: '#2563eb',
   },
   {
     type: 'quiz',
@@ -55,9 +55,38 @@ export const BLOCK_TYPES: BlockTypeMeta[] = [
 ]
 
 export function blockTypeMeta(type: BlockType): BlockTypeMeta {
-  // Every block_type enum member has an entry above, so this cannot miss.
-  return BLOCK_TYPES.find((meta) => meta.type === type)!
+  // Every block_type enum member has an entry above, so this cannot miss —
+  // except for a row written before a type was retired, which falls back to
+  // Text rather than crashing the page it appears on.
+  return BLOCK_TYPES.find((meta) => meta.type === type) ?? BLOCK_TYPES[1]
 }
+
+/* ── Uploaded material ─────────────────────────────────────────────────── */
+
+/** The private bucket every uploaded video and document lands in. */
+export const MATERIAL_BUCKET = 'course-material'
+
+/** Path convention the bucket's RLS policies key off: course id comes first. */
+export function materialPath(courseId: string, blockId: string, fileName: string): string {
+  const safe = fileName.replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80)
+  return `${courseId}/${blockId}/${Date.now()}-${safe}`
+}
+
+export const VIDEO_MIME_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime',
+  'video/x-m4v',
+] as const
+
+export const DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'text/plain',
+  'text/markdown',
+] as const
 
 /* ── content_ref payloads ──────────────────────────────────────────────── */
 
@@ -65,29 +94,106 @@ export function blockTypeMeta(type: BlockType): BlockTypeMeta {
  * `course_blocks.content_ref` is a free-form jsonb column. These are the shapes
  * this app writes into it, one per block type. Readers must treat every field
  * as possibly absent — rows written by an earlier build, or by a future block
- * type, are not guaranteed to match.
+ * type, are not guaranteed to match. Use `asVideo` / `asText` rather than
+ * casting.
  */
 export type VideoContent = {
-  method: 'upload' | 'link'
-  url: string | null
+  /** Object path in MATERIAL_BUCKET. Null until something is uploaded. */
+  path: string | null
   fileName: string | null
+  /**
+   * Legacy only. Rows written when videos could be linked hold an external
+   * URL here; the player still honours it so those courses keep working. The
+   * builder never writes it.
+   */
+  url: string | null
   captions: boolean
+  /** What the learner should DO with this material, shown before the player. */
+  guidelines: string
+  /** Extra material shown alongside the video. */
+  notes: string
+  /**
+   * A transcript typed or pasted by the author. The builder cannot transcribe
+   * — that is the faster-whisper step in scripts/ — so this is the way a video
+   * block becomes generatable without leaving the app.
+   */
+  transcript: string
 }
 
 export type TextContent = {
-  mode: 'rich' | 'upload' | 'url'
+  mode: 'rich' | 'upload'
   body: string
-  url: string | null
+  /** Object path in MATERIAL_BUCKET, when mode is 'upload'. */
+  path: string | null
   fileName: string | null
+  /** What to focus on while reading, shown above the content. */
+  pointers: string
+  /** The takeaway, shown after it. */
+  summary: string
 }
 
-export type WebsiteContent = { url: string | null }
+/** Reads a jsonb payload defensively — rows may predate the current shape. */
+export function asVideo(content: unknown): VideoContent {
+  const c = (content ?? {}) as Partial<VideoContent>
+  return {
+    path: c.path ?? null,
+    fileName: c.fileName ?? null,
+    url: c.url ?? null,
+    captions: c.captions ?? true,
+    guidelines: c.guidelines ?? '',
+    notes: c.notes ?? '',
+    transcript: c.transcript ?? '',
+  }
+}
+
+export function asText(content: unknown): TextContent {
+  const c = (content ?? {}) as Partial<TextContent>
+  return {
+    mode: c.mode === 'upload' ? 'upload' : 'rich',
+    body: c.body ?? '',
+    path: c.path ?? null,
+    fileName: c.fileName ?? null,
+    pointers: c.pointers ?? '',
+    summary: c.summary ?? '',
+  }
+}
 
 export const EMPTY_CONTENT: Record<BlockType, unknown> = {
-  video: { method: 'upload', url: null, fileName: null, captions: true } satisfies VideoContent,
-  text: { mode: 'rich', body: '', url: null, fileName: null } satisfies TextContent,
-  website: { url: null } satisfies WebsiteContent,
+  video: {
+    path: null,
+    fileName: null,
+    url: null,
+    captions: true,
+    guidelines: '',
+    notes: '',
+    transcript: '',
+  } satisfies VideoContent,
+  text: {
+    mode: 'rich',
+    body: '',
+    path: null,
+    fileName: null,
+    pointers: '',
+    summary: '',
+  } satisfies TextContent,
   quiz: {},
+}
+
+/**
+ * Presets rather than a blank box, so the sentence a learner reads before a
+ * video is consistent across a course and across authors — with "Something
+ * else" for the cases four presets do not cover.
+ */
+export const VIDEO_GUIDELINE_PRESETS = [
+  'Just watch — nothing to write down.',
+  'Take notes as you watch.',
+  'Watch, then try it yourself before moving on.',
+  'Watch twice: once straight through, once pausing to reflect.',
+] as const
+
+/** Whether a stored guideline came from the preset list or was typed. */
+export function isGuidelinePreset(value: string): boolean {
+  return (VIDEO_GUIDELINE_PRESETS as readonly string[]).includes(value)
 }
 
 /* ── Quiz configuration ────────────────────────────────────────────────── */
@@ -101,6 +207,14 @@ export const QUIZ_SCOPE_OPTIONS: { value: QuizScope; label: string }[] = [
 ]
 
 export const PASSING_SCORE_OPTIONS = [60, 70, 80, 90] as const
+
+/**
+ * The counts offered when "specific number" is chosen. `null` — no specific
+ * number, the model decides from the material — is the default, because a
+ * 90-second video and a 40-page manual should not both get five questions just
+ * because five is the number in the box. See quizzes.generation_count.
+ */
+export const GENERATION_COUNT_CHOICES = [3, 5, 10, 15, 20] as const
 
 /** `null` means retries are off entirely; `0` means retry with no wait. */
 export const RETRY_COOLDOWN_OPTIONS: { value: number; label: string }[] = [
@@ -159,7 +273,12 @@ export const COURSE_TAG_SUGGESTIONS = [
  * The builder asks for things in the order they can actually be answered:
  * what the course IS first, then the material, then the settings that only
  * mean something once material exists (how long it takes, how its quizzes
- * behave), then review & publish (build step 6) once all of that is set.
+ * behave), then review & publish.
+ *
+ * "Content" is two screens, not one: the sequence (what blocks, in what order)
+ * and then a walkthrough with one page per block. Planning the shape of a
+ * course and filling each block in are different jobs, and doing them in one
+ * accordion meant doing neither well.
  */
 export const COURSE_BUILD_STEPS = [
   { key: 'basics', label: 'Basics' },
@@ -169,6 +288,31 @@ export const COURSE_BUILD_STEPS = [
 ] as const
 
 export type CourseStepKey = (typeof COURSE_BUILD_STEPS)[number]['key']
+
+/**
+ * Where "Resume" on the courses index sends someone back to. A walkthrough
+ * cursor whose block has since been deleted falls back to the sequence, which
+ * is the screen that can put it right.
+ */
+export function resumeHref(
+  courseId: string,
+  stage: CourseBuildStage,
+  blockId: string | null
+): string {
+  switch (stage) {
+    case 'basics':
+      return `/courses/${courseId}/basics`
+    case 'walkthrough':
+      return blockId ? `/courses/${courseId}/content/${blockId}` : `/courses/${courseId}`
+    case 'details':
+      return `/courses/${courseId}/details`
+    case 'publish':
+      return `/courses/${courseId}/publish`
+    case 'sequence':
+    default:
+      return `/courses/${courseId}`
+  }
+}
 
 /* ── Step 1: basics ────────────────────────────────────────────────────── */
 

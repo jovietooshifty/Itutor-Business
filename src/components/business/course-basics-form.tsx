@@ -23,14 +23,23 @@ export function CourseBasicsForm({
   businessId,
   courseId,
   initial,
+  variant = 'wizard',
 }: {
   businessId: string
   courseId?: string
   initial: CourseBasics
+  /**
+   * 'settings' is the same fields on the course's own Settings tab: no step
+   * rail, no "continue", and saving stays put. Editing a live course's title
+   * should not march you towards Publish.
+   */
+  variant?: 'wizard' | 'settings'
 }) {
+  const isWizard = variant === 'wizard'
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [error, setError] = React.useState<string | null>(null)
+  const [saved, setSaved] = React.useState(false)
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
 
   const [title, setTitle] = React.useState(initial.title)
@@ -52,6 +61,7 @@ export function CourseBasicsForm({
 
   function submit() {
     setError(null)
+    setSaved(false)
     setFieldErrors({})
 
     const input: CourseBasics = {
@@ -74,6 +84,12 @@ export function CourseBasicsForm({
         return
       }
 
+      if (!isWizard) {
+        setSaved(true)
+        router.refresh()
+        return
+      }
+
       const id = courseId ?? (result as { data?: { id: string } }).data?.id
       router.push(`/courses/${id}`)
     })
@@ -81,16 +97,22 @@ export function CourseBasicsForm({
 
   const suggestions = COURSE_TAG_SUGGESTIONS.filter((t) => !tags.includes(t))
 
-  return (
-    <main className="mx-auto max-w-[880px] p-6 md:p-10">
-      <CourseSteps current="basics" courseId={courseId} />
+  const Wrapper = isWizard ? 'main' : 'div'
 
-      <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">
-        {isEdit ? 'Course basics' : 'Create a course'}
-      </h1>
-      <p className="m-0 mb-8 text-sm text-ink-muted">
-        Set up what the course is — you&apos;ll add the material next.
-      </p>
+  return (
+    <Wrapper className={isWizard ? 'mx-auto max-w-[880px] p-6 md:p-10' : undefined}>
+      {isWizard && (
+        <>
+          <CourseSteps current="basics" courseId={courseId} />
+
+          <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">
+            {isEdit ? 'Course basics' : 'Create a course'}
+          </h1>
+          <p className="m-0 mb-8 text-sm text-ink-muted">
+            Set up what the course is — you&apos;ll add the material next.
+          </p>
+        </>
+      )}
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-6 shadow-sm md:p-7">
         <div className="flex flex-col gap-5 sm:flex-row">
@@ -233,15 +255,23 @@ export function CourseBasicsForm({
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <Link href="/courses" className="no-underline">
-          <Button variant="ghost">
-            <ArrowLeft size={15} /> All courses
-          </Button>
-        </Link>
+        {isWizard ? (
+          <Link href="/courses" className="no-underline">
+            <Button variant="ghost">
+              <ArrowLeft size={15} /> All courses
+            </Button>
+          </Link>
+        ) : (
+          <span />
+        )}
         <Button size="lg" onClick={submit} loading={pending}>
-          {isEdit ? 'Save and continue' : 'Continue to content'}
+          {!isWizard ? 'Save changes' : isEdit ? 'Save and continue' : 'Continue to content'}
         </Button>
       </div>
-    </main>
+
+      {saved && (
+        <p className="mt-2.5 text-right text-xs font-semibold text-[var(--itutor-green)]">Saved</p>
+      )}
+    </Wrapper>
   )
 }

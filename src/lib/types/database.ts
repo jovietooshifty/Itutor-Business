@@ -372,6 +372,9 @@ export type Database = {
           id: string
           position: number
           quiz_navigation_override: Database["public"]["Enums"]["quiz_navigation_override"]
+          source_error: string | null
+          source_status: Database["public"]["Enums"]["block_source_status"]
+          source_text: string | null
           title: string | null
           type: Database["public"]["Enums"]["block_type"]
           updated_at: string
@@ -383,6 +386,9 @@ export type Database = {
           id?: string
           position: number
           quiz_navigation_override?: Database["public"]["Enums"]["quiz_navigation_override"]
+          source_error?: string | null
+          source_status?: Database["public"]["Enums"]["block_source_status"]
+          source_text?: string | null
           title?: string | null
           type: Database["public"]["Enums"]["block_type"]
           updated_at?: string
@@ -394,6 +400,9 @@ export type Database = {
           id?: string
           position?: number
           quiz_navigation_override?: Database["public"]["Enums"]["quiz_navigation_override"]
+          source_error?: string | null
+          source_status?: Database["public"]["Enums"]["block_source_status"]
+          source_text?: string | null
           title?: string | null
           type?: Database["public"]["Enums"]["block_type"]
           updated_at?: string
@@ -436,6 +445,8 @@ export type Database = {
       }
       courses: {
         Row: {
+          build_block_id: string | null
+          build_stage: Database["public"]["Enums"]["course_build_stage"]
           business_id: string
           created_at: string
           created_by: string | null
@@ -455,6 +466,8 @@ export type Database = {
           what_you_will_learn: string[]
         }
         Insert: {
+          build_block_id?: string | null
+          build_stage?: Database["public"]["Enums"]["course_build_stage"]
           business_id: string
           created_at?: string
           created_by?: string | null
@@ -474,6 +487,8 @@ export type Database = {
           what_you_will_learn?: string[]
         }
         Update: {
+          build_block_id?: string | null
+          build_stage?: Database["public"]["Enums"]["course_build_stage"]
           business_id?: string
           created_at?: string
           created_by?: string | null
@@ -493,6 +508,13 @@ export type Database = {
           what_you_will_learn?: string[]
         }
         Relationships: [
+          {
+            foreignKeyName: "courses_build_block_id_fkey"
+            columns: ["build_block_id"]
+            isOneToOne: false
+            referencedRelation: "course_blocks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "courses_business_id_fkey"
             columns: ["business_id"]
@@ -825,6 +847,7 @@ export type Database = {
         Row: {
           block_id: string
           created_at: string
+          generation_count: number | null
           id: string
           passing_score: number
           retry_cooldown_hours: number | null
@@ -838,6 +861,7 @@ export type Database = {
         Insert: {
           block_id: string
           created_at?: string
+          generation_count?: number | null
           id?: string
           passing_score?: number
           retry_cooldown_hours?: number | null
@@ -851,6 +875,7 @@ export type Database = {
         Update: {
           block_id?: string
           created_at?: string
+          generation_count?: number | null
           id?: string
           passing_score?: number
           retry_cooldown_hours?: number | null
@@ -994,9 +1019,16 @@ export type Database = {
     }
     Enums: {
       block_progress_status: "locked" | "unlocked" | "completed"
-      block_type: "video" | "text" | "website" | "quiz"
+      block_source_status: "empty" | "ready" | "pending" | "failed"
+      block_type: "video" | "text" | "quiz"
       business_status: "active"
       business_type: "independent" | "franchise" | "chain"
+      course_build_stage:
+        | "basics"
+        | "sequence"
+        | "walkthrough"
+        | "details"
+        | "publish"
       course_status: "draft" | "published"
       course_visibility: "public" | "private"
       enrollment_status: "in_progress" | "completed"
@@ -1139,9 +1171,17 @@ export const Constants = {
   public: {
     Enums: {
       block_progress_status: ["locked", "unlocked", "completed"],
-      block_type: ["video", "text", "website", "quiz"],
+      block_source_status: ["empty", "ready", "pending", "failed"],
+      block_type: ["video", "text", "quiz"],
       business_status: ["active"],
       business_type: ["independent", "franchise", "chain"],
+      course_build_stage: [
+        "basics",
+        "sequence",
+        "walkthrough",
+        "details",
+        "publish",
+      ],
       course_status: ["draft", "published"],
       course_visibility: ["public", "private"],
       enrollment_status: ["in_progress", "completed"],

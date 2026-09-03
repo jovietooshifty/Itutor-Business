@@ -1,121 +1,29 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import {
-  CourseSequence,
-  type BuilderBlock,
-  type BuilderCourse,
-} from '@/components/business/course-sequence'
+import { CourseSequence } from '@/components/business/course-sequence'
+import { loadSequence } from '@/lib/builder'
 import { getBusinessContext } from '@/lib/business'
-import { createClient } from '@/lib/supabase/server'
-import type { EditableQuestion } from '@/components/business/question-editor'
-import type { QuizScope } from '@/lib/course'
 
 export const metadata: Metadata = { title: 'Course builder — iTutor Business' }
 
-type QuizRow = {
-  id: string
-  passing_score: number
-  scope: QuizScope
-  scope_block_ids: string[]
-  reveal_answers: boolean
-  retry_max: number | null
-  retry_cooldown_hours: number | null
-}
-
-/** Course Builder screen 2 — the lesson sequence for one course. */
+/** Course Builder step 2a — the lesson sequence for one course. */
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   const context = await getBusinessContext()
   if (!context) redirect('/login')
 
-  const supabase = await createClient()
-
-  const [{ data: course }, { data: blocks }] = await Promise.all([
-    supabase
-      .from('courses')
-      .select('id, business_id, title, quiz_retry_max_default, quiz_retry_cooldown_hours_default')
-      .eq('id', id)
-      .maybeSingle(),
-    supabase
-      .from('course_blocks')
-      .select(
-        'id, type, title, content_ref, quiz_navigation_override, position, quizzes(id, passing_score, scope, scope_block_ids, reveal_answers, retry_max, retry_cooldown_hours)'
-      )
-      .eq('course_id', id)
-      .order('position'),
-  ])
+  const loaded = await loadSequence(id)
 
   // RLS already hides other businesses' courses, so a miss here is a 404 rather
   // than a permission error — but check the owner explicitly so a course that
   // is merely *visible* (a public one) can never be opened in the editor.
-  if (!course || course.business_id !== context.businessId) notFound()
-
-  const builderCourse: BuilderCourse = {
-    id: course.id,
-    title: course.title,
-    retryMaxDefault: course.quiz_retry_max_default,
-    retryCooldownHoursDefault: course.quiz_retry_cooldown_hours_default,
-  }
-
-  const normalised = (blocks ?? []).map((block) => {
-    // The embed is one-to-one (quizzes.block_id is unique) but PostgREST still
-    // hands it back as an array on some shapes, so normalise both.
-    const embedded = block.quizzes as QuizRow | QuizRow[] | null
-    return { block, quiz: Array.isArray(embedded) ? (embedded[0] ?? null) : embedded }
-  })
-
-  // One query for every quiz's questions rather than one per block. Staff read
-  // quiz_questions directly (quiz_questions_select_staff) — it is only the
-  // learner side that goes through the answer-stripping RPC.
-  const quizIds = normalised.map((n) => n.quiz?.id).filter((id): id is string => Boolean(id))
-  const { data: questionRows } = quizIds.length
-    ? await supabase
-        .from('quiz_questions')
-        .select('id, quiz_id, question_text, options, correct_option, explanation, position')
-        .in('quiz_id', quizIds)
-        .order('position')
-    : { data: [] }
-
-  const questionsByQuiz = new Map<string, EditableQuestion[]>()
-  for (const row of questionRows ?? []) {
-    const list = questionsByQuiz.get(row.quiz_id) ?? []
-    list.push({
-      id: row.id,
-      questionText: row.question_text,
-      options: (row.options as string[]) ?? [],
-      correctOption: row.correct_option,
-      explanation: row.explanation,
-    })
-    questionsByQuiz.set(row.quiz_id, list)
-  }
-
-  const builderBlocks: BuilderBlock[] = normalised.map(({ block, quiz }) => {
-    return {
-      id: block.id,
-      type: block.type,
-      title: block.title ?? '',
-      content: block.content_ref,
-      navigationOverride: block.quiz_navigation_override,
-      questions: quiz ? (questionsByQuiz.get(quiz.id) ?? []) : [],
-      quiz:
-        block.type === 'quiz'
-          ? {
-              passingScore: quiz?.passing_score ?? 80,
-              scope: quiz?.scope ?? 'preceding_block',
-              scopeBlockIds: quiz?.scope_block_ids ?? [],
-              revealAnswers: quiz?.reveal_answers ?? false,
-              retryMax: quiz?.retry_max ?? null,
-              retryCooldownHours: quiz?.retry_cooldown_hours ?? null,
-            }
-          : null,
-    }
-  })
+  if (!loaded || loaded.course.businessId !== context.businessId) notFound()
 
   return (
     <CourseSequence
-      course={builderCourse}
-      initialBlocks={builderBlocks}
+      course={{ id: loaded.course.id, title: loaded.course.title }}
+      initialBlocks={loaded.blocks}
       canDelete={context.role === 'admin'}
     />
   )

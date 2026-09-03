@@ -3,11 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getBusinessContext } from '@/lib/business'
-import { generateQuiz, MAX_QUESTIONS } from '@/lib/pipeline/quiz/generate'
+import { generateQuiz, MAX_QUESTIONS, type QuestionCount } from '@/lib/pipeline/quiz/generate'
 import { regenerateQuestion } from '@/lib/pipeline/quiz/regenerate'
 import { OPTIONS_PER_QUESTION, type Question } from '@/lib/pipeline/quiz/schema'
 import type { SourceType } from '@/lib/pipeline/extract/types'
-import type { TextContent, WebsiteContent } from '@/lib/course'
 import type { ActionResult } from '@/app/(auth)/actions'
 
 export type QuestionInput = {
@@ -67,40 +66,31 @@ function validate(input: QuestionInput): string | null {
 /* ── Source text ───────────────────────────────────────────────────────── */
 
 /**
- * Loaded on demand rather than imported at the top of this file.
- *
- * Every action in this module — deleteQuestion, addQuestion, and via the same
- * route bundle the whole course builder's deleteBlock and saveDraft — shares
- * one module graph. A static import puts jsdom (through @mozilla/readability)
- * on that graph, and jsdom failed to load at all under the serverless runtime,
- * so a single unrelated dependency took down every server action on the
- * builder page. Reaching for it only when a website actually needs reading
- * keeps that blast radius to the one feature that needs it.
- */
-async function readWebsite(url: string) {
-  const { extractFromWebsite } = await import('@/lib/pipeline/extract/website')
-  return extractFromWebsite(url)
-}
-
-/**
  * Collects the material a quiz is meant to test, following its own scope
  * setting — the same rule the player uses, resolved here so generation covers
  * what the quiz claims to cover.
  *
- * Video is the gap: turning one into a transcript needs the Whisper step in
- * scripts/, which is a local pipeline and not something this request can run.
- * Those blocks are reported as warnings rather than silently skipped.
+ * Nothing is parsed at this point. Extraction happens once, when the material
+ * is saved on its own walkthrough page, and lands in `source_text`; by the
+ * time a quiz asks for it, the answer is a column read. That is what makes
+ * "generate" fast, and what lets the quiz page say up front which of the
+ * blocks above it are actually usable — rather than finding out mid-call.
  */
 async function gatherSourceText(
   courseId: string,
   blockId: string,
   scope: string,
   scopeBlockIds: string[]
-): Promise<{ text: string; sourceType: SourceType; warnings: string[] }> {
+): Promise<{
+  text: string
+  sourceType: SourceType
+  warnings: string[]
+  blocksUsed: number
+}> {
   const supabase = await createClient()
   const { data: blocks } = await supabase
     .from('course_blocks')
-    .select('id, type, title, content_ref, position')
+    .select('id, type, title, source_text, source_status, source_error, position')
     .eq('course_id', courseId)
     .order('position')
 
@@ -122,46 +112,41 @@ async function gatherSourceText(
 
   const warnings: string[] = []
   const parts: string[] = []
-  let sourceType: SourceType = 'docx'
+  let sawVideo = false
+  let sawWritten = false
 
   for (const block of sources) {
-    const label = block.title?.trim()
+    if (block.type === 'quiz') continue
+    const label = block.title?.trim() || `a ${block.type} block`
 
-    if (block.type === 'text') {
-      const content = (block.content_ref ?? {}) as Partial<TextContent>
-      if (content.mode === 'rich' && content.body?.trim()) {
-        parts.push(label ? `## ${label}\n${content.body}` : content.body)
-      } else if (content.url) {
-        // An uploaded document lives behind a URL; the PDF/DOCX extractors
-        // read a local path, so this one goes through the website reader.
-        try {
-          const extracted = await readWebsite(content.url)
-          parts.push(extracted.text)
-          warnings.push(...extracted.warnings)
-        } catch {
-          warnings.push(`Could not read the document in "${label || 'a text block'}".`)
-        }
-      }
-    } else if (block.type === 'website') {
-      const content = (block.content_ref ?? {}) as Partial<WebsiteContent>
-      if (content.url) {
-        try {
-          const extracted = await readWebsite(content.url)
-          parts.push(extracted.text)
-          warnings.push(...extracted.warnings)
-          sourceType = 'website'
-        } catch {
-          warnings.push(`Could not read ${content.url}.`)
-        }
-      }
-    } else if (block.type === 'video') {
+    if (block.source_status === 'ready' && block.source_text?.trim()) {
+      parts.push(`## ${label}\n${block.source_text.trim()}`)
+      if (block.type === 'video') sawVideo = true
+      else sawWritten = true
+      // A block can be readable and still thin; that note was recorded at
+      // extraction time and is worth repeating here, where it changes whether
+      // the resulting questions can be trusted.
+      if (block.source_error) warnings.push(`"${label}": ${block.source_error}`)
+      continue
+    }
+
+    if (block.source_status === 'pending') {
       warnings.push(
-        `Skipped "${label || 'a video block'}" — video needs the transcription step, which runs from scripts/, not from the builder.`
+        `Skipped "${label}" — it is still waiting on a transcript. Paste one on its page, or come back to this quiz later.`
       )
+    } else if (block.source_status === 'failed') {
+      warnings.push(`Skipped "${label}" — ${block.source_error ?? 'its material could not be read.'}`)
+    } else {
+      warnings.push(`Skipped "${label}" — it has no material yet.`)
     }
   }
 
-  return { text: parts.join('\n\n').trim(), sourceType, warnings }
+  // The source label only steers a phrase in the prompt ("transcript of a
+  // training video" vs "Word training document"), so a mixed set is described
+  // as written material rather than inventing a fifth label for "both".
+  const sourceType: SourceType = sawVideo && !sawWritten ? 'video' : 'docx'
+
+  return { text: parts.join('\n\n').trim(), sourceType, warnings, blocksUsed: parts.length }
 }
 
 /* ── Generation ────────────────────────────────────────────────────────── */
@@ -174,19 +159,21 @@ async function gatherSourceText(
 export async function generateQuestions(
   courseId: string,
   blockId: string,
-  count: number
-): Promise<ActionResult<{ added: number; warnings: string[] }>> {
+  count: QuestionCount
+): Promise<ActionResult<{ added: number; blocksUsed: number; warnings: string[] }>> {
   const auth = await requireEditor(courseId)
   if (!auth.ok) return auth
 
-  if (!Number.isInteger(count) || count < 1 || count > MAX_QUESTIONS) {
+  // 'auto' has no number to check. Its ceiling is in the prompt and enforced
+  // by the response schema, which truncates rather than rejecting.
+  if (count !== 'auto' && (!Number.isInteger(count) || count < 1 || count > MAX_QUESTIONS)) {
     return { ok: false, error: `Ask for between 1 and ${MAX_QUESTIONS} questions.` }
   }
 
   const quiz = await quizForBlock(blockId)
   if (!quiz) return { ok: false, error: 'That quiz is not set up yet.' }
 
-  const { text, sourceType, warnings } = await gatherSourceText(
+  const { text, sourceType, warnings, blocksUsed } = await gatherSourceText(
     courseId,
     blockId,
     quiz.scope,
@@ -235,6 +222,7 @@ export async function generateQuestions(
     ok: true,
     data: {
       added: generated.questions.length,
+      blocksUsed,
       warnings: [...warnings, ...generated.warnings],
     },
   }
