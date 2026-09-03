@@ -19,6 +19,7 @@ import {
   WebsiteConfig,
   type QuizState,
 } from '@/components/business/block-config'
+import type { EditableQuestion } from '@/components/business/question-editor'
 import {
   BLOCK_TYPES,
   EMPTY_CONTENT,
@@ -52,6 +53,8 @@ export type BuilderBlock = {
   content: unknown
   navigationOverride: QuizNavigationOverride
   quiz: QuizState | null
+  /** Only ever populated for quiz blocks. */
+  questions: EditableQuestion[]
 }
 
 const DEFAULT_QUIZ: QuizState = {
@@ -125,6 +128,7 @@ export function CourseSequence({
         title: '',
         content: EMPTY_CONTENT[type],
         navigationOverride: 'inherit',
+        questions: [],
         quiz:
           type === 'quiz'
             ? {
@@ -267,6 +271,7 @@ export function CourseSequence({
               expanded={expanded === block.id}
               dragging={dragging === block.id}
               canDelete={canDelete}
+              courseId={course.id}
               priorBlocks={blocks.slice(0, index).map((b) => ({
                 id: b.id,
                 label: b.title.trim() || `${blockTypeMeta(b.type).label} block`,
@@ -399,6 +404,7 @@ function BlockRow({
   expanded,
   dragging,
   canDelete,
+  courseId,
   priorBlocks,
   onToggleExpand,
   onPatch,
@@ -412,6 +418,7 @@ function BlockRow({
   expanded: boolean
   dragging: boolean
   canDelete: boolean
+  courseId: string
   priorBlocks: { id: string; label: string }[]
   onToggleExpand: () => void
   onPatch: (patch: Partial<BuilderBlock>) => void
@@ -497,6 +504,9 @@ function BlockRow({
               quiz={block.quiz}
               priorBlocks={priorBlocks}
               onChange={(quiz) => onPatch({ quiz })}
+              courseId={courseId}
+              blockId={block.id}
+              questions={block.questions}
             />
           )}
         </div>

@@ -4,6 +4,10 @@ import * as React from 'react'
 import { Globe } from 'lucide-react'
 import { Checkbox, Field, Input, SegmentedControl, Select, Textarea } from '@/components/ui'
 import {
+  QuestionEditor,
+  type EditableQuestion,
+} from '@/components/business/question-editor'
+import {
   PASSING_SCORE_OPTIONS,
   QUIZ_SCOPE_OPTIONS,
   type QuizScope,
@@ -216,10 +220,16 @@ export function QuizConfig({
   quiz,
   priorBlocks,
   onChange,
+  courseId,
+  blockId,
+  questions,
 }: {
   quiz: QuizState
   priorBlocks: { id: string; label: string }[]
   onChange: (quiz: QuizState) => void
+  courseId: string
+  blockId: string
+  questions: EditableQuestion[]
 }) {
   const scopeGroup = React.useId()
 
@@ -303,9 +313,10 @@ export function QuizConfig({
         </div>
       </div>
 
-      <p className="m-0 rounded-md border border-dashed border-surface-border px-4 py-4 text-center text-xs text-[#9ca3af]">
-        Navigation and retries are set once for the whole course, on the Details step. Questions —
-        AI generation, manual entry and CSV import — are build step 5.
+      <QuestionEditor courseId={courseId} blockId={blockId} questions={questions} />
+
+      <p className="m-0 text-center text-xs text-[#9ca3af]">
+        Navigation and retries are set once for the whole course, on the Details step.
       </p>
     </div>
   )
