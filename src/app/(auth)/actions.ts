@@ -239,3 +239,57 @@ export async function signOut() {
   revalidatePath('/', 'layout')
   redirect('/login')
 }
+
+/* ── Password reset ────────────────────────────────────────────────────── */
+
+/**
+ * Sends a reset link. Always reports success: whether an address has an
+ * account is not something an unauthenticated caller should be able to probe,
+ * and Supabase's own response is deliberately uninformative for the same
+ * reason.
+ */
+export async function requestPasswordReset(email: string): Promise<ActionResult> {
+  if (!EMAIL_RE.test(email.trim())) {
+    return { ok: false, error: 'Enter a valid email address.' }
+  }
+
+  const supabase = await createClient()
+  await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+  })
+
+  return { ok: true }
+}
+
+/**
+ * Sets the new password. The recovery link already established a session, so
+ * this is an ordinary updateUser — there is no token to pass, and if the link
+ * has expired there is no session and nothing to update.
+ */
+export async function resetPassword(input: {
+  password: string
+  confirmPassword: string
+}): Promise<ActionResult> {
+  const fieldErrors: Record<string, string> = {}
+  if (input.password.length < 8) fieldErrors.password = 'Use at least 8 characters'
+  if (input.confirmPassword !== input.password) {
+    fieldErrors.confirmPassword = "Passwords don't match"
+  }
+  if (Object.keys(fieldErrors).length) {
+    return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { ok: false, error: 'That reset link has expired. Request a new one.' }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: input.password })
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/', 'layout')
+  return { ok: true }
+}

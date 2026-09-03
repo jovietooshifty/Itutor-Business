@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Checkbox, Field, Input } from '@/components/ui'
 import { signIn } from '../actions'
@@ -58,12 +59,18 @@ export function LoginForm() {
         </Field>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <Checkbox
           label="Remember me on this device"
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
         />
+        <Link
+          href="/forgot-password"
+          className="text-sm font-semibold text-[var(--itutor-green)] no-underline hover:underline"
+        >
+          Forgot password?
+        </Link>
       </div>
 
       {error && (

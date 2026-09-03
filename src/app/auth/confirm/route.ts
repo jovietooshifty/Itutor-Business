@@ -28,6 +28,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=invalid_or_expired_link`)
   }
 
+  // A recovery link is not onboarding — it belongs to someone who already has
+  // an account and cannot get into it. The verify above is what gives them the
+  // session that lets them set a new password.
+  if (type === 'recovery') {
+    return NextResponse.redirect(`${origin}/reset-password`)
+  }
+
   // Land each account type on its own step 2 of 2.
   const { data: profile } = await supabase
     .from('users')
