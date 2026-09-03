@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
 export type ActionResult<T = undefined> =
@@ -9,6 +10,23 @@ export type ActionResult<T = undefined> =
   | { ok: false; error: string; fieldErrors?: Record<string, string> }
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/
+
+/**
+ * Supabase's signUp() never errors for an email that's already registered —
+ * it returns 200 with a user whose `identities` array is empty instead, so
+ * it doesn't leak which emails exist. Callers must check for this themselves,
+ * or the caller ends up on the "check your inbox" screen for a code that will
+ * never arrive.
+ */
+function isAlreadyRegistered(user: User | null) {
+  return !!user && user.identities?.length === 0
+}
+
+const ALREADY_REGISTERED_RESULT: ActionResult = {
+  ok: false,
+  error: 'An account with this email already exists.',
+  fieldErrors: { email: 'An account with this email already exists. Log in instead.' },
+}
 
 /* ── Step 1: create the preliminary account ─────────────────────────────── */
 
@@ -32,10 +50,11 @@ export async function signUpBusiness(input: {
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: input.email.trim(),
     password: input.password,
     options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
       data: {
         user_type: 'business_owner',
         org_name: input.orgName.trim(),
@@ -45,6 +64,7 @@ export async function signUpBusiness(input: {
   })
 
   if (error) return { ok: false, error: error.message }
+  if (isAlreadyRegistered(data.user)) return ALREADY_REGISTERED_RESULT
   return { ok: true }
 }
 
@@ -66,15 +86,17 @@ export async function signUpLearner(input: {
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: input.email.trim(),
     password: input.password,
     options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
       data: { user_type: 'learner', date_of_birth: input.dateOfBirth },
     },
   })
 
   if (error) return { ok: false, error: error.message }
+  if (isAlreadyRegistered(data.user)) return ALREADY_REGISTERED_RESULT
   return { ok: true }
 }
 
@@ -104,7 +126,11 @@ export async function verifyEmailCode(input: {
 
 export async function resendVerification(email: string): Promise<ActionResult> {
   const supabase = await createClient()
-  const { error } = await supabase.auth.resend({ type: 'signup', email })
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm` },
+  })
   if (error) return { ok: false, error: error.message }
   return { ok: true }
 }
