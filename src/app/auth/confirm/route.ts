@@ -35,8 +35,16 @@ export async function GET(request: NextRequest) {
     .eq('id', data.user.id)
     .maybeSingle()
 
+  // A company_member got here from a team invite, not a signup form: they are
+  // joining a business that already exists, and the invite gave them an
+  // account with no password. Both make the company-profile builder the wrong
+  // destination.
   const destination =
-    profile?.user_type === 'learner' ? '/learner/signup/profile' : '/business/signup/profile'
+    profile?.user_type === 'company_member'
+      ? '/invite/accept'
+      : profile?.user_type === 'learner'
+        ? '/learner/signup/profile'
+        : '/business/signup/profile'
 
   return NextResponse.redirect(`${origin}${destination}`)
 }

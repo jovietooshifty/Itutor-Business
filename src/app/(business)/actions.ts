@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Database } from '@/lib/types/database'
 import type { ActionResult } from '@/app/(auth)/actions'
+import type { MemberRole } from '@/lib/business'
 
 type BusinessType = Database['public']['Enums']['business_type']
 
@@ -211,6 +213,245 @@ export async function saveAccountSettings(input: {
 
   revalidatePath('/dashboard')
   return { ok: true }
+}
+
+/* ── Team management ───────────────────────────────────────────────────── */
+
+const EMAIL_RE = /^\S+@\S+\.\S+$/
+const ROLES: MemberRole[] = ['admin', 'operator', 'auditor']
+
+/** Every write below is Admin-only; RLS enforces it, this reads better. */
+async function requireAdmin(businessId: string): Promise<ActionResult<{ userId: string }>> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'You are not signed in.' }
+
+  const { data: membership } = await supabase
+    .from('business_members')
+    .select('role')
+    .eq('business_id', businessId)
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (membership?.role !== 'admin') {
+    return { ok: false, error: 'Only an Admin can manage the team.' }
+  }
+  return { ok: true, data: { userId: user.id } }
+}
+
+/**
+ * Invites someone to the business. The membership row is the thing that
+ * actually grants access, so it is always written — the email is a courtesy
+ * and a failure to send it does not fail the invite.
+ *
+ * The row is created as 'invited' either way. If the address already has an
+ * account we attach its user_id up front, but activation still happens when
+ * they next land in the business area (see claimPendingInvites), so nobody is
+ * silently dropped into a business without signing in first.
+ */
+export async function inviteMember(
+  businessId: string,
+  input: { email: string; role: MemberRole }
+): Promise<ActionResult<{ emailed: boolean }>> {
+  const auth = await requireAdmin(businessId)
+  if (!auth.ok) return auth
+
+  const email = input.email.trim().toLowerCase()
+  if (!EMAIL_RE.test(email)) {
+    return { ok: false, error: 'Enter a valid email address.', fieldErrors: { email: 'Invalid email' } }
+  }
+  if (!ROLES.includes(input.role)) return { ok: false, error: 'Pick a role.' }
+
+  const supabase = await createClient()
+  const admin = createAdminClient()
+
+  // Existing account? A business admin cannot read users outside their own
+  // business, so this lookup has to bypass RLS.
+  const { data: existingUser } = await admin
+    .from('users')
+    .select('id, user_type')
+    .ilike('email', email)
+    .maybeSingle()
+
+  if (existingUser) {
+    // Two cases this app cannot honestly deliver on, refused here rather than
+    // written as an invite that would never activate:
+    //
+    //  - a learner account: user_type drives routing, and the middleware sends
+    //    learners out of every business route
+    //  - an account already active in a business: getBusinessContext resolves
+    //    a single membership, so a second one is never reached
+    if (existingUser.user_type === 'learner') {
+      return {
+        ok: false,
+        error: 'That address is registered as a learner account and cannot join a team.',
+        fieldErrors: { email: 'Learner account' },
+      }
+    }
+
+    const { count } = await admin
+      .from('business_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', existingUser.id)
+      .eq('status', 'active')
+
+    if (count) {
+      return {
+        ok: false,
+        error: 'That address already belongs to another business.',
+        fieldErrors: { email: 'Already on a team' },
+      }
+    }
+  }
+
+  // Already on this team, by either identity. Two queries rather than one
+  // `.or()`: the email goes into the filter as a value, not as filter syntax.
+  const [{ data: byEmail }, { data: byUser }] = await Promise.all([
+    supabase
+      .from('business_members')
+      .select('id, status')
+      .eq('business_id', businessId)
+      .ilike('invited_email', email)
+      .maybeSingle(),
+    existingUser
+      ? supabase
+          .from('business_members')
+          .select('id, status')
+          .eq('business_id', businessId)
+          .eq('user_id', existingUser.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
+
+  const clash = byEmail ?? byUser
+  if (clash) {
+    return {
+      ok: false,
+      error:
+        clash.status === 'active'
+          ? 'That person is already on your team.'
+          : 'That address already has a pending invite.',
+      fieldErrors: { email: 'Already invited' },
+    }
+  }
+
+  const { error } = await supabase.from('business_members').insert({
+    business_id: businessId,
+    user_id: existingUser?.id ?? null,
+    invited_email: email,
+    role: input.role,
+    invited_by: auth.data!.userId,
+    status: 'invited',
+  })
+  if (error) return { ok: false, error: error.message }
+
+  // Only worth emailing someone who has no account yet — this is the message
+  // that gets them one. Supabase's built-in mailer is heavily rate limited, so
+  // treat a send failure as a warning, not a failed invite.
+  let emailed = false
+  if (!existingUser) {
+    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+      // handle_new_user branches on this. Without it the account defaults to
+      // 'learner', and the middleware would bounce the very person we just
+      // invited out of every business route. 'company_member' is the branch
+      // that creates a profile without creating a business of its own.
+      data: { user_type: 'company_member' },
+    })
+    emailed = !inviteError
+  }
+
+  revalidatePath('/dashboard')
+  return { ok: true, data: { emailed } }
+}
+
+/** Changes a member's role. Refuses to remove the business's last Admin. */
+export async function changeMemberRole(
+  businessId: string,
+  memberId: string,
+  role: MemberRole
+): Promise<ActionResult> {
+  const auth = await requireAdmin(businessId)
+  if (!auth.ok) return auth
+  if (!ROLES.includes(role)) return { ok: false, error: 'Pick a valid role.' }
+
+  const supabase = await createClient()
+  const guard = await wouldOrphanBusiness(businessId, memberId, role)
+  if (guard) return guard
+
+  const { error, count } = await supabase
+    .from('business_members')
+    .update({ role }, { count: 'exact' })
+    .eq('id', memberId)
+    .eq('business_id', businessId)
+
+  if (error) return { ok: false, error: error.message }
+  if (count === 0) return { ok: false, error: 'That member is no longer on your team.' }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
+/** Removes a member or revokes a pending invite. */
+export async function removeMember(
+  businessId: string,
+  memberId: string
+): Promise<ActionResult> {
+  const auth = await requireAdmin(businessId)
+  if (!auth.ok) return auth
+
+  const supabase = await createClient()
+  const guard = await wouldOrphanBusiness(businessId, memberId, null)
+  if (guard) return guard
+
+  const { error, count } = await supabase
+    .from('business_members')
+    .delete({ count: 'exact' })
+    .eq('id', memberId)
+    .eq('business_id', businessId)
+
+  if (error) return { ok: false, error: error.message }
+  if (count === 0) return { ok: false, error: 'That member is no longer on your team.' }
+
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
+/**
+ * A business with no active Admin cannot be administered by anyone — nobody
+ * could invite, promote, or edit the company profile again. Guards the two
+ * ways to get there: demoting the last Admin, or removing them.
+ *
+ * `nextRole` is the role being moved to, or null for a removal.
+ */
+async function wouldOrphanBusiness(
+  businessId: string,
+  memberId: string,
+  nextRole: MemberRole | null
+): Promise<ActionResult | null> {
+  if (nextRole === 'admin') return null
+
+  const supabase = await createClient()
+  const { data: admins } = await supabase
+    .from('business_members')
+    .select('id')
+    .eq('business_id', businessId)
+    .eq('role', 'admin')
+    .eq('status', 'active')
+
+  const isLastAdmin = (admins ?? []).length === 1 && admins![0].id === memberId
+  if (!isLastAdmin) return null
+
+  return {
+    ok: false,
+    error:
+      nextRole === null
+        ? 'You cannot remove the last Admin — promote someone else first.'
+        : 'You cannot change the last Admin’s role — promote someone else first.',
+  }
 }
 
 export async function saveNotificationPrefs(

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { CompanyProfileInitial } from '@/components/business/company-profile-form'
 import type { Database } from '@/lib/types/database'
 
@@ -46,13 +47,24 @@ export async function getBusinessContext(): Promise<BusinessContext | null> {
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: membership } = await supabase
-    .from('business_members')
-    .select('business_id, role, businesses(name)')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle()
+  async function activeMembership() {
+    const { data } = await supabase
+      .from('business_members')
+      .select('business_id, role, businesses(name)')
+      .eq('user_id', user!.id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle()
+    return data
+  }
+
+  // Only when there is nothing active is it worth looking for an invite — that
+  // is exactly the case the caller is about to turn into a redirect, and it
+  // keeps the claim off the path every normal page load takes.
+  let membership = await activeMembership()
+  if (!membership && (await claimPendingInvite(user.id))) {
+    membership = await activeMembership()
+  }
 
   if (!membership) return null
 
@@ -71,6 +83,35 @@ export async function getBusinessContext(): Promise<BusinessContext | null> {
     businessName:
       (membership.businesses as { name: string } | null)?.name ?? 'your company',
   }
+}
+
+/**
+ * Activates an invite that was addressed to an account which ALREADY existed
+ * when it was sent — inviteMember stamps user_id on those rows but leaves them
+ * 'invited', and no database trigger covers them: users_claim_pending_invites
+ * fires on insert into public.users, which never happens for an existing user.
+ * Invites sent to a stranger are that trigger's job, at signup.
+ *
+ * Needs the service role: the invitee is not a member yet, so
+ * business_members_update_admin (Admin-only) would reject the update.
+ */
+async function claimPendingInvite(userId: string) {
+  const admin = createAdminClient()
+
+  const { data, error } = await admin
+    .from('business_members')
+    .update({
+      status: 'active',
+      joined_at: new Date().toISOString(),
+      // Matches what the trigger leaves behind, so a claimed row looks the
+      // same however it got claimed.
+      invited_email: null,
+    })
+    .eq('user_id', userId)
+    .eq('status', 'invited')
+    .select('id')
+
+  return !error && (data ?? []).length > 0
 }
 
 /** Loads the business plus its child collections into the form's shape. */

@@ -135,6 +135,48 @@ export async function resendVerification(email: string): Promise<ActionResult> {
   return { ok: true }
 }
 
+/**
+ * Finishes a team invite. The invite link already signed them in, but the
+ * account Supabase created for them has no password — without one they could
+ * never get back in after this session expires.
+ */
+export async function acceptInvite(input: {
+  fullName: string
+  password: string
+  confirmPassword: string
+}): Promise<ActionResult> {
+  const fieldErrors: Record<string, string> = {}
+  if (!input.fullName.trim()) fieldErrors.fullName = 'Enter your name'
+  if (input.password.length < 8) fieldErrors.password = 'Use at least 8 characters'
+  if (input.confirmPassword !== input.password) {
+    fieldErrors.confirmPassword = "Passwords don't match"
+  }
+  if (Object.keys(fieldErrors).length) {
+    return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Your invite link has expired. Ask for a new one.' }
+
+  const { error } = await supabase.auth.updateUser({
+    password: input.password,
+    data: { full_name: input.fullName.trim() },
+  })
+  if (error) return { ok: false, error: error.message }
+
+  const { error: profileError } = await supabase
+    .from('users')
+    .update({ full_name: input.fullName.trim() })
+    .eq('id', user.id)
+  if (profileError) return { ok: false, error: profileError.message }
+
+  revalidatePath('/', 'layout')
+  return { ok: true }
+}
+
 /* ── Sign in / out ──────────────────────────────────────────────────────── */
 
 export async function signIn(input: {

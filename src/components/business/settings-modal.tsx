@@ -7,6 +7,9 @@ import { Bell, Building2, ExternalLink, Search, Settings, User, Users, X } from 
 import { Avatar, Badge, Button, Checkbox, cn, Field, Input, Select } from '@/components/ui'
 import { TIMEZONE_OPTIONS } from '@/lib/constants'
 import {
+  changeMemberRole,
+  inviteMember,
+  removeMember,
   saveAccountSettings,
   saveGeneralSettings,
   saveNotificationPrefs,
@@ -167,7 +170,14 @@ export function SettingsModal({
             <GeneralTab initial={initial} isAdmin={isAdmin} onSaved={() => router.refresh()} />
           )}
           {tab === 'account' && <AccountTab email={initial.email} />}
-          {tab === 'team' && <TeamTab team={initial.team} isAdmin={isAdmin} />}
+          {tab === 'team' && (
+            <TeamTab
+              businessId={initial.businessId}
+              team={initial.team}
+              isAdmin={isAdmin}
+              onChanged={() => router.refresh()}
+            />
+          )}
           {tab === 'notifications' && (
             <NotificationsTab
               businessId={initial.businessId}
@@ -193,7 +203,8 @@ function StatusLine({ state }: { state: { kind: 'idle' | 'ok' | 'error'; message
         state.kind === 'ok' ? 'text-success-fg' : 'text-danger-fg'
       )}
     >
-      {state.kind === 'ok' ? 'Saved.' : state.message}
+      {/* Falls back to "Saved." so the tabs that pass no message read as before. */}
+      {state.kind === 'ok' ? (state.message ?? 'Saved.') : state.message}
     </p>
   )
 }
@@ -311,27 +322,117 @@ function AccountTab({ email }: { email: string }) {
 }
 
 function TeamTab({
+  businessId,
   team,
   isAdmin,
+  onChanged,
 }: {
+  businessId: string
   team: SettingsInitial['team']
   isAdmin: boolean
+  onChanged: () => void
 }) {
+  const [inviting, setInviting] = React.useState(false)
+  const [email, setEmail] = React.useState('')
+  const [role, setRole] = React.useState<MemberRole>('operator')
+  const [pending, startTransition] = React.useTransition()
+  const [state, setState] = React.useState<{ kind: 'idle' | 'ok' | 'error'; message?: string }>({
+    kind: 'idle',
+  })
+
+  function sendInvite() {
+    setState({ kind: 'idle' })
+    startTransition(async () => {
+      const result = await inviteMember(businessId, { email, role })
+      if (!result.ok) {
+        setState({ kind: 'error', message: result.error })
+        return
+      }
+      setEmail('')
+      setInviting(false)
+      setState({
+        kind: 'ok',
+        // An existing account gets no email — say so rather than implying one went out.
+        message: result.data?.emailed
+          ? 'Invite sent.'
+          : 'Invite added. They get access the next time they sign in.',
+      })
+      onChanged()
+    })
+  }
+
+  function mutate(run: () => Promise<{ ok: boolean; error?: string }>) {
+    setState({ kind: 'idle' })
+    startTransition(async () => {
+      const result = await run()
+      if (!result.ok) {
+        setState({ kind: 'error', message: result.error })
+        return
+      }
+      onChanged()
+    })
+  }
+
   return (
     <>
       <div className="flex items-center justify-between">
         <PanelHeading>Team</PanelHeading>
-        {/* Full invite flow is build step 3 in the handoff; this is the entry point. */}
-        <Button size="sm" disabled={!isAdmin} title={isAdmin ? undefined : 'Admins only'}>
-          Invite member
+        <Button
+          size="sm"
+          disabled={!isAdmin || pending}
+          title={isAdmin ? undefined : 'Admins only'}
+          onClick={() => setInviting((v) => !v)}
+        >
+          {inviting ? 'Cancel' : 'Invite member'}
         </Button>
       </div>
+
+      {inviting && (
+        <div className="mt-4 rounded-lg border border-border bg-surface-inset p-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[220px] flex-1">
+              <Field label="Email address" htmlFor="invite-email">
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="teammate@company.com"
+                  autoComplete="off"
+                />
+              </Field>
+            </div>
+            <Field label="Role" htmlFor="invite-role">
+              <Select
+                id="invite-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as MemberRole)}
+              >
+                {(Object.keys(ROLE_LABEL) as MemberRole[]).map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Button loading={pending} disabled={!email.trim()} onClick={sendInvite}>
+              Send invite
+            </Button>
+          </div>
+          <p className="m-0 mt-2.5 text-xs text-ink-muted">
+            Admins manage the team and company profile · Operators build and edit courses ·
+            Auditors have read-only access.
+          </p>
+        </div>
+      )}
+
+      <StatusLine state={state} />
 
       <div className="mt-5 grid overflow-hidden rounded-lg border border-border">
         {team.map((m) => (
           <div
             key={m.id}
-            className="flex items-center gap-3 border-b border-border bg-white px-4 py-3 last:border-b-0"
+            className="flex flex-wrap items-center gap-3 border-b border-border bg-white px-4 py-3 last:border-b-0"
           >
             <Avatar name={m.name} size={36} />
             <div className="min-w-0 flex-1">
@@ -341,8 +442,43 @@ function TeamTab({
               </div>
               <div className="text-xs text-[#9ca3af]">{m.email}</div>
             </div>
+
             {m.status === 'invited' && <Badge tone="warning">Invited</Badge>}
-            <Badge tone="neutral">{ROLE_LABEL[m.role]}</Badge>
+
+            {isAdmin ? (
+              <Select
+                aria-label={`Role for ${m.name}`}
+                value={m.role}
+                disabled={pending}
+                onChange={(e) =>
+                  mutate(() => changeMemberRole(businessId, m.id, e.target.value as MemberRole))
+                }
+                className="w-[130px]"
+              >
+                {(Object.keys(ROLE_LABEL) as MemberRole[]).map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <Badge tone="neutral">{ROLE_LABEL[m.role]}</Badge>
+            )}
+
+            {isAdmin && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => mutate(() => removeMember(businessId, m.id))}
+                aria-label={
+                  m.status === 'invited' ? `Revoke invite for ${m.name}` : `Remove ${m.name}`
+                }
+                title={m.status === 'invited' ? 'Revoke invite' : 'Remove from team'}
+                className="shrink-0 text-[#9ca3af] transition-colors duration-fast hover:text-[var(--danger-fg)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <X size={15} />
+              </button>
+            )}
           </div>
         ))}
       </div>
