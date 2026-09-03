@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, RefreshCw, Sparkles, Trash2, Upload } from 'lucide-react'
 import { Button, Field, SegmentedControl, Input, Select, Textarea, cn } from '@/components/ui'
@@ -13,6 +14,7 @@ import {
   regenerateOneQuestion,
   updateQuestion,
   type QuestionInput,
+  type TranscriptNeeded,
 } from '@/app/(business)/courses/quiz-actions'
 
 export type EditableQuestion = {
@@ -69,6 +71,7 @@ export function QuestionEditor({
   const [mode, setMode] = React.useState<Mode>('idle')
   const [pending, startTransition] = React.useTransition()
   const [error, setError] = React.useState<string | null>(null)
+  const [needsTranscript, setNeedsTranscript] = React.useState<TranscriptNeeded[]>([])
   const [notice, setNotice] = React.useState<string | null>(null)
 
   /* The count field keeps its value while "no specific number" is selected, so
@@ -100,6 +103,7 @@ export function QuestionEditor({
   function generate() {
     setError(null)
     setNotice(null)
+    setNeedsTranscript([])
     startTransition(async () => {
       if (onBeforeGenerate && !(await onBeforeGenerate())) return
 
@@ -110,6 +114,9 @@ export function QuestionEditor({
       )
       if (!result.ok) {
         setError(result.error)
+        /* An untranscribed video is the one failure with an obvious next step,
+           so the block that needs it becomes a link rather than advice. */
+        setNeedsTranscript(result.needsTranscript ?? [])
         return
       }
       const { added, blocksUsed, warnings } = result.data!
@@ -304,7 +311,24 @@ export function QuestionEditor({
       )}
 
       {error && (
-        <p className="mt-3 rounded-md bg-danger-bg px-3 py-2 text-xs text-danger-fg">{error}</p>
+        <div className="mt-3 rounded-md bg-danger-bg px-3 py-2 text-xs text-danger-fg">
+          <p>{error}</p>
+          {needsTranscript.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {needsTranscript.map((block) => (
+                <li key={block.blockId}>
+                  <Link
+                    href={`/courses/${courseId}/content/${block.blockId}`}
+                    className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
+                  >
+                    <Sparkles className="h-3 w-3" aria-hidden />
+                    Transcribe “{block.title}”
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {notice && (
         <p className="mt-3 rounded-md bg-brand-light px-3 py-2 text-xs text-[var(--itutor-green)]">

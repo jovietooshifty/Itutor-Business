@@ -16,6 +16,21 @@ export type QuestionInput = {
   explanation: string | null
 }
 
+/**
+ * A video block inside this quiz's scope that has an upload but nothing
+ * readable yet. Returned so the quiz page can send the admin straight to that
+ * block's transcript step instead of just refusing to generate — the video is
+ * there, the one missing step is transcribing it.
+ *
+ * Only blocks with an actual upload appear here. A video block with nothing
+ * uploaded cannot be transcribed, so offering it would be a dead end.
+ */
+export type TranscriptNeeded = { blockId: string; title: string }
+
+export type GenerateQuestionsResult =
+  | { ok: true; data: { added: number; blocksUsed: number; warnings: string[] } }
+  | { ok: false; error: string; needsTranscript?: TranscriptNeeded[] }
+
 /** Admin/Operator only, same as every other course write. */
 async function requireEditor(courseId: string): Promise<ActionResult<{ businessId: string }>> {
   const context = await getBusinessContext()
@@ -86,11 +101,12 @@ async function gatherSourceText(
   sourceType: SourceType
   warnings: string[]
   blocksUsed: number
+  needsTranscript: TranscriptNeeded[]
 }> {
   const supabase = await createClient()
   const { data: blocks } = await supabase
     .from('course_blocks')
-    .select('id, type, title, source_text, source_status, source_error, position')
+    .select('id, type, title, source_text, source_status, source_error, position, content_ref')
     .eq('course_id', courseId)
     .order('position')
 
@@ -112,12 +128,20 @@ async function gatherSourceText(
 
   const warnings: string[] = []
   const parts: string[] = []
+  const needsTranscript: TranscriptNeeded[] = []
   let sawVideo = false
   let sawWritten = false
 
   for (const block of sources) {
     if (block.type === 'quiz') continue
     const label = block.title?.trim() || `a ${block.type} block`
+
+    /* An uploaded-but-unread video is recoverable in one step, so it is
+       collected separately from the blocks that are simply empty. */
+    if (block.type === 'video' && block.source_status !== 'ready') {
+      const uploaded = Boolean((block.content_ref as { path?: string | null } | null)?.path)
+      if (uploaded) needsTranscript.push({ blockId: block.id, title: label })
+    }
 
     if (block.source_status === 'ready' && block.source_text?.trim()) {
       parts.push(`## ${label}\n${block.source_text.trim()}`)
@@ -146,7 +170,13 @@ async function gatherSourceText(
   // as written material rather than inventing a fifth label for "both".
   const sourceType: SourceType = sawVideo && !sawWritten ? 'video' : 'docx'
 
-  return { text: parts.join('\n\n').trim(), sourceType, warnings, blocksUsed: parts.length }
+  return {
+    text: parts.join('\n\n').trim(),
+    sourceType,
+    warnings,
+    blocksUsed: parts.length,
+    needsTranscript,
+  }
 }
 
 /* ── Generation ────────────────────────────────────────────────────────── */
@@ -160,7 +190,7 @@ export async function generateQuestions(
   courseId: string,
   blockId: string,
   count: QuestionCount
-): Promise<ActionResult<{ added: number; blocksUsed: number; warnings: string[] }>> {
+): Promise<GenerateQuestionsResult> {
   const auth = await requireEditor(courseId)
   if (!auth.ok) return auth
 
@@ -173,7 +203,7 @@ export async function generateQuestions(
   const quiz = await quizForBlock(blockId)
   if (!quiz) return { ok: false, error: 'That quiz is not set up yet.' }
 
-  const { text, sourceType, warnings, blocksUsed } = await gatherSourceText(
+  const { text, sourceType, warnings, blocksUsed, needsTranscript } = await gatherSourceText(
     courseId,
     blockId,
     quiz.scope,
@@ -181,6 +211,21 @@ export async function generateQuestions(
   )
 
   if (!text) {
+    /* Questions come from the transcript, not the video file, so an untranscribed
+       upload is a missing step rather than missing material. Naming the block and
+       handing back its id lets the caller offer that step instead of a dead end. */
+    if (needsTranscript.length > 0) {
+      const [first] = needsTranscript
+      return {
+        ok: false,
+        error:
+          needsTranscript.length === 1
+            ? `“${first.title}” has not been transcribed yet. Quizzes are written from the transcript, not the video itself.`
+            : `${needsTranscript.length} videos in this quiz’s scope have not been transcribed yet. Quizzes are written from the transcript, not the video itself.`,
+        needsTranscript,
+      }
+    }
+
     return {
       ok: false,
       error:
