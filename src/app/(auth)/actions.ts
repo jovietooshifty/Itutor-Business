@@ -254,8 +254,12 @@ export async function requestPasswordReset(email: string): Promise<ActionResult>
   }
 
   const supabase = await createClient()
+  // `next` is read back by /auth/confirm. A recovery link can come back as
+  // either a code exchange or a token_hash depending on the flow, and only one
+  // of those carries a `type` we could branch on — so the destination travels
+  // on the link itself rather than being inferred at the other end.
   await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
   })
 
   return { ok: true }
