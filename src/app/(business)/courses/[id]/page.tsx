@@ -29,15 +29,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const supabase = await createClient()
 
-  const [{ data: course }, { data: tags }, { data: blocks }] = await Promise.all([
+  const [{ data: course }, { data: blocks }] = await Promise.all([
     supabase
       .from('courses')
       .select(
-        'id, business_id, title, description, duration_label, visibility, what_you_will_learn, thumbnail_url, quiz_navigation_default, quiz_retry_max_default, quiz_retry_cooldown_hours_default'
+        'id, business_id, title, quiz_navigation_default, quiz_retry_max_default, quiz_retry_cooldown_hours_default'
       )
       .eq('id', id)
       .maybeSingle(),
-    supabase.from('course_tags').select('tag').eq('course_id', id),
     supabase
       .from('course_blocks')
       .select(
@@ -55,12 +54,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const builderCourse: BuilderCourse = {
     id: course.id,
     title: course.title,
-    description: course.description ?? '',
-    durationLabel: course.duration_label ?? '',
-    visibility: course.visibility,
-    tags: (tags ?? []).map((t) => t.tag),
-    whatYouWillLearn: course.what_you_will_learn ?? [],
-    thumbnailUrl: course.thumbnail_url,
     quizNavigationDefault: course.quiz_navigation_default,
     retryMaxDefault: course.quiz_retry_max_default,
     retryCooldownHoursDefault: course.quiz_retry_cooldown_hours_default,

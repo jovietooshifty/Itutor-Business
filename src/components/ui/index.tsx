@@ -363,6 +363,46 @@ export function Toggle({
   )
 }
 
+/* ── Segmented control ─────────────────────────────────────────────────── */
+
+export function SegmentedControl({
+  options,
+  value,
+  onChange,
+  className,
+}: {
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (value: string) => void
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'inline-flex rounded-lg border border-surface-border bg-surface-inset p-1',
+        className
+      )}
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          aria-pressed={value === option.value}
+          className={cn(
+            'rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-colors duration-fast',
+            value === option.value
+              ? 'bg-white text-ink shadow-sm'
+              : 'text-ink-muted hover:text-ink'
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /* ── Chip ──────────────────────────────────────────────────────────────── */
 
 export function Chip({

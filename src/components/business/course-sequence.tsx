@@ -1,16 +1,17 @@
 'use client'
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
 import {
+  ArrowLeft,
   ChevronDown,
   ChevronUp,
   GripVertical,
   Plus,
-  Settings,
   Trash2,
 } from 'lucide-react'
-import { Button, Field, Input, cn } from '@/components/ui'
-import { SegmentedControl } from '@/components/business/course-setup-form'
+import { Button, cn } from '@/components/ui'
+import { CourseSteps } from '@/components/business/course-steps'
 import {
   QuizConfig,
   TextConfig,
@@ -23,7 +24,6 @@ import {
   EMPTY_CONTENT,
   blockTypeMeta,
   type BlockType,
-  type CourseVisibility,
   type QuizNavigation,
   type QuizNavigationOverride,
 } from '@/lib/course'
@@ -32,19 +32,16 @@ import {
   deleteBlock,
   reorderBlocks,
   updateBlock,
-  updateCourseSetup,
   updateQuizConfig,
 } from '@/app/(business)/courses/actions'
 
+/**
+ * Only what the sequence screen itself needs. The rest of the course record is
+ * step 1's (basics) or step 3's (details) to load and edit.
+ */
 export type BuilderCourse = {
   id: string
   title: string
-  description: string
-  durationLabel: string
-  visibility: CourseVisibility
-  tags: string[]
-  whatYouWillLearn: string[]
-  thumbnailUrl: string | null
   quizNavigationDefault: QuizNavigation
   retryMaxDefault: number | null
   retryCooldownHoursDefault: number | null
@@ -69,12 +66,17 @@ const DEFAULT_QUIZ: QuizState = {
 }
 
 /**
- * Course Builder screen 2 — the lesson sequence.
+ * Course Builder step 2 — the lesson sequence.
  *
  * Structural edits (add, delete, reorder) hit the server as they happen because
  * they need real row ids and positions. Field edits stay local and are flushed
  * by "Save draft", which is the model the design draws: a save button and a
  * "Draft saved" confirmation, not an autosave.
+ *
+ * Course-level settings are deliberately NOT here. Title and the rest are step
+ * 1 ("Back"), duration and quiz defaults are step 3 ("Continue") — asking for
+ * them beside the sequence is what made the old settings panel a dead end: its
+ * fields never marked the draft dirty, so Save draft stayed disabled.
  */
 export function CourseSequence({
   course,
@@ -85,16 +87,12 @@ export function CourseSequence({
   initialBlocks: BuilderBlock[]
   canDelete: boolean
 }) {
+  const router = useRouter()
   const [blocks, setBlocks] = React.useState(initialBlocks)
   const [expanded, setExpanded] = React.useState<string | null>(null)
   const [insertAt, setInsertAt] = React.useState<number | null>(null)
   const [dragging, setDragging] = React.useState<string | null>(null)
   const [dirty, setDirty] = React.useState<Set<string>>(new Set())
-
-  const [showSettings, setShowSettings] = React.useState(false)
-  const [title, setTitle] = React.useState(course.title)
-  const [durationLabel, setDurationLabel] = React.useState(course.durationLabel)
-  const [visibility, setVisibility] = React.useState(course.visibility)
 
   const [pending, startTransition] = React.useTransition()
   const [error, setError] = React.useState<string | null>(null)
@@ -191,7 +189,11 @@ export function CourseSequence({
 
   /* ── Saving ─────────────────────────────────────────────────────────── */
 
-  function saveDraft() {
+  /**
+   * Flushes pending field edits. `then` runs only on a clean save, so stepping
+   * away never silently drops what the user typed.
+   */
+  function saveDraft(then?: () => void) {
     setError(null)
     startTransition(async () => {
       for (const id of dirty) {
@@ -226,82 +228,20 @@ export function CourseSequence({
 
       setDirty(new Set())
       setSaved(true)
-    })
-  }
-
-  function saveSettings() {
-    setError(null)
-    startTransition(async () => {
-      const result = await updateCourseSetup(course.id, {
-        title,
-        description: course.description,
-        durationLabel,
-        visibility,
-        tags: course.tags,
-        whatYouWillLearn: course.whatYouWillLearn,
-        thumbnailUrl: course.thumbnailUrl,
-        quizNavigationDefault: course.quizNavigationDefault,
-        retryMaxDefault: course.retryMaxDefault,
-        retryCooldownHoursDefault: course.retryCooldownHoursDefault,
-      })
-      if (!result.ok) {
-        setError(result.error)
-        return
-      }
-      setShowSettings(false)
-      setSaved(true)
+      then?.()
     })
   }
 
   return (
     <main className="mx-auto max-w-[880px] p-6 md:p-10">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="m-0 font-display text-[22px] font-bold text-ink">
-          {title.trim() || 'Untitled course'}
-        </h1>
-        <button
-          type="button"
-          onClick={() => setShowSettings((v) => !v)}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
-        >
-          <Settings size={14} aria-hidden /> Course settings
-        </button>
-      </div>
+      <CourseSteps current="content" courseId={course.id} />
 
-      {showSettings && (
-        <div className="mb-6 rounded-xl border border-[#f3f4f6] bg-white p-6 shadow-sm">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Course title" htmlFor="settings-title">
-              <Input
-                id="settings-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </Field>
-            <Field label="Estimated duration" htmlFor="settings-duration">
-              <Input
-                id="settings-duration"
-                value={durationLabel}
-                onChange={(e) => setDurationLabel(e.target.value)}
-                placeholder="e.g. 2 hrs"
-              />
-            </Field>
-          </div>
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-            <SegmentedControl
-              options={[
-                { value: 'public', label: 'Public' },
-                { value: 'private', label: 'Private' },
-              ]}
-              value={visibility}
-              onChange={(v) => setVisibility(v as CourseVisibility)}
-            />
-            <Button variant="secondary" onClick={saveSettings} loading={pending}>
-              Save settings
-            </Button>
-          </div>
-        </div>
-      )}
+      <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">
+        {course.title.trim() || 'Untitled course'}
+      </h1>
+      <p className="m-0 mb-8 text-sm text-ink-muted">
+        Add the material, in the order learners should work through it.
+      </p>
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-4 shadow-sm md:p-6">
         {blocks.length === 0 && insertAt === null && (
@@ -349,12 +289,32 @@ export function CourseSequence({
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <Button variant="secondary" onClick={saveDraft} loading={pending} disabled={dirty.size === 0}>
-          Save draft
+        {/* Both moves flush pending edits first — see saveDraft(). */}
+        <Button
+          variant="ghost"
+          loading={pending}
+          onClick={() => saveDraft(() => router.push(`/courses/${course.id}/basics`))}
+        >
+          <ArrowLeft size={15} /> Back to basics
         </Button>
-        <p className="m-0 text-xs text-[#9ca3af]">
-          Review &amp; publish is build step 6.
-        </p>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => saveDraft()}
+            loading={pending}
+            disabled={dirty.size === 0}
+          >
+            Save draft
+          </Button>
+          <Button
+            size="lg"
+            loading={pending}
+            onClick={() => saveDraft(() => router.push(`/courses/${course.id}/details`))}
+          >
+            Continue to details
+          </Button>
+        </div>
       </div>
 
       {saved && (

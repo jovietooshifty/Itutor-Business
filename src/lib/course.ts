@@ -152,32 +152,63 @@ export const COURSE_TAG_SUGGESTIONS = [
   'Conflict Resolution',
 ] as const
 
-export type CourseSetupInitial = {
-  businessId: string
+/* ── Builder steps ─────────────────────────────────────────────────────── */
+
+/**
+ * The builder asks for things in the order they can actually be answered:
+ * what the course IS first, then the material, then the settings that only
+ * mean something once material exists (how long it takes, how its quizzes
+ * behave). Review & publish is build step 6 and joins the end of this list.
+ */
+export const COURSE_BUILD_STEPS = [
+  { key: 'basics', label: 'Basics' },
+  { key: 'content', label: 'Content' },
+  { key: 'details', label: 'Details' },
+] as const
+
+export type CourseStepKey = (typeof COURSE_BUILD_STEPS)[number]['key']
+
+/* ── Step 1: basics ────────────────────────────────────────────────────── */
+
+/** What the course is. Answerable before a single block exists. */
+export type CourseBasics = {
   title: string
   description: string
-  durationLabel: string
   visibility: CourseVisibility
   tags: string[]
   whatYouWillLearn: string[]
   thumbnailUrl: string | null
+}
+
+export function emptyCourseBasics(): CourseBasics {
+  return {
+    title: '',
+    description: '',
+    visibility: 'private',
+    tags: [],
+    whatYouWillLearn: [],
+    thumbnailUrl: null,
+  }
+}
+
+/* ── Step 3: details ───────────────────────────────────────────────────── */
+
+/**
+ * Settings that need the material to exist first: you cannot estimate a
+ * duration for content you have not added, and quiz defaults are meaningless
+ * until the course has a quiz to apply them to.
+ */
+export type CourseDetails = {
+  durationLabel: string
   quizNavigationDefault: QuizNavigation
   retryMaxDefault: number | null
   retryCooldownHoursDefault: number | null
 }
 
-export function emptyCourseSetup(businessId: string): CourseSetupInitial {
-  return {
-    businessId,
-    title: '',
-    description: '',
-    durationLabel: '',
-    visibility: 'private',
-    tags: [],
-    whatYouWillLearn: [],
-    thumbnailUrl: null,
-    quizNavigationDefault: 'allow_back',
-    retryMaxDefault: null,
-    retryCooldownHoursDefault: null,
-  }
+/** What a brand-new course gets until step 3 is filled in. */
+export const DEFAULT_COURSE_DETAILS: CourseDetails = {
+  durationLabel: '',
+  quizNavigationDefault: 'allow_back',
+  retryMaxDefault: null,
+  retryCooldownHoursDefault: null,
 }

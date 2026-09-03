@@ -3,30 +3,27 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getBusinessContext } from '@/lib/business'
-import { EMPTY_CONTENT, effectiveNavigation, retriesAllowed } from '@/lib/course'
+import {
+  DEFAULT_COURSE_DETAILS,
+  EMPTY_CONTENT,
+  effectiveNavigation,
+  retriesAllowed,
+} from '@/lib/course'
 import type {
   BlockType,
-  CourseVisibility,
-  QuizNavigation,
+  CourseBasics,
+  CourseDetails,
   QuizNavigationOverride,
   QuizScope,
 } from '@/lib/course'
 import type { Database } from '@/lib/types/database'
 import type { ActionResult } from '@/app/(auth)/actions'
 
-export type CourseSetupInput = {
-  title: string
-  description: string
-  durationLabel: string
-  visibility: CourseVisibility
-  tags: string[]
-  whatYouWillLearn: string[]
-  thumbnailUrl: string | null
-  quizNavigationDefault: QuizNavigation
-  /** null switches retries off; a number is the attempt cap. */
-  retryMaxDefault: number | null
-  retryCooldownHoursDefault: number | null
-}
+/** Step 1 — what the course is. */
+export type CourseBasicsInput = CourseBasics
+
+/** Step 3 — settings that need the material to exist first. */
+export type CourseDetailsInput = CourseDetails
 
 export type QuizConfigInput = {
   passingScore: number
@@ -70,11 +67,17 @@ async function ownedCourse(courseId: string, businessId: string) {
   return data
 }
 
-function validateSetup(input: CourseSetupInput): Record<string, string> | null {
+function validateBasics(input: CourseBasicsInput): Record<string, string> | null {
   const fieldErrors: Record<string, string> = {}
 
   if (!input.title.trim()) fieldErrors.title = 'Give the course a title.'
   if (input.title.trim().length > 200) fieldErrors.title = 'Keep the title under 200 characters.'
+
+  return Object.keys(fieldErrors).length > 0 ? fieldErrors : null
+}
+
+function validateDetails(input: CourseDetailsInput): Record<string, string> | null {
+  const fieldErrors: Record<string, string> = {}
 
   if (input.retryMaxDefault !== null && input.retryMaxDefault < 1) {
     fieldErrors.retryMaxDefault = 'Allow at least one attempt, or switch retries off.'
@@ -99,13 +102,17 @@ function validateSetup(input: CourseSetupInput): Record<string, string> | null {
 
 /* ── Course ────────────────────────────────────────────────────────────── */
 
+/**
+ * Step 1. The course is created from its basics alone — duration and quiz
+ * defaults are step 3, and start at DEFAULT_COURSE_DETAILS until then.
+ */
 export async function createCourse(
-  input: CourseSetupInput
+  input: CourseBasicsInput
 ): Promise<ActionResult<{ id: string }>> {
   const auth = await requireEditor()
   if (!auth.ok) return { ok: false, error: auth.error }
 
-  const fieldErrors = validateSetup(input)
+  const fieldErrors = validateBasics(input)
   if (fieldErrors) return { ok: false, error: 'Check the highlighted fields.', fieldErrors }
 
   const supabase = await createClient()
@@ -116,13 +123,13 @@ export async function createCourse(
       created_by: auth.userId,
       title: input.title.trim(),
       description: input.description.trim() || null,
-      duration_label: input.durationLabel.trim() || null,
       visibility: input.visibility,
       what_you_will_learn: input.whatYouWillLearn.map((s) => s.trim()).filter(Boolean),
       thumbnail_url: input.thumbnailUrl,
-      quiz_navigation_default: input.quizNavigationDefault,
-      quiz_retry_max_default: input.retryMaxDefault,
-      quiz_retry_cooldown_hours_default: input.retryCooldownHoursDefault,
+      duration_label: null,
+      quiz_navigation_default: DEFAULT_COURSE_DETAILS.quizNavigationDefault,
+      quiz_retry_max_default: DEFAULT_COURSE_DETAILS.retryMaxDefault,
+      quiz_retry_cooldown_hours_default: DEFAULT_COURSE_DETAILS.retryCooldownHoursDefault,
     })
     .select('id')
     .single()
@@ -136,9 +143,10 @@ export async function createCourse(
   return { ok: true, data: { id: data.id } }
 }
 
-export async function updateCourseSetup(
+/** Step 1, revisited — what "Back" from the sequence lets you change. */
+export async function updateCourseBasics(
   courseId: string,
-  input: CourseSetupInput
+  input: CourseBasicsInput
 ): Promise<ActionResult> {
   const auth = await requireEditor()
   if (!auth.ok) return { ok: false, error: auth.error }
@@ -146,7 +154,43 @@ export async function updateCourseSetup(
     return { ok: false, error: 'Course not found.' }
   }
 
-  const fieldErrors = validateSetup(input)
+  const fieldErrors = validateBasics(input)
+  if (fieldErrors) return { ok: false, error: 'Check the highlighted fields.', fieldErrors }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('courses')
+    .update({
+      title: input.title.trim(),
+      description: input.description.trim() || null,
+      visibility: input.visibility,
+      what_you_will_learn: input.whatYouWillLearn.map((s) => s.trim()).filter(Boolean),
+      thumbnail_url: input.thumbnailUrl,
+    })
+    .eq('id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+
+  const tagResult = await replaceTags(courseId, input.tags)
+  if (!tagResult.ok) return tagResult
+
+  revalidatePath(`/courses/${courseId}`)
+  revalidatePath('/courses')
+  return { ok: true }
+}
+
+/** Step 3 — duration and the course-wide quiz defaults. */
+export async function updateCourseDetails(
+  courseId: string,
+  input: CourseDetailsInput
+): Promise<ActionResult> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const fieldErrors = validateDetails(input)
   if (fieldErrors) return { ok: false, error: 'Check the highlighted fields.', fieldErrors }
 
   const supabase = await createClient()
@@ -170,12 +214,7 @@ export async function updateCourseSetup(
   const { error } = await supabase
     .from('courses')
     .update({
-      title: input.title.trim(),
-      description: input.description.trim() || null,
       duration_label: input.durationLabel.trim() || null,
-      visibility: input.visibility,
-      what_you_will_learn: input.whatYouWillLearn.map((s) => s.trim()).filter(Boolean),
-      thumbnail_url: input.thumbnailUrl,
       quiz_navigation_default: input.quizNavigationDefault,
       quiz_retry_max_default: input.retryMaxDefault,
       quiz_retry_cooldown_hours_default: input.retryCooldownHoursDefault,
@@ -183,9 +222,6 @@ export async function updateCourseSetup(
     .eq('id', courseId)
 
   if (error) return { ok: false, error: error.message }
-
-  const tagResult = await replaceTags(courseId, input.tags)
-  if (!tagResult.ok) return tagResult
 
   revalidatePath(`/courses/${courseId}`)
   revalidatePath('/courses')

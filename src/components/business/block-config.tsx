@@ -2,8 +2,7 @@
 
 import * as React from 'react'
 import { Globe } from 'lucide-react'
-import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui'
-import { SegmentedControl } from '@/components/business/course-setup-form'
+import { Checkbox, Field, Input, SegmentedControl, Select, Textarea } from '@/components/ui'
 import {
   NAVIGATION_LABELS,
   PASSING_SCORE_OPTIONS,
