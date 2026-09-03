@@ -951,6 +951,26 @@ export type Database = {
       is_business_admin: { Args: { p_business_id: string }; Returns: boolean }
       is_business_member: { Args: { p_business_id: string }; Returns: boolean }
       quiz_business_id: { Args: { p_quiz_id: string }; Returns: string }
+      portfolio_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          full_name: string
+          job_title: string
+          user_id: string
+          years_experience: string
+        }[]
+      }
+      portfolio_certificates: {
+        Args: { p_slug: string }
+        Returns: {
+          business_name: string
+          certificate_id: string
+          course_title: string
+          issued_at: string
+        }[]
+      }
       quiz_questions_for_learner: {
         Args: { p_quiz_id: string }
         Returns: {
