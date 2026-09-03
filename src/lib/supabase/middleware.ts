@@ -10,8 +10,20 @@ import type { Database } from '@/lib/types/database'
 const BUSINESS_PREFIXES = ['/dashboard', '/company-profile', '/my-profile', '/courses', '/learners']
 const LEARNER_PREFIXES = ['/marketplace', '/my-portfolio', '/learn/']
 
-/** Always public, even though they sit under a protected-looking path. */
-const PUBLIC_PREFIXES = ['/login', '/business/signup', '/learner/signup', '/auth/', '/p/']
+/**
+ * Always public, even though they sit under a protected-looking path.
+ * '/p/' is a learner's public portfolio; '/c/' is a course share link, which
+ * has to work for someone with no account at all — that is the whole point of
+ * it. The token is what authorizes the read (course_by_share_token).
+ */
+const PUBLIC_PREFIXES = [
+  '/login',
+  '/business/signup',
+  '/learner/signup',
+  '/auth/',
+  '/p/',
+  '/c/',
+]
 
 function matches(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p.endsWith('/') ? p : `${p}/`))

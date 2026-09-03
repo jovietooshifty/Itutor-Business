@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { Badge, Button, Card } from '@/components/ui'
+import { ShareCourseButton } from '@/components/business/share-course-modal'
 import { getBusinessContext } from '@/lib/business'
 import { createClient } from '@/lib/supabase/server'
 
@@ -20,7 +21,9 @@ export default async function Page() {
   const supabase = await createClient()
   const { data: courses } = await supabase
     .from('courses')
-    .select('id, title, description, visibility, status, duration_label, updated_at, course_blocks(id)')
+    .select(
+      'id, title, description, visibility, status, share_token, duration_label, updated_at, course_blocks(id)'
+    )
     .eq('business_id', context.businessId)
     .order('updated_at', { ascending: false })
 
@@ -58,36 +61,46 @@ export default async function Page() {
           {courses.map((course) => {
             const blockCount = (course.course_blocks as { id: string }[] | null)?.length ?? 0
             return (
-              <Link key={course.id} href={`/courses/${course.id}`} className="no-underline">
-                <Card className="p-5 transition-shadow duration-fast hover:shadow-md">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="m-0 font-display text-h4 font-bold text-ink">
-                        {course.title}
-                      </h2>
-                      {course.description && (
-                        <p className="m-0 mt-1 line-clamp-2 text-sm text-ink-muted">
-                          {course.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <Badge tone={course.status === 'published' ? 'success' : 'neutral'}>
-                        {course.status === 'published' ? 'Published' : 'Draft'}
-                      </Badge>
-                      <Badge tone="neutral">
-                        {course.visibility === 'public' ? 'Public' : 'Private'}
-                      </Badge>
-                    </div>
+              <Card key={course.id} className="p-5 transition-shadow duration-fast hover:shadow-md">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  {/* Only the text links through — the share button sits outside
+                      the anchor so clicking it cannot navigate. */}
+                  <Link href={`/courses/${course.id}`} className="min-w-0 flex-1 no-underline">
+                    <h2 className="m-0 font-display text-h4 font-bold text-ink">{course.title}</h2>
+                    {course.description && (
+                      <p className="m-0 mt-1 line-clamp-2 text-sm text-ink-muted">
+                        {course.description}
+                      </p>
+                    )}
+                  </Link>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Badge tone={course.status === 'published' ? 'success' : 'neutral'}>
+                      {course.status === 'published' ? 'Published' : 'Draft'}
+                    </Badge>
+                    <Badge tone="neutral">
+                      {course.visibility === 'public' ? 'Public' : 'Private'}
+                    </Badge>
+                    {canCreate && (
+                      <ShareCourseButton
+                        course={{
+                          id: course.id,
+                          title: course.title,
+                          shareToken: course.share_token,
+                          isPrivate: course.visibility === 'private',
+                        }}
+                      />
+                    )}
                   </div>
+                </div>
+                <Link href={`/courses/${course.id}`} className="no-underline">
                   <p className="m-0 mt-3 text-xs text-[#9ca3af]">
                     {blockCount === 0
                       ? 'No blocks yet'
                       : `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`}
                     {course.duration_label ? ` · ${course.duration_label}` : ''}
                   </p>
-                </Card>
-              </Link>
+                </Link>
+              </Card>
             )
           })}
         </div>

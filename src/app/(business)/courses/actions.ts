@@ -570,6 +570,39 @@ export async function updateQuizConfig(
   return { ok: true }
 }
 
+/* ── Sharing ───────────────────────────────────────────────────────────── */
+
+/**
+ * Regenerates a course's share token, which permanently breaks every link
+ * already handed out — that is the point of it. For a private course the link
+ * is the only way in, so this is how access gets revoked.
+ */
+export async function resetShareLink(
+  courseId: string
+): Promise<ActionResult<{ shareToken: string }>> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  // Same shape the column's own default produces: 24 random bytes, hex.
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('courses')
+    .update({ share_token: token })
+    .eq('id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/courses')
+  return { ok: true, data: { shareToken: token } }
+}
+
 /* ── Publish ───────────────────────────────────────────────────────────── */
 
 /**
