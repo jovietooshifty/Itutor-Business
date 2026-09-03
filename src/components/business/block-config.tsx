@@ -4,14 +4,8 @@ import * as React from 'react'
 import { Globe } from 'lucide-react'
 import { Checkbox, Field, Input, SegmentedControl, Select, Textarea } from '@/components/ui'
 import {
-  NAVIGATION_LABELS,
   PASSING_SCORE_OPTIONS,
   QUIZ_SCOPE_OPTIONS,
-  RETRY_COOLDOWN_OPTIONS,
-  effectiveNavigation,
-  retriesAllowed,
-  type QuizNavigation,
-  type QuizNavigationOverride,
   type QuizScope,
   type TextContent,
   type VideoContent,
@@ -210,41 +204,27 @@ export function WebsiteConfig({
 
 /* ── Quiz ──────────────────────────────────────────────────────────────── */
 
+/**
+ * Deliberately does not ask about navigation or retries — both are course-wide
+ * settings from the Details step (step 3), which comes after this one. Asking
+ * here would mean asking before the course even has a navigation default to
+ * show, and retries only mean anything once that default is settled (a quiz
+ * failed and retried without new material covered proves nothing, which is
+ * exactly why forward-only navigation disables retries entirely).
+ */
 export function QuizConfig({
   quiz,
-  navigationOverride,
-  courseNavigationDefault,
   priorBlocks,
   onChange,
 }: {
   quiz: QuizState
-  navigationOverride: QuizNavigationOverride
-  courseNavigationDefault: QuizNavigation
   priorBlocks: { id: string; label: string }[]
-  onChange: (next: { quiz: QuizState; navigationOverride: QuizNavigationOverride }) => void
+  onChange: (quiz: QuizState) => void
 }) {
-  const navigation = effectiveNavigation(courseNavigationDefault, navigationOverride)
-  const canRetry = retriesAllowed(navigation)
   const scopeGroup = React.useId()
 
-  /**
-   * Any navigation change routes through here so retries can be dropped in the
-   * same update. Both the API layer and three database triggers reject retries
-   * under forward-only navigation, so leaving them set would only surface as a
-   * failed save.
-   */
-  function setNavigationOverride(next: QuizNavigationOverride) {
-    const nextNavigation = effectiveNavigation(courseNavigationDefault, next)
-    onChange({
-      navigationOverride: next,
-      quiz: retriesAllowed(nextNavigation)
-        ? quiz
-        : { ...quiz, retryMax: null, retryCooldownHours: null },
-    })
-  }
-
   function patchQuiz(patch: Partial<QuizState>) {
-    onChange({ navigationOverride, quiz: { ...quiz, ...patch } })
+    onChange({ ...quiz, ...patch })
   }
 
   return (
@@ -323,83 +303,9 @@ export function QuizConfig({
         </div>
       </div>
 
-      <div>
-        <span className="mb-1.5 block text-sm font-medium text-[#374151]">Navigation</span>
-        {navigationOverride === 'inherit' ? (
-          <p className="m-0 text-xs text-ink-muted">
-            Use course default ({NAVIGATION_LABELS[courseNavigationDefault]}) —{' '}
-            <button
-              type="button"
-              onClick={() => setNavigationOverride(courseNavigationDefault)}
-              className="font-semibold text-[var(--itutor-green)] underline"
-            >
-              Override for this quiz
-            </button>
-          </p>
-        ) : (
-          <div>
-            <SegmentedControl
-              options={[
-                { value: 'allow_back', label: NAVIGATION_LABELS.allow_back },
-                { value: 'lock_forward', label: NAVIGATION_LABELS.lock_forward },
-              ]}
-              value={navigationOverride}
-              onChange={(v) => setNavigationOverride(v as QuizNavigationOverride)}
-            />
-            <p className="m-0 mt-1.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setNavigationOverride('inherit')}
-                className="text-ink-muted underline hover:text-ink"
-              >
-                Use course default instead
-              </button>
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div>
-        <span className="mb-1.5 block text-sm font-medium text-[#374151]">Retries</span>
-        {!canRetry ? (
-          <p className="m-0 text-xs text-[#9ca3af]">
-            Not available — requires &ldquo;{NAVIGATION_LABELS.allow_back}&rdquo;
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Maximum attempts" htmlFor="block-retry-max">
-              <Input
-                id="block-retry-max"
-                type="number"
-                min={1}
-                value={quiz.retryMax ?? ''}
-                placeholder="No retries"
-                onChange={(e) => {
-                  const raw = e.target.value.trim()
-                  patchQuiz({ retryMax: raw === '' ? null : Number(raw) })
-                }}
-              />
-            </Field>
-            <Field label="Wait before retry" htmlFor="block-retry-cooldown">
-              <Select
-                id="block-retry-cooldown"
-                value={quiz.retryCooldownHours ?? 0}
-                disabled={quiz.retryMax === null}
-                onChange={(e) => patchQuiz({ retryCooldownHours: Number(e.target.value) })}
-              >
-                {RETRY_COOLDOWN_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
-        )}
-      </div>
-
       <p className="m-0 rounded-md border border-dashed border-surface-border px-4 py-4 text-center text-xs text-[#9ca3af]">
-        Questions — AI generation, manual entry and CSV import — are build step 5.
+        Navigation and retries are set once for the whole course, on the Details step. Questions —
+        AI generation, manual entry and CSV import — are build step 5.
       </p>
     </div>
   )

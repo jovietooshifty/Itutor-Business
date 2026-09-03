@@ -223,6 +223,20 @@ export async function updateCourseDetails(
 
   if (error) return { ok: false, error: error.message }
 
+  // There is no per-quiz override UI anymore, so every quiz block's retry
+  // settings are meant to track the course default live. addBlock seeds a new
+  // block from whatever the default is at creation time, but without this a
+  // block created before this save would keep whatever (likely null) value it
+  // was seeded with, silently out of step with the default set just now.
+  if (retriesAllowed(input.quizNavigationDefault)) {
+    const synced = await syncInheritedRetries(
+      courseId,
+      input.retryMaxDefault,
+      input.retryCooldownHoursDefault
+    )
+    if (!synced.ok) return synced
+  }
+
   revalidatePath(`/courses/${courseId}`)
   revalidatePath('/courses')
   return { ok: true }
@@ -249,6 +263,45 @@ async function clearInheritedRetries(courseId: string): Promise<ActionResult> {
   const { error: quizError } = await supabase
     .from('quizzes')
     .update({ retry_max: null, retry_cooldown_hours: null })
+    .in(
+      'block_id',
+      blocks.map((b) => b.id)
+    )
+
+  if (quizError) return { ok: false, error: quizError.message }
+  return { ok: true }
+}
+
+/**
+ * Pushes the course's new retry default onto every quiz that INHERITS the
+ * course navigation default — the mirror image of clearInheritedRetries, for
+ * when retries are still allowed but the default itself changed. Same
+ * exemption: a block with an explicit `allow_back` override keeps its own
+ * value rather than being overwritten.
+ */
+async function syncInheritedRetries(
+  courseId: string,
+  retryMax: number | null,
+  retryCooldownHours: number | null
+): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data: blocks, error } = await supabase
+    .from('course_blocks')
+    .select('id')
+    .eq('course_id', courseId)
+    .eq('type', 'quiz')
+    .eq('quiz_navigation_override', 'inherit')
+
+  if (error) return { ok: false, error: error.message }
+  if (!blocks || blocks.length === 0) return { ok: true }
+
+  const { error: quizError } = await supabase
+    .from('quizzes')
+    .update({
+      retry_max: retryMax,
+      retry_cooldown_hours: retryMax === null ? null : retryCooldownHours,
+    })
     .in(
       'block_id',
       blocks.map((b) => b.id)

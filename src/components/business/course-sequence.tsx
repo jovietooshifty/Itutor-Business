@@ -24,7 +24,6 @@ import {
   EMPTY_CONTENT,
   blockTypeMeta,
   type BlockType,
-  type QuizNavigation,
   type QuizNavigationOverride,
 } from '@/lib/course'
 import {
@@ -42,7 +41,6 @@ import {
 export type BuilderCourse = {
   id: string
   title: string
-  quizNavigationDefault: QuizNavigation
   retryMaxDefault: number | null
   retryCooldownHoursDefault: number | null
 }
@@ -269,7 +267,6 @@ export function CourseSequence({
               expanded={expanded === block.id}
               dragging={dragging === block.id}
               canDelete={canDelete}
-              courseNavigationDefault={course.quizNavigationDefault}
               priorBlocks={blocks.slice(0, index).map((b) => ({
                 id: b.id,
                 label: b.title.trim() || `${blockTypeMeta(b.type).label} block`,
@@ -402,7 +399,6 @@ function BlockRow({
   expanded,
   dragging,
   canDelete,
-  courseNavigationDefault,
   priorBlocks,
   onToggleExpand,
   onPatch,
@@ -416,7 +412,6 @@ function BlockRow({
   expanded: boolean
   dragging: boolean
   canDelete: boolean
-  courseNavigationDefault: QuizNavigation
   priorBlocks: { id: string; label: string }[]
   onToggleExpand: () => void
   onPatch: (patch: Partial<BuilderBlock>) => void
@@ -500,10 +495,8 @@ function BlockRow({
           {block.type === 'quiz' && block.quiz && (
             <QuizConfig
               quiz={block.quiz}
-              navigationOverride={block.navigationOverride}
-              courseNavigationDefault={courseNavigationDefault}
               priorBlocks={priorBlocks}
-              onChange={({ quiz, navigationOverride }) => onPatch({ quiz, navigationOverride })}
+              onChange={(quiz) => onPatch({ quiz })}
             />
           )}
         </div>

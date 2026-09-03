@@ -32,9 +32,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const [{ data: course }, { data: blocks }] = await Promise.all([
     supabase
       .from('courses')
-      .select(
-        'id, business_id, title, quiz_navigation_default, quiz_retry_max_default, quiz_retry_cooldown_hours_default'
-      )
+      .select('id, business_id, title, quiz_retry_max_default, quiz_retry_cooldown_hours_default')
       .eq('id', id)
       .maybeSingle(),
     supabase
@@ -54,7 +52,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const builderCourse: BuilderCourse = {
     id: course.id,
     title: course.title,
-    quizNavigationDefault: course.quiz_navigation_default,
     retryMaxDefault: course.quiz_retry_max_default,
     retryCooldownHoursDefault: course.quiz_retry_cooldown_hours_default,
   }
