@@ -4,23 +4,36 @@ import { ExtractionError, THIN_TEXT_CHARS, type ExtractedContent } from './types
 
 export { type SttProvider } from './stt'
 
+export type VideoInput =
+  | string
+  /* Bytes plus a filename: the filename is what the MIME type is derived from,
+     which decides both the model and whether frames are read at all. */
+  | { buffer: Buffer; filename: string }
+
+export type VideoOptions = { provider?: SttProviderName }
+
 /* Transcription sits behind the SttProvider seam in ./stt — this function does
    not know or care which provider ran, so switching between hosted Gemini and
    local faster-whisper is a config change, not a code change. */
 export async function extractFromVideo(
-  filePath: string,
-  options: { provider?: SttProviderName } = {},
+  input: VideoInput,
+  options: VideoOptions = {},
 ): Promise<ExtractedContent> {
-  try {
-    await access(filePath)
-  } catch (cause) {
-    throw new ExtractionError('video', `No such file: ${filePath}`, { cause })
+  if (typeof input === 'string') {
+    try {
+      await access(input)
+    } catch (cause) {
+      throw new ExtractionError('video', `No such file: ${input}`, { cause })
+    }
   }
 
   let transcript: string
   try {
     const provider = resolveSttProvider(options.provider)
-    transcript = (await provider.transcribe(filePath)).replace(/\s+/g, ' ').trim()
+    const raw = await provider.transcribe(
+      typeof input === 'string' ? { path: input } : { buffer: input.buffer, filename: input.filename },
+    )
+    transcript = raw.replace(/\s+/g, ' ').trim()
   } catch (cause) {
     /* SttError messages are already specific and actionable, so they are
        passed through rather than being wrapped in something vaguer. */

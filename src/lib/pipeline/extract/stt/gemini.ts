@@ -1,6 +1,13 @@
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { SttError, TRANSCRIBE_INSTRUCTION, mimeTypeForPath, type SttProvider } from './types'
+import {
+  SttError,
+  TRANSCRIBE_INSTRUCTION,
+  mimeTypeForName,
+  nameOf,
+  type SttInput,
+  type SttProvider,
+} from './types'
 
 const BASE_URL = process.env.GEMINI_BASE_URL ?? 'https://generativelanguage.googleapis.com/v1beta'
 const UPLOAD_URL = BASE_URL.replace('/v1beta', '/upload/v1beta')
@@ -42,17 +49,22 @@ export class GeminiSttProvider implements SttProvider {
     return `${this.audioModel} / ${this.videoModel}`
   }
 
-  async transcribe(filePath: string): Promise<string> {
-    const mimeType = mimeTypeForPath(filePath)
-    const { size } = await stat(filePath)
+  async transcribe(input: SttInput): Promise<string> {
+    const name = nameOf(input)
+    const mimeType = mimeTypeForName(name)
     const model = mimeType.startsWith('video/') ? this.videoModel : this.audioModel
 
-    const mediaPart =
-      size <= INLINE_LIMIT_BYTES
-        ? { inlineData: { mimeType, data: (await readFile(filePath)).toString('base64') } }
-        : { fileData: await this.uploadFile(filePath, mimeType, size) }
+    /* Bytes are used as given; a path is only read when needed, so a large
+       file that has to go through the Files API is never doubled in memory. */
+    const size = input.buffer ? input.buffer.length : (await stat(input.path as string)).size
 
-    return this.generate(mediaPart, model)
+    if (size <= INLINE_LIMIT_BYTES) {
+      const buffer = input.buffer ?? (await readFile(input.path as string))
+      return this.generate({ inlineData: { mimeType, data: buffer.toString('base64') } }, model)
+    }
+
+    const fileData = await this.uploadFile(input, name, mimeType, size)
+    return this.generate({ fileData }, model)
   }
 
   private async generate(mediaPart: unknown, model: string): Promise<string> {
@@ -90,7 +102,12 @@ export class GeminiSttProvider implements SttProvider {
   /* Resumable upload: start to get a session URL, then send the bytes and
      finalize, then wait for the file to leave PROCESSING — a file referenced
      before it is ACTIVE is rejected by generateContent. */
-  private async uploadFile(filePath: string, mimeType: string, size: number): Promise<FileData> {
+  private async uploadFile(
+    input: SttInput,
+    name: string,
+    mimeType: string,
+    size: number,
+  ): Promise<FileData> {
     const start = await this.request(
       `${UPLOAD_URL}/files`,
       {
@@ -103,7 +120,7 @@ export class GeminiSttProvider implements SttProvider {
           'X-Goog-Upload-Header-Content-Type': mimeType,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ file: { display_name: path.basename(filePath) } }),
+        body: JSON.stringify({ file: { display_name: path.basename(name) } }),
       },
       UPLOAD_TIMEOUT_MS,
     )
@@ -120,7 +137,9 @@ export class GeminiSttProvider implements SttProvider {
           'X-Goog-Upload-Offset': '0',
           'X-Goog-Upload-Command': 'upload, finalize',
         },
-        body: await readFile(filePath),
+        /* Wrapped in a view because fetch's BodyInit does not accept a Node
+           Buffer under the DOM lib types, though it is byte-identical. */
+        body: new Uint8Array(input.buffer ?? (await readFile(input.path as string))),
       },
       UPLOAD_TIMEOUT_MS,
     )

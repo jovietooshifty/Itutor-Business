@@ -1,16 +1,20 @@
 import * as mammoth from 'mammoth'
+import { toBuffer, type BinaryInput } from './source'
 import { ExtractionError, THIN_TEXT_CHARS, type ExtractedContent } from './types'
 
-export async function extractFromDocx(filePath: string): Promise<ExtractedContent> {
+export async function extractFromDocx(input: BinaryInput): Promise<ExtractedContent> {
+  const buffer = await toBuffer(input, 'docx')
+
   /* mammoth uses `export =` and does not export its Result interface, so the
      type is taken from the function itself. */
   let result: Awaited<ReturnType<typeof mammoth.extractRawText>>
   try {
     /* extractRawText rather than convertToHtml: the quiz prompt wants prose,
        and markup would just spend tokens. */
-    result = await mammoth.extractRawText({ path: filePath })
+    result = await mammoth.extractRawText({ buffer })
   } catch (cause) {
-    throw new ExtractionError('docx', `Could not read or parse .docx at ${filePath}`, { cause })
+    const label = typeof input === 'string' ? input : 'the uploaded file'
+    throw new ExtractionError('docx', `Could not parse .docx (${label})`, { cause })
   }
 
   const text = result.value.replace(/[ \t]+/g, ' ').trim()

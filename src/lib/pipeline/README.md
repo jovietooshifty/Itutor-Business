@@ -16,6 +16,31 @@ Every extractor returns `{ text, sourceType, warnings }`. Genuine failures
 throw `ExtractionError`; "succeeded but the text looks unusable" (scanned PDF,
 silent video, thin page) comes back as a `warnings` entry so the caller decides.
 
+## Inputs: paths, bytes, or a URL
+
+`extractFromPdf` / `extractFromDocx` take a local path **or** a `Buffer`, and
+`extractFromVideo` takes a path or `{ buffer, filename }`. Bytes are the form a
+server route has: an upload arrives as a stream and serverless has no
+persistent filesystem to stage it on.
+
+When all you have is a URL — which is what a course block stores — use the
+dispatcher:
+
+```ts
+import { extractFromUrl } from '@/lib/pipeline/extract/from-url'
+const { text, sourceType, warnings } = await extractFromUrl(url)
+```
+
+It HEADs the URL, routes on the response's own content-type (falling back to
+the extension, since object-storage URLs often carry a signature query string
+or no extension), and hands off to the right extractor — PDF, docx, media, or
+the readable-HTML reader. Do **not** point `extractFromWebsite` at an uploaded
+document: it rejects any non-HTML content-type by design.
+
+Remote downloads are capped at `MAX_REMOTE_BYTES` (50MB) so a large file cannot
+be pulled into a function's memory. Media above that needs streaming to the
+transcription provider instead.
+
 ## Running the harness
 
 ```bash

@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { toBuffer, type BinaryInput } from './source'
 import { ExtractionError, THIN_TEXT_CHARS, type ExtractedContent } from './types'
 
 /* pdfjs loads character maps and standard font metrics from disk on demand.
@@ -34,20 +34,16 @@ export type PdfExtraction = ExtractedContent & {
   pageCount: number
 }
 
-export async function extractFromPdf(filePath: string): Promise<PdfExtraction> {
-  let buffer: Buffer
-  try {
-    buffer = await readFile(filePath)
-  } catch (cause) {
-    throw new ExtractionError('pdf', `Could not read PDF at ${filePath}`, { cause })
-  }
+export async function extractFromPdf(input: BinaryInput): Promise<PdfExtraction> {
+  const buffer = await toBuffer(input, 'pdf')
+  const label = typeof input === 'string' ? input : 'the uploaded file'
 
   /* Checked before handing anything to pdfjs, because a mislabelled file is
      common in practice (a .docx saved as .pdf) and pdfjs only reports it as
      "Invalid PDF structure", which sends you looking for the wrong problem. */
   const misnamed = detectMisnamedFile(buffer)
   if (misnamed) {
-    throw new ExtractionError('pdf', `${filePath} is not a PDF — it looks like ${misnamed}`)
+    throw new ExtractionError('pdf', `${label} is not a PDF — it looks like ${misnamed}`)
   }
 
   /* pdfjs mutates the buffer it is handed, so it gets a copy — otherwise a
@@ -84,7 +80,7 @@ export async function extractFromPdf(filePath: string): Promise<PdfExtraction> {
         : name === 'InvalidPDFException'
           ? 'the file is not a structurally valid PDF'
           : ((cause as { message?: string })?.message ?? 'unknown error')
-    throw new ExtractionError('pdf', `Could not parse PDF: ${detail} (${filePath})`, { cause })
+    throw new ExtractionError('pdf', `Could not parse PDF: ${detail} (${label})`, { cause })
   } finally {
     /* Releases the pdfjs worker. Without this the process keeps a live worker
        per document, which matters once this runs inside a long-lived server. */

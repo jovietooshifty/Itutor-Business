@@ -1,8 +1,17 @@
 /* The speech-to-text seam. Swapping providers means adding a file here and a
    line in resolveSttProvider() — extract/video.ts never names one. */
+export type SttInput = {
+  /* Present when the media is already on disk. Local Whisper needs a real
+     path; hosted providers can use either. */
+  path?: string
+  buffer?: Buffer
+  /* Used to derive the MIME type when there is no path to read it from. */
+  filename?: string
+}
+
 export interface SttProvider {
   readonly name: string
-  transcribe(filePath: string): Promise<string>
+  transcribe(input: SttInput): Promise<string>
 }
 
 export class SttError extends Error {
@@ -29,15 +38,25 @@ const MIME_TYPES: Record<string, string> = {
   '.mpg': 'video/mpeg',
 }
 
-export function mimeTypeForPath(filePath: string): string {
-  const extension = filePath.slice(filePath.lastIndexOf('.')).toLowerCase()
+export const SUPPORTED_MEDIA_EXTENSIONS = Object.keys(MIME_TYPES)
+
+export function mimeTypeForName(name: string): string {
+  const extension = name.slice(name.lastIndexOf('.')).toLowerCase()
   const mimeType = MIME_TYPES[extension]
   if (!mimeType) {
     throw new SttError(
-      `Unsupported media type "${extension}" — supported: ${Object.keys(MIME_TYPES).join(', ')}`,
+      `Unsupported media type "${extension}" — supported: ${SUPPORTED_MEDIA_EXTENSIONS.join(', ')}`,
     )
   }
   return mimeType
+}
+
+export function nameOf(input: SttInput): string {
+  const name = input.path ?? input.filename
+  if (!name) {
+    throw new SttError('Cannot determine the media type — pass a path or a filename alongside the buffer')
+  }
+  return name
 }
 
 export const TRANSCRIBE_INSTRUCTION =

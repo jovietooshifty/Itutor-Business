@@ -1,7 +1,9 @@
 import { execFile } from 'node:child_process'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { SttError, type SttProvider } from './types'
+import { SttError, nameOf, type SttInput, type SttProvider } from './types'
 
 const execFileAsync = promisify(execFile)
 
@@ -16,7 +18,24 @@ const execFileAsync = promisify(execFile)
 export class FasterWhisperProvider implements SttProvider {
   readonly name = 'faster-whisper (local)'
 
-  async transcribe(filePath: string): Promise<string> {
+  async transcribe(input: SttInput): Promise<string> {
+    /* The Python helper reads a real file, so bytes have to be staged on disk
+       first — and cleaned up afterwards, since media files are large. */
+    if (!input.path) {
+      const directory = await mkdtemp(path.join(tmpdir(), 'itutor-stt-'))
+      const staged = path.join(directory, path.basename(nameOf(input)))
+      try {
+        await writeFile(staged, input.buffer as Buffer)
+        return await this.transcribe({ path: staged })
+      } finally {
+        await rm(directory, { recursive: true, force: true })
+      }
+    }
+
+    return this.runPython(input.path)
+  }
+
+  private async runPython(filePath: string): Promise<string> {
     const script = path.join(__dirname, '..', 'whisper_transcribe.py')
 
     /* Windows ships `python`, most Unix machines only `python3`; the override
