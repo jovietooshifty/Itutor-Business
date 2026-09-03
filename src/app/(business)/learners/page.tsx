@@ -20,7 +20,7 @@ export default async function Page() {
         Everyone enrolled in your courses. Select a learner to see their full record.
       </p>
 
-      <LearnerTable rows={learners} showCourse />
+      <LearnerTable rows={learners} showCourse canRemove={context.role !== 'auditor'} />
     </main>
   )
 }

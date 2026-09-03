@@ -4,14 +4,15 @@ import { cn } from '@/lib/cn'
 export type CourseTab = 'overview' | 'sequence' | 'learners'
 
 /**
- * Course management tabs. "Sequence" leaves for the builder rather than
- * duplicating it read-only — editing the sequence IS the builder, and a second
- * rendering of it would be one more thing to keep in step.
+ * Course management tabs. Every one of them stays inside the tab set — the
+ * Sequence tab used to link out to the builder, so clicking a tab made the tab
+ * bar disappear. It now renders the same editor in its 'manage' variant, and
+ * the build flow is a separate, clearly-labelled action.
  */
 export function CourseTabs({ courseId, active }: { courseId: string; active: CourseTab }) {
   const tabs: { key: CourseTab; label: string; href: string }[] = [
     { key: 'overview', label: 'Overview', href: `/courses/${courseId}/manage` },
-    { key: 'sequence', label: 'Sequence', href: `/courses/${courseId}` },
+    { key: 'sequence', label: 'Sequence', href: `/courses/${courseId}/manage/sequence` },
     { key: 'learners', label: 'Learners', href: `/courses/${courseId}/manage/learners` },
   ]
 

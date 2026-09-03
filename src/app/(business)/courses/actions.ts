@@ -570,6 +570,66 @@ export async function updateQuizConfig(
   return { ok: true }
 }
 
+/* ── Deleting ──────────────────────────────────────────────────────────── */
+
+/**
+ * Deletes a course outright. Admin-only per the RLS matrix, and an Operator's
+ * delete is filtered out by the policy rather than rejected, so a zero row
+ * count is the tell.
+ *
+ * Everything hanging off it goes too — blocks, quizzes, questions, enrolments,
+ * progress and certificates all cascade from the foreign keys. That includes
+ * certificates already issued to learners, which is why this is Admin-only and
+ * why the UI asks for the course title before enabling it.
+ */
+export async function deleteCourse(courseId: string): Promise<ActionResult> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { error, count } = await supabase
+    .from('courses')
+    .delete({ count: 'exact' })
+    .eq('id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+  if (count === 0) return { ok: false, error: 'Only an admin can delete a course.' }
+
+  revalidatePath('/courses')
+  return { ok: true }
+}
+
+/** Unenrols a learner. Admin/Operator per enrollments_delete_editor. */
+export async function removeEnrollment(
+  courseId: string,
+  enrollmentId: string
+): Promise<ActionResult> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { error, count } = await supabase
+    .from('enrollments')
+    .delete({ count: 'exact' })
+    .eq('id', enrollmentId)
+    .eq('course_id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+  if (count === 0) {
+    return { ok: false, error: 'That learner is no longer enrolled, or you cannot remove them.' }
+  }
+
+  revalidatePath(`/courses/${courseId}/manage/learners`)
+  revalidatePath('/learners')
+  return { ok: true }
+}
+
 /* ── Sharing ───────────────────────────────────────────────────────────── */
 
 /**

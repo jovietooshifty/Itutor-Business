@@ -83,11 +83,20 @@ export function CourseSequence({
   course,
   initialBlocks,
   canDelete,
+  variant = 'wizard',
 }: {
   course: BuilderCourse
   initialBlocks: BuilderBlock[]
   canDelete: boolean
+  /**
+   * 'wizard' is the build flow — step rail, Back to basics, Continue to
+   * details. 'manage' is the Sequence tab of an existing course, where that
+   * chrome would be wrong: you are editing one thing, not walking a path. The
+   * editor itself is identical, which is the point of the split.
+   */
+  variant?: 'wizard' | 'manage'
 }) {
+  const isWizard = variant === 'wizard'
   const router = useRouter()
   const [blocks, setBlocks] = React.useState(initialBlocks)
   const [expanded, setExpanded] = React.useState<string | null>(null)
@@ -240,15 +249,19 @@ export function CourseSequence({
   }
 
   return (
-    <main className="mx-auto max-w-[880px] p-6 md:p-10">
-      <CourseSteps current="content" courseId={course.id} />
+    <div className={isWizard ? 'mx-auto max-w-[880px] p-6 md:p-10' : ''}>
+      {isWizard && (
+        <>
+          <CourseSteps current="content" courseId={course.id} />
 
-      <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">
-        {course.title.trim() || 'Untitled course'}
-      </h1>
-      <p className="m-0 mb-8 text-sm text-ink-muted">
-        Add the material, in the order learners should work through it.
-      </p>
+          <h1 className="m-0 mb-1.5 font-display text-[28px] font-bold text-ink">
+            {course.title.trim() || 'Untitled course'}
+          </h1>
+          <p className="m-0 mb-8 text-sm text-ink-muted">
+            Add the material, in the order learners should work through it.
+          </p>
+        </>
+      )}
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-4 shadow-sm md:p-6">
         {blocks.length === 0 && insertAt === null && (
@@ -298,39 +311,46 @@ export function CourseSequence({
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         {/* Both moves flush pending edits first — see saveDraft(). */}
-        <Button
-          variant="ghost"
-          loading={pending}
-          onClick={() => saveDraft(() => router.push(`/courses/${course.id}/basics`))}
-        >
-          <ArrowLeft size={15} /> Back to basics
-        </Button>
+        {isWizard ? (
+          <Button
+            variant="ghost"
+            loading={pending}
+            onClick={() => saveDraft(() => router.push(`/courses/${course.id}/basics`))}
+          >
+            <ArrowLeft size={15} /> Back to basics
+          </Button>
+        ) : (
+          <span />
+        )}
 
         <div className="flex items-center gap-3">
           <Button
-            variant="secondary"
+            variant={isWizard ? 'secondary' : 'primary'}
+            size={isWizard ? 'md' : 'lg'}
             onClick={() => saveDraft()}
             loading={pending}
             disabled={dirty.size === 0}
           >
-            Save draft
+            Save changes
           </Button>
-          <Button
-            size="lg"
-            loading={pending}
-            onClick={() => saveDraft(() => router.push(`/courses/${course.id}/details`))}
-          >
-            Continue to details
-          </Button>
+          {isWizard && (
+            <Button
+              size="lg"
+              loading={pending}
+              onClick={() => saveDraft(() => router.push(`/courses/${course.id}/details`))}
+            >
+              Continue to details
+            </Button>
+          )}
         </div>
       </div>
 
       {saved && (
         <p className="mt-2.5 text-right text-xs font-semibold text-[var(--itutor-green)]">
-          Draft saved
+          Saved
         </p>
       )}
-    </main>
+    </div>
   )
 }
 

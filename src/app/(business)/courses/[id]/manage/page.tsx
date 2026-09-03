@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { Badge, Button, Card } from '@/components/ui'
 import { CourseTabs } from '@/components/business/course-tabs'
+import { DeleteCourse } from '@/components/business/delete-course'
 import { getBusinessContext } from '@/lib/business'
 import { loadCourseLearners } from '@/lib/learners'
 import { createClient } from '@/lib/supabase/server'
@@ -94,7 +95,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {course.duration_label ? ` · ${course.duration_label}` : ''}
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link href={`/courses/${course.id}`} className="no-underline">
+          <Link href={`/courses/${course.id}/manage/sequence`} className="no-underline">
             <Button variant="secondary">Edit the sequence</Button>
           </Link>
           <Link href={`/courses/${course.id}/publish`} className="no-underline">
@@ -104,6 +105,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </Link>
         </div>
       </Card>
+
+      <DeleteCourse
+        courseId={course.id}
+        courseTitle={course.title}
+        enrolledCount={learners.length}
+        isAdmin={context.role === 'admin'}
+      />
     </main>
   )
 }

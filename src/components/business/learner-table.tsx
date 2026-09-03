@@ -2,8 +2,10 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Search } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, UserMinus } from 'lucide-react'
 import { Avatar, Badge, Card, Input, ProgressBar, Select, cn } from '@/components/ui'
+import { removeEnrollment } from '@/app/(business)/courses/actions'
 import type { LearnerRow } from '@/lib/learners'
 
 type StatusFilter = 'all' | 'in_progress' | 'completed'
@@ -15,14 +17,34 @@ const SCORE_THRESHOLD = 70
 export function LearnerTable({
   rows,
   showCourse = false,
+  canRemove = false,
 }: {
   rows: LearnerRow[]
   /** The business-wide list spans courses, so it names them per row. */
   showCourse?: boolean
+  /** Admin/Operator get an unenrol control on each row. */
+  canRemove?: boolean
 }) {
+  const router = useRouter()
   const [search, setSearch] = React.useState('')
   const [status, setStatus] = React.useState<StatusFilter>('all')
   const [score, setScore] = React.useState<ScoreFilter>('all')
+  const [confirmingId, setConfirmingId] = React.useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  const [pending, startTransition] = React.useTransition()
+
+  function remove(row: LearnerRow) {
+    setError(null)
+    startTransition(async () => {
+      const result = await removeEnrollment(row.courseId, row.enrollmentId)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      setConfirmingId(null)
+      router.refresh()
+    })
+  }
 
   const query = search.trim().toLowerCase()
   const visible = rows.filter((row) => {
@@ -78,6 +100,10 @@ export function LearnerTable({
         </Select>
       </div>
 
+      {error && (
+        <p className="mb-4 rounded-md bg-danger-bg px-4 py-3 text-sm text-danger-fg">{error}</p>
+      )}
+
       {visible.length === 0 ? (
         <Card className="py-14 text-center">
           <p className="m-0 text-sm text-ink-muted">
@@ -87,11 +113,17 @@ export function LearnerTable({
       ) : (
         <div className="grid overflow-hidden rounded-lg border border-border">
           {visible.map((row) => (
-            <Link
+            <div
               key={row.enrollmentId}
-              href={`/learners/${row.learnerId}`}
-              className="flex flex-wrap items-center gap-4 border-b border-border bg-white px-4 py-3.5 no-underline last:border-b-0 hover:bg-surface-inset"
+              className="relative flex flex-wrap items-center gap-4 border-b border-border bg-white px-4 py-3.5 last:border-b-0 hover:bg-surface-inset"
             >
+              {/* The row links through, but the remove control has to sit
+                  outside the anchor or clicking it would navigate. */}
+              <Link
+                href={`/learners/${row.learnerId}`}
+                className="absolute inset-0 z-0"
+                aria-label={`View ${row.name}`}
+              />
               <Avatar name={row.name} size={38} />
 
               <div className="min-w-[160px] flex-1">
@@ -127,7 +159,41 @@ export function LearnerTable({
               <Badge tone={row.status === 'completed' ? 'success' : 'neutral'}>
                 {row.status === 'completed' ? 'Completed' : 'In progress'}
               </Badge>
-            </Link>
+
+              {canRemove && (
+                <div className="relative z-10 flex shrink-0 items-center gap-2">
+                  {confirmingId === row.enrollmentId ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => remove(row)}
+                        className="text-xs font-semibold text-danger-fg hover:underline disabled:opacity-50"
+                      >
+                        {pending ? 'Removing…' : 'Confirm'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(null)}
+                        className="text-xs font-semibold text-ink-muted hover:text-ink"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingId(row.enrollmentId)}
+                      title={`Unenrol ${row.name} from ${row.courseTitle}`}
+                      aria-label={`Unenrol ${row.name} from ${row.courseTitle}`}
+                      className="text-[#9ca3af] transition-colors duration-fast hover:text-[var(--danger-fg)]"
+                    >
+                      <UserMinus size={15} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
