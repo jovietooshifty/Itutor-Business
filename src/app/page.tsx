@@ -42,12 +42,14 @@ export default function HomePage() {
     <>
       <SiteHeader />
       {/*
-        A light green ground for the whole page. Sections that need to sit
-        apart — the course preview, the closing band — set their own
-        background over it, so this reads as a tint rather than flattening
-        the page into one colour.
+        The light green ground. It has to be a colour the sections let
+        through: an earlier attempt put a wash here and nothing showed,
+        because every section painted its own opaque background over it.
+        The near-white ones are now transparent, while the deliberately
+        white bands (trust strip, closing CTA) keep theirs — so the page
+        alternates rather than flattening into one colour.
       */}
-      <main className="bg-mint-wash">
+      <main className="bg-mint">
         <Hero />
         <CoursePreview />
         <HowItWorks />
@@ -170,7 +172,7 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-surface-soft px-6 py-20">
+    <section id="how-it-works" className="px-6 py-20">
       <div className="mb-14 text-center">
         <h2 className="m-0 mb-3 text-[clamp(32px,4vw,44px)] font-bold tracking-heading text-ink">
           How It Works
@@ -224,7 +226,7 @@ const STATS = [
 
 function Stats() {
   return (
-    <section className="bg-surface-soft px-6 py-20">
+    <section className="px-6 py-20">
       <div className="mx-auto grid max-w-[1024px] gap-px overflow-hidden rounded-3xl bg-border shadow-card sm:grid-cols-2 lg:grid-cols-4">
         {STATS.map((stat) => (
           <div key={stat.label} className="bg-white p-8 text-center">
@@ -293,7 +295,7 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section className="bg-surface-soft px-6 py-20">
+    <section className="px-6 py-20">
       <div className="mx-auto max-w-content">
         <div className="mb-12 text-center">
           <h2 className="m-0 mb-3 text-[clamp(32px,4vw,40px)] font-bold tracking-heading text-ink">

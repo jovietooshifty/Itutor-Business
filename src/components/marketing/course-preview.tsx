@@ -32,7 +32,7 @@ export function CoursePreview() {
   )
 
   return (
-    <section id="courses" className="bg-white px-6 pb-[72px] pt-4">
+    <section id="courses" className="px-6 pb-[72px] pt-4">
       <div className="mx-auto max-w-content">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
