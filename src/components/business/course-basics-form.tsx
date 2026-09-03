@@ -43,6 +43,19 @@ export function CourseBasicsForm({
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
 
   const [title, setTitle] = React.useState(initial.title)
+
+  /**
+   * Field errors come back from a submit, so they describe the values as they
+   * were then. Typing makes them stale: "Give the course a title" sitting under
+   * a filled-in title box reads as the form rejecting what is on screen, and
+   * sends people looking for a second problem that is not there.
+   */
+  function editTitle(next: string) {
+    setTitle(next)
+    if (fieldErrors.title) {
+      setFieldErrors(({ title: _cleared, ...rest }) => rest)
+    }
+  }
   const [description, setDescription] = React.useState(initial.description)
   const [visibility, setVisibility] = React.useState<CourseVisibility>(initial.visibility)
   const [tags, setTags] = React.useState<string[]>(initial.tags)
@@ -132,7 +145,7 @@ export function CourseBasicsForm({
               <Input
                 id="course-title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => editTitle(e.target.value)}
                 placeholder="e.g. Food Safety & Sanitation Basics"
                 invalid={Boolean(fieldErrors.title)}
               />

@@ -56,7 +56,7 @@ export function ImageUpload({
       const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath)
       onChange(data.publicUrl)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed')
+      setError(describeUploadError(e))
     } finally {
       setBusy(false)
     }
@@ -118,6 +118,37 @@ export function ImageUpload({
       {error && <p className="mt-1 text-[10.5px] text-[var(--danger-fg)]">{error}</p>}
     </div>
   )
+}
+
+/**
+ * Turns a Storage failure into something an admin can act on.
+ *
+ * The one that matters is the row-level security rejection. Postgres phrases it
+ * as "new row violates row-level security policy", which is true and useless:
+ * it names the mechanism, not the cause, and the cause is almost always one of
+ * two ordinary things — the session expired in a tab that has been open a
+ * while, or this member is not an Admin of the business. Both have obvious next
+ * steps, and neither is discoverable from the raw string.
+ */
+function describeUploadError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+
+  if (/row-level security|violates row-level|not authorized|Unauthorized|JWT/i.test(message)) {
+    return 'Could not save that image — your sign-in may have expired, or only an Admin can change it. Reload the page and try again.'
+  }
+  if (/exceeded the maximum allowed size|Payload too large|entity too large|413/i.test(message)) {
+    return 'That image is too large. The limit is 5 MB.'
+  }
+  if (/mime type|content type|not supported|invalid_mime/i.test(message)) {
+    return 'That file type is not supported. Use a PNG, JPEG or WebP image.'
+  }
+  if (/Failed to fetch|NetworkError|network/i.test(message)) {
+    return 'Could not reach the server. Check your connection and try again.'
+  }
+
+  // Anything unrecognised keeps its original text — a wrong guess is worse
+  // than an unfamiliar message when someone has to report the problem.
+  return message || 'Upload failed.'
 }
 
 /**
