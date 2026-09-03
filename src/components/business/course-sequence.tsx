@@ -161,9 +161,15 @@ export function CourseSequence({
   }
 
   function handleDrop(targetId: string) {
-    if (!dragging || dragging === targetId) return
+    // Cleared up front: every path out of here ends the drag, and a path that
+    // returned without clearing left the source block stuck at opacity-40.
+    // onDragEnd covers the drops that never reach this function at all.
+    const source = dragging
+    setDragging(null)
 
-    const from = blocks.findIndex((b) => b.id === dragging)
+    if (!source || source === targetId) return
+
+    const from = blocks.findIndex((b) => b.id === source)
     const to = blocks.findIndex((b) => b.id === targetId)
     if (from < 0 || to < 0) return
 
@@ -172,7 +178,6 @@ export function CourseSequence({
     next.splice(to, 0, moved)
 
     setBlocks(next)
-    setDragging(null)
     setError(null)
 
     const orderedIds = next.map((b) => b.id)
@@ -273,6 +278,7 @@ export function CourseSequence({
               onPatch={(patch) => patchBlock(block.id, patch)}
               onDelete={() => handleDelete(block.id)}
               onDragStart={() => setDragging(block.id)}
+              onDragEnd={() => setDragging(null)}
               onDrop={() => handleDrop(block.id)}
             />
             <InsertRow
@@ -402,6 +408,7 @@ function BlockRow({
   onPatch,
   onDelete,
   onDragStart,
+  onDragEnd,
   onDrop,
 }: {
   block: BuilderBlock
@@ -415,6 +422,7 @@ function BlockRow({
   onPatch: (patch: Partial<BuilderBlock>) => void
   onDelete: () => void
   onDragStart: () => void
+  onDragEnd: () => void
   onDrop: () => void
 }) {
   const meta = blockTypeMeta(block.type)
@@ -424,6 +432,9 @@ function BlockRow({
     <div
       draggable
       onDragStart={onDragStart}
+      // Fires however the drag ends — dropped on a block, dropped into empty
+      // space, or cancelled with Escape — so the faded state always clears.
+      onDragEnd={onDragEnd}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
