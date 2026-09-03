@@ -16,6 +16,31 @@ Every extractor returns `{ text, sourceType, warnings }`. Genuine failures
 throw `ExtractionError`; "succeeded but the text looks unusable" (scanned PDF,
 silent video, thin page) comes back as a `warnings` entry so the caller decides.
 
+## Inputs: paths, bytes, or a URL
+
+`extractFromPdf` / `extractFromDocx` take a local path **or** a `Buffer`, and
+`extractFromVideo` takes a path or `{ buffer, filename }`. Bytes are the form a
+server route has: an upload arrives as a stream and serverless has no
+persistent filesystem to stage it on.
+
+When all you have is a URL — which is what a course block stores — use the
+dispatcher:
+
+```ts
+import { extractFromUrl } from '@/lib/pipeline/extract/from-url'
+const { text, sourceType, warnings } = await extractFromUrl(url)
+```
+
+It HEADs the URL, routes on the response's own content-type (falling back to
+the extension, since object-storage URLs often carry a signature query string
+or no extension), and hands off to the right extractor — PDF, docx, media, or
+the readable-HTML reader. Do **not** point `extractFromWebsite` at an uploaded
+document: it rejects any non-HTML content-type by design.
+
+Remote downloads are capped at `MAX_REMOTE_BYTES` (50MB) so a large file cannot
+be pulled into a function's memory. Media above that needs streaming to the
+transcription provider instead.
+
 ## Running the harness
 
 ```bash
@@ -38,8 +63,30 @@ anything under `quiz/`.
 forces one. The harness runs outside Next.js, so it loads that file via Node's
 `--env-file-if-exists`; nothing else is required.
 
-**The video path** needs a local Python toolchain — this is the only piece that
-is not `npm install`-able:
+**The video/audio path** needs nothing beyond that same `GEMINI_API_KEY` —
+transcription is hosted, so there is no Python, no model download and no local
+CPU cost, and it works the same on a laptop as on serverless. Files up to 12MB
+are sent inline; larger ones go through Gemini's Files API, so long recordings
+work too.
+
+Audio and video deliberately use **different models**: the purpose-built
+`gemini-3.5-transcribe` is better for audio but rejects video outright — "Image
+input modality is not enabled for this model", because the frames count as
+image input — so video goes to a general multimodal model. Override either with
+`GEMINI_STT_MODEL` / `GEMINI_STT_VIDEO_MODEL`.
+
+Video also costs more per minute than audio, since the model reads frames as
+well as the audio track. For a long recording, extracting its audio first is
+the cheaper path.
+
+Transcription models return 429/503 under load often enough that a single
+attempt makes the path look broken, so overload responses get three attempts
+with growing backoff.
+
+### Transcribing locally instead
+
+Set `STT_PROVIDER=faster-whisper` when media must not leave the machine. This is
+the one piece that is not `npm install`-able, and it cannot run on serverless:
 
 ```bash
 winget install Python.Python.3.12   # if `python --version` fails
@@ -47,20 +94,13 @@ pip install faster-whisper          # pulls ctranslate2 and av
 python -c "import faster_whisper"   # should print nothing and exit 0
 ```
 
-The first transcription downloads model weights (~500MB for `small`) from
-Hugging Face and caches them; later runs are offline. The other three paths do
-not touch Python at all.
+First run downloads weights (~500MB for `small`) and caches them. No system
+ffmpeg needed — faster-whisper decodes through PyAV, which bundles its own
+FFmpeg libraries, so video containers are read directly.
 
-- `PYTHON_BIN` — set this if `python` is not the right executable. On Windows,
-  a bare `python` may resolve to the Microsoft Store stub, which the pipeline
-  detects and reports explicitly; `py` usually works instead.
-- `WHISPER_MODEL_SIZE` — defaults to `small`. `base` is faster and less
-  accurate, `medium` the reverse.
-
-**ffmpeg is not required.** faster-whisper decodes through PyAV, which bundles
-its own FFmpeg libraries, so video containers are read directly. If some exotic
-codec ever fails to decode, installing system ffmpeg and pre-transcoding to wav
-is the fallback.
+- `PYTHON_BIN` — on Windows a bare `python` may resolve to the Microsoft Store
+  stub, which the pipeline detects and reports explicitly; `py` usually works.
+- `WHISPER_MODEL_SIZE` — defaults to `small`.
 
 ## Swapping the LLM
 

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowLeft, ArrowRight, Clock, ListOrdered } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Clock, ListOrdered, Sparkles } from 'lucide-react'
 import {
   Button,
   Checkbox,
@@ -32,7 +32,11 @@ import {
   type TextContent,
   type VideoContent,
 } from '@/lib/course'
-import { recordBuildProgress, saveBlockPage } from '@/app/(business)/courses/actions'
+import {
+  recordBuildProgress,
+  saveBlockPage,
+  transcribeBlockVideo,
+} from '@/app/(business)/courses/actions'
 
 export type QuizState = {
   passingScore: number
@@ -225,7 +229,17 @@ export function BlockWalkthrough({
               courseId={courseId}
               blockId={block.id}
               value={asVideo(content)}
+              sourceStatus={block.sourceStatus}
+              sourceError={block.sourceError}
               onChange={setContent}
+              onBeforeTranscribe={async () => {
+                setError(null)
+                const result = await persist()
+                return result.ok
+              }}
+              onTranscribed={(transcript) =>
+                setContent({ ...asVideo(content), transcript })
+              }
             />
           )}
           {block.type === 'text' && (
@@ -333,14 +347,42 @@ function VideoPage({
   courseId,
   blockId,
   value,
+  sourceStatus,
+  sourceError,
   onChange,
+  onBeforeTranscribe,
+  onTranscribed,
 }: {
   courseId: string
   blockId: string
   value: VideoContent
+  sourceStatus: BlockSourceStatus
+  sourceError: string | null
   onChange: (next: VideoContent) => void
+  /** Flushes the page so the upload is on the row before it is fetched. */
+  onBeforeTranscribe: () => Promise<boolean>
+  onTranscribed: (transcript: string) => void
 }) {
   const usingPreset = value.guidelines === '' || isGuidelinePreset(value.guidelines)
+
+  const [transcribing, setTranscribing] = React.useState(false)
+  const [transcribeError, setTranscribeError] = React.useState<string | null>(null)
+
+  async function transcribe() {
+    setTranscribeError(null)
+    setTranscribing(true)
+    try {
+      if (!(await onBeforeTranscribe())) return
+      const result = await transcribeBlockVideo(courseId, blockId)
+      if (!result.ok) {
+        setTranscribeError(result.error)
+        return
+      }
+      onTranscribed(result.data!.transcript)
+    } finally {
+      setTranscribing(false)
+    }
+  }
 
   return (
     <div className="grid gap-6">
@@ -413,13 +455,47 @@ function VideoPage({
       <Field
         label="Transcript"
         optional
-        hint="The one thing this app cannot produce for you: transcription runs from scripts/, not from the browser. Paste a transcript and any quiz after this block can be generated from the video straight away."
+        hint="What quizzes after this block are generated from. Transcribe the upload, or paste one you already have — and correct it either way; a transcript is a first draft, not a fact."
       >
+        <div className="mb-2 flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            loading={transcribing}
+            disabled={!value.path}
+            title={value.path ? undefined : 'Upload a video first'}
+            onClick={() => void transcribe()}
+          >
+            <Sparkles size={13} /> {value.transcript ? 'Transcribe again' : 'Transcribe the video'}
+          </Button>
+          {/* Said before the click, not after it: this is a hosted model call
+              on a whole recording, and a spinner with no expectation attached
+              reads as a hang. */}
+          <span className="text-xs text-[#9ca3af]">
+            {transcribing
+              ? 'Transcribing — this runs on the whole recording and can take a few minutes.'
+              : sourceStatus === 'ready'
+                ? 'Ready — quizzes after this block can be generated from it.'
+                : 'Takes a few minutes for a long video. You can paste one instead.'}
+          </span>
+        </div>
+
+        {transcribeError && (
+          <p className="mb-2 flex items-start gap-2 text-xs leading-relaxed text-[var(--danger-fg)]">
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
+            {transcribeError}
+          </p>
+        )}
+        {!transcribeError && sourceError && sourceStatus === 'pending' && (
+          <p className="mb-2 text-xs leading-relaxed text-[#92400e]">{sourceError}</p>
+        )}
+
         <Textarea
-          rows={4}
+          rows={6}
           value={value.transcript}
           onChange={(e) => onChange({ ...value, transcript: e.target.value })}
-          placeholder="Paste the transcript here, or leave it and come back…"
+          placeholder="Transcribe the upload above, paste a transcript here, or leave it and come back…"
         />
       </Field>
 

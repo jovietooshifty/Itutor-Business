@@ -113,9 +113,9 @@ export type VideoContent = {
   /** Extra material shown alongside the video. */
   notes: string
   /**
-   * A transcript typed or pasted by the author. The builder cannot transcribe
-   * — that is the faster-whisper step in scripts/ — so this is the way a video
-   * block becomes generatable without leaving the app.
+   * What quizzes after this block are generated from. Produced by the
+   * transcribe action or pasted in, and editable either way — a transcript is
+   * a first draft, not a fact.
    */
   transcript: string
 }

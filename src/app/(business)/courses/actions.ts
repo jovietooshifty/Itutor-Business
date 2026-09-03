@@ -634,9 +634,9 @@ async function extractUploadedSource(
  *
  *   rich text   the body IS the source, ready immediately
  *   document    extracted here, on the way in
- *   video       'pending'. The builder cannot transcribe — that is the
- *               faster-whisper step in scripts/ — so it says so rather than
- *               pretending, and an author who has a transcript can paste it.
+ *   video       'pending' until a transcript exists. Transcription is a slow
+ *               hosted call, so it is transcribeBlockVideo's job rather than a
+ *               side effect of pressing Save — see the note there.
  */
 export async function saveBlockPage(
   courseId: string,
@@ -731,6 +731,131 @@ export async function saveBlockPage(
 
   revalidatePath(`/courses/${courseId}`)
   return { ok: true, data: { warnings } }
+}
+
+/**
+ * Bytes have to come through this function's memory to reach the transcriber,
+ * so the ceiling is about what a request can hold, not what the model accepts.
+ * Past it, pasting a transcript is the honest answer.
+ */
+const MAX_TRANSCRIBE_BYTES = 50 * 1024 * 1024
+
+/**
+ * Transcribes a block's uploaded video, which is what moves it from 'pending'
+ * to 'ready' and lets the quizzes after it be generated.
+ *
+ * Deliberately its own action rather than part of saving. Reading a PDF is
+ * milliseconds; transcribing a recording is a hosted model call measured in
+ * minutes. Folding that into Save would mean "Continue to next page"
+ * occasionally hanging for two minutes and sometimes hitting the request
+ * timeout — so the author asks for it, knowing it takes a while, and a failure
+ * costs them nothing they typed.
+ */
+export async function transcribeBlockVideo(
+  courseId: string,
+  blockId: string
+): Promise<ActionResult<{ transcript: string; warnings: string[] }>> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { data: block } = await supabase
+    .from('course_blocks')
+    .select('id, type, content_ref')
+    .eq('id', blockId)
+    .eq('course_id', courseId)
+    .maybeSingle()
+
+  if (!block) return { ok: false, error: 'That block no longer exists.' }
+  if (block.type !== 'video') return { ok: false, error: 'That block is not a video.' }
+
+  const video = asVideo(block.content_ref)
+  if (!video.path) return { ok: false, error: 'Upload a video first, then transcribe it.' }
+
+  // Checked from the object listing rather than after downloading, so an
+  // oversized file is refused without pulling it into memory to find out.
+  const slash = video.path.lastIndexOf('/')
+  const { data: entries } = await supabase.storage
+    .from(MATERIAL_BUCKET)
+    .list(video.path.slice(0, slash))
+  const size = entries?.find((entry) => entry.name === video.path!.slice(slash + 1))?.metadata
+    ?.size as number | undefined
+
+  if (size && size > MAX_TRANSCRIBE_BYTES) {
+    return {
+      ok: false,
+      error:
+        `That video is ${Math.round(size / 1024 / 1024)} MB, over the ` +
+        `${MAX_TRANSCRIBE_BYTES / 1024 / 1024} MB limit for transcribing here. Paste a transcript instead.`,
+    }
+  }
+
+  const { data: file, error: downloadError } = await supabase.storage
+    .from(MATERIAL_BUCKET)
+    .download(video.path)
+
+  if (downloadError || !file) {
+    return { ok: false, error: `Could not open the video (${downloadError?.message ?? 'not found'}).` }
+  }
+
+  let transcript: string
+  let warnings: string[]
+  try {
+    // Dynamic for the same reason as the document extractors — see the note at
+    // the top of extract/upload.ts.
+    const { transcribeUpload } = await import('@/lib/pipeline/extract/upload')
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    const result = await transcribeUpload(bytes, video.fileName ?? video.path)
+    transcript = result.text.trim()
+    warnings = result.warnings
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : 'Transcription failed.'
+    // The block stays 'pending' — nothing about it got worse, it just still
+    // has no transcript, and now says why.
+    await supabase
+      .from('course_blocks')
+      .update({ source_status: 'pending', source_error: message })
+      .eq('id', blockId)
+      .eq('course_id', courseId)
+
+    revalidatePath(`/courses/${courseId}`)
+    return { ok: false, error: message }
+  }
+
+  if (!transcript) {
+    const message =
+      warnings[0] ?? 'That video produced no transcript — it may have no audio track, or only silence.'
+    await supabase
+      .from('course_blocks')
+      .update({ source_status: 'pending', source_error: message })
+      .eq('id', blockId)
+      .eq('course_id', courseId)
+
+    revalidatePath(`/courses/${courseId}`)
+    return { ok: false, error: message }
+  }
+
+  // Written into content_ref as well as source_text so the author can read and
+  // correct it in the same box they could have pasted one into. A transcript
+  // is a first draft, not a fact.
+  const { error } = await supabase
+    .from('course_blocks')
+    .update({
+      content_ref: { ...video, transcript } as never,
+      source_text: transcript,
+      source_status: 'ready',
+      source_error: warnings[0] ?? null,
+    })
+    .eq('id', blockId)
+    .eq('course_id', courseId)
+
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/courses/${courseId}`)
+  return { ok: true, data: { transcript, warnings } }
 }
 
 /* ── Quiz configuration ────────────────────────────────────────────────── */

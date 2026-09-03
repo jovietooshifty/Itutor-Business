@@ -11,8 +11,8 @@
 --   2. Blocks now carry the text a quiz can actually be generated from
 --      (`source_text`) and the state of getting it there (`source_status`).
 --      Rich text is ready the moment it is typed; an uploaded document is
---      extracted on save; a video waits on transcription, which is the one
---      case the builder cannot finish by itself.
+--      extracted on save; a video waits on transcription, which is a slow
+--      hosted call the author asks for rather than a side effect of saving.
 --
 --   3. The builder remembers where you were (`courses.build_stage`,
 --      `build_block_id`), so an abandoned draft resumes rather than restarts.
@@ -93,7 +93,7 @@ where type = 'text'::public.block_type;
 create type public.block_source_status as enum ('empty', 'ready', 'pending', 'failed');
 
 comment on type public.block_source_status is
-  'How far a block is from having text a quiz can be generated from. pending is the honest state for an uploaded video: the builder cannot transcribe, so the quiz page offers to come back to it.';
+  'How far a block is from having text a quiz can be generated from. pending is an uploaded video with no transcript yet: transcription is a slow hosted call the author triggers, so a quiz in front of one offers to come back rather than blocking.';
 
 alter table public.course_blocks
   add column if not exists source_text text,

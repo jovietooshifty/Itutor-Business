@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { toBuffer, type BinaryInput } from './source'
 import { ExtractionError, THIN_TEXT_CHARS, type ExtractedContent } from './types'
 
 /* pdfjs loads character maps and standard font metrics from disk on demand.
@@ -34,31 +34,14 @@ export type PdfExtraction = ExtractedContent & {
   pageCount: number
 }
 
-export async function extractFromPdf(filePath: string): Promise<PdfExtraction> {
-  let buffer: Buffer
-  try {
-    buffer = await readFile(filePath)
-  } catch (cause) {
-    throw new ExtractionError('pdf', `Could not read PDF at ${filePath}`, { cause })
-  }
+export async function extractFromPdf(input: BinaryInput): Promise<PdfExtraction> {
+  const buffer = await toBuffer(input, 'pdf')
+  const label = typeof input === 'string' ? input : 'the uploaded file'
 
-  return extractFromPdfBuffer(buffer, filePath)
-}
-
-/* The same extraction, from bytes already in hand. Uploaded course material
-   arrives from Supabase Storage as a Blob, and writing it to a temp file just
-   to read it back is a round trip with nothing to show for it.
-
-   `label` is whatever names the source in an error message — a path for the
-   local pipeline, a file name for an upload. */
-export async function extractFromPdfBuffer(
-  buffer: Uint8Array,
-  label: string,
-): Promise<PdfExtraction> {
   /* Checked before handing anything to pdfjs, because a mislabelled file is
      common in practice (a .docx saved as .pdf) and pdfjs only reports it as
      "Invalid PDF structure", which sends you looking for the wrong problem. */
-  const misnamed = detectMisnamedFile(Buffer.from(buffer))
+  const misnamed = detectMisnamedFile(buffer)
   if (misnamed) {
     throw new ExtractionError('pdf', `${label} is not a PDF — it looks like ${misnamed}`)
   }

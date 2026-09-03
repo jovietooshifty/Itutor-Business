@@ -4,6 +4,11 @@ import { ExtractionError, THIN_TEXT_CHARS, type ExtractedContent, type SourceTyp
  * Extraction for material uploaded through the builder, as opposed to the
  * local `scripts/` pipeline that reads files off disk.
  *
+ * The extractors themselves take either a path or the bytes (see
+ * extract/source.ts), so this adds nothing to them — it decides WHICH one a
+ * given upload needs, from a filename and a MIME type neither of which can be
+ * trusted on its own.
+ *
  * Everything heavy is behind a dynamic import. Every server action in the
  * course-builder route shares one module graph, and a static import of pdfjs
  * or mammoth puts them on it — which is exactly how a jsdom load failure once
@@ -18,16 +23,17 @@ export async function extractFromUpload(
   mimeType: string | null
 ): Promise<ExtractedContent> {
   const kind = classify(fileName, mimeType)
+  const buffer = Buffer.from(bytes)
 
   if (kind === 'pdf') {
-    const { extractFromPdfBuffer } = await import('./pdf')
-    const { text, warnings } = await extractFromPdfBuffer(bytes, fileName)
+    const { extractFromPdf } = await import('./pdf')
+    const { text, warnings } = await extractFromPdf(buffer)
     return { text, sourceType: 'pdf', warnings }
   }
 
   if (kind === 'docx') {
-    const { extractFromDocxBuffer } = await import('./docx')
-    return extractFromDocxBuffer(bytes, fileName)
+    const { extractFromDocx } = await import('./docx')
+    return extractFromDocx(buffer)
   }
 
   if (kind === 'plain') {
@@ -50,6 +56,20 @@ export async function extractFromUpload(
     'docx',
     `"${fileName}" is not a document this can read. Upload a PDF, a Word .docx, or plain text.`
   )
+}
+
+/**
+ * Transcribes an uploaded video. Separate from extractFromUpload because it is
+ * separate in cost: reading a PDF is milliseconds, transcribing a recording is
+ * a hosted model call measured in minutes, so the builder asks for it
+ * deliberately rather than as a side effect of saving.
+ */
+export async function transcribeUpload(
+  bytes: Uint8Array,
+  fileName: string
+): Promise<ExtractedContent> {
+  const { extractFromVideo } = await import('./video')
+  return extractFromVideo({ buffer: Buffer.from(bytes), filename: fileName })
 }
 
 /** Mime type first, extension as the fallback — browsers get both wrong. */
