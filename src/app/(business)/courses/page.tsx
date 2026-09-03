@@ -92,14 +92,20 @@ export default async function Page() {
                     )}
                   </div>
                 </div>
-                <Link href={`/courses/${course.id}`} className="no-underline">
-                  <p className="m-0 mt-3 text-xs text-[#9ca3af]">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="m-0 text-xs text-[#9ca3af]">
                     {blockCount === 0
                       ? 'No blocks yet'
                       : `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`}
                     {course.duration_label ? ` · ${course.duration_label}` : ''}
                   </p>
-                </Link>
+                  <Link
+                    href={`/courses/${course.id}/manage`}
+                    className="text-xs font-semibold text-[var(--itutor-green)] no-underline hover:underline"
+                  >
+                    Manage &amp; learners
+                  </Link>
+                </div>
               </Card>
             )
           })}

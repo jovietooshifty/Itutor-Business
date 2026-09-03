@@ -1,0 +1,37 @@
+import Link from 'next/link'
+import { cn } from '@/lib/cn'
+
+export type CourseTab = 'overview' | 'sequence' | 'learners'
+
+/**
+ * Course management tabs. "Sequence" leaves for the builder rather than
+ * duplicating it read-only — editing the sequence IS the builder, and a second
+ * rendering of it would be one more thing to keep in step.
+ */
+export function CourseTabs({ courseId, active }: { courseId: string; active: CourseTab }) {
+  const tabs: { key: CourseTab; label: string; href: string }[] = [
+    { key: 'overview', label: 'Overview', href: `/courses/${courseId}/manage` },
+    { key: 'sequence', label: 'Sequence', href: `/courses/${courseId}` },
+    { key: 'learners', label: 'Learners', href: `/courses/${courseId}/manage/learners` },
+  ]
+
+  return (
+    <nav className="mb-7 flex gap-1 border-b border-border">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.key}
+          href={tab.href}
+          aria-current={tab.key === active ? 'page' : undefined}
+          className={cn(
+            '-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold no-underline transition-colors duration-fast',
+            tab.key === active
+              ? 'border-[color:var(--itutor-green)] text-[var(--itutor-green)]'
+              : 'border-transparent text-ink-muted hover:text-ink'
+          )}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  )
+}
