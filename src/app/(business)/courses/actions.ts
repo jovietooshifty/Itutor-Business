@@ -569,3 +569,67 @@ export async function updateQuizConfig(
   revalidatePath(`/courses/${courseId}`)
   return { ok: true }
 }
+
+/* ── Publish ───────────────────────────────────────────────────────────── */
+
+/**
+ * Step 4. Flips a course from draft to published — the moment it becomes
+ * reachable outside the business (marketplace listing, share link; see
+ * 20260903000100_course_publish_status.sql). Re-checks the two things a
+ * course cannot be published without, even though the UI already keeps you
+ * from getting here without them, so this cannot be bypassed by calling the
+ * action directly.
+ */
+export async function publishCourse(courseId: string): Promise<ActionResult> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const [{ data: course }, { count: blockCount }] = await Promise.all([
+    supabase.from('courses').select('title').eq('id', courseId).maybeSingle(),
+    supabase
+      .from('course_blocks')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_id', courseId),
+  ])
+
+  if (!course?.title.trim()) {
+    return { ok: false, error: 'Add a title before publishing — see step 1, Basics.' }
+  }
+  if (!blockCount) {
+    return { ok: false, error: 'Add at least one block before publishing — see step 2, Content.' }
+  }
+
+  const { error: publishError } = await supabase
+    .from('courses')
+    .update({ status: 'published' })
+    .eq('id', courseId)
+  if (publishError) return { ok: false, error: publishError.message }
+
+  revalidatePath(`/courses/${courseId}`)
+  revalidatePath('/courses')
+  return { ok: true }
+}
+
+/** Pulls a published course back out of the marketplace and off its share link. */
+export async function unpublishCourse(courseId: string): Promise<ActionResult> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { error: unpublishError } = await supabase
+    .from('courses')
+    .update({ status: 'draft' })
+    .eq('id', courseId)
+  if (unpublishError) return { ok: false, error: unpublishError.message }
+
+  revalidatePath(`/courses/${courseId}`)
+  revalidatePath('/courses')
+  return { ok: true }
+}

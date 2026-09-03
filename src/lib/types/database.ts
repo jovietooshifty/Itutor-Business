@@ -446,6 +446,7 @@ export type Database = {
           quiz_retry_cooldown_hours_default: number | null
           quiz_retry_max_default: number | null
           share_token: string
+          status: Database["public"]["Enums"]["course_status"]
           tagline: string | null
           thumbnail_url: string | null
           title: string
@@ -464,6 +465,7 @@ export type Database = {
           quiz_retry_cooldown_hours_default?: number | null
           quiz_retry_max_default?: number | null
           share_token?: string
+          status?: Database["public"]["Enums"]["course_status"]
           tagline?: string | null
           thumbnail_url?: string | null
           title: string
@@ -482,6 +484,7 @@ export type Database = {
           quiz_retry_cooldown_hours_default?: number | null
           quiz_retry_max_default?: number | null
           share_token?: string
+          status?: Database["public"]["Enums"]["course_status"]
           tagline?: string | null
           thumbnail_url?: string | null
           title?: string
@@ -974,6 +977,7 @@ export type Database = {
       block_type: "video" | "text" | "website" | "quiz"
       business_status: "active"
       business_type: "independent" | "franchise" | "chain"
+      course_status: "draft" | "published"
       course_visibility: "public" | "private"
       enrollment_status: "in_progress" | "completed"
       member_role: "admin" | "operator" | "auditor"
@@ -1118,6 +1122,7 @@ export const Constants = {
       block_type: ["video", "text", "website", "quiz"],
       business_status: ["active"],
       business_type: ["independent", "franchise", "chain"],
+      course_status: ["draft", "published"],
       course_visibility: ["public", "private"],
       enrollment_status: ["in_progress", "completed"],
       member_role: ["admin", "operator", "auditor"],

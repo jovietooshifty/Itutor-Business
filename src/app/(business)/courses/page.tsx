@@ -20,7 +20,7 @@ export default async function Page() {
   const supabase = await createClient()
   const { data: courses } = await supabase
     .from('courses')
-    .select('id, title, description, visibility, duration_label, updated_at, course_blocks(id)')
+    .select('id, title, description, visibility, status, duration_label, updated_at, course_blocks(id)')
     .eq('business_id', context.businessId)
     .order('updated_at', { ascending: false })
 
@@ -71,9 +71,14 @@ export default async function Page() {
                         </p>
                       )}
                     </div>
-                    <Badge tone={course.visibility === 'public' ? 'success' : 'neutral'}>
-                      {course.visibility === 'public' ? 'Public' : 'Private'}
-                    </Badge>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Badge tone={course.status === 'published' ? 'success' : 'neutral'}>
+                        {course.status === 'published' ? 'Published' : 'Draft'}
+                      </Badge>
+                      <Badge tone="neutral">
+                        {course.visibility === 'public' ? 'Public' : 'Private'}
+                      </Badge>
+                    </div>
                   </div>
                   <p className="m-0 mt-3 text-xs text-[#9ca3af]">
                     {blockCount === 0

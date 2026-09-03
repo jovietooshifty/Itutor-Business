@@ -21,7 +21,8 @@ export function CourseSteps({
     if (!courseId) return null
     if (key === 'basics') return `/courses/${courseId}/basics`
     if (key === 'content') return `/courses/${courseId}`
-    return `/courses/${courseId}/details`
+    if (key === 'details') return `/courses/${courseId}/details`
+    return `/courses/${courseId}/publish`
   }
 
   return (

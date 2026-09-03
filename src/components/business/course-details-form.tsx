@@ -199,15 +199,15 @@ export function CourseDetailsForm({
           <Link href="/courses" className="no-underline">
             <Button variant="secondary">Exit</Button>
           </Link>
-          <Button size="lg" loading={pending} onClick={() => save(() => router.push('/courses'))}>
-            Save and finish
+          <Button
+            size="lg"
+            loading={pending}
+            onClick={() => save(() => router.push(`/courses/${courseId}/publish`))}
+          >
+            Continue to publish
           </Button>
         </div>
       </div>
-
-      <p className="mt-3 text-right text-xs text-[#9ca3af]">
-        Review &amp; publish is build step 6.
-      </p>
     </main>
   )
 }

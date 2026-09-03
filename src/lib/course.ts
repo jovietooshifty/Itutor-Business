@@ -6,6 +6,7 @@ export type QuizScope = Database['public']['Enums']['quiz_scope']
 export type QuizNavigation = Database['public']['Enums']['quiz_navigation']
 export type QuizNavigationOverride = Database['public']['Enums']['quiz_navigation_override']
 export type CourseVisibility = Database['public']['Enums']['course_visibility']
+export type CourseStatus = Database['public']['Enums']['course_status']
 
 /* ── Block types ───────────────────────────────────────────────────────── */
 
@@ -158,12 +159,13 @@ export const COURSE_TAG_SUGGESTIONS = [
  * The builder asks for things in the order they can actually be answered:
  * what the course IS first, then the material, then the settings that only
  * mean something once material exists (how long it takes, how its quizzes
- * behave). Review & publish is build step 6 and joins the end of this list.
+ * behave), then review & publish (build step 6) once all of that is set.
  */
 export const COURSE_BUILD_STEPS = [
   { key: 'basics', label: 'Basics' },
   { key: 'content', label: 'Content' },
   { key: 'details', label: 'Details' },
+  { key: 'publish', label: 'Publish' },
 ] as const
 
 export type CourseStepKey = (typeof COURSE_BUILD_STEPS)[number]['key']
