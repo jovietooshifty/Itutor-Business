@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getBusinessContext } from '@/lib/business'
-import { extractFromWebsite } from '@/lib/pipeline/extract/website'
 import { generateQuiz, MAX_QUESTIONS } from '@/lib/pipeline/quiz/generate'
 import { regenerateQuestion } from '@/lib/pipeline/quiz/regenerate'
 import { OPTIONS_PER_QUESTION, type Question } from '@/lib/pipeline/quiz/schema'
@@ -68,6 +67,22 @@ function validate(input: QuestionInput): string | null {
 /* ── Source text ───────────────────────────────────────────────────────── */
 
 /**
+ * Loaded on demand rather than imported at the top of this file.
+ *
+ * Every action in this module — deleteQuestion, addQuestion, and via the same
+ * route bundle the whole course builder's deleteBlock and saveDraft — shares
+ * one module graph. A static import puts jsdom (through @mozilla/readability)
+ * on that graph, and jsdom failed to load at all under the serverless runtime,
+ * so a single unrelated dependency took down every server action on the
+ * builder page. Reaching for it only when a website actually needs reading
+ * keeps that blast radius to the one feature that needs it.
+ */
+async function readWebsite(url: string) {
+  const { extractFromWebsite } = await import('@/lib/pipeline/extract/website')
+  return extractFromWebsite(url)
+}
+
+/**
  * Collects the material a quiz is meant to test, following its own scope
  * setting — the same rule the player uses, resolved here so generation covers
  * what the quiz claims to cover.
@@ -120,7 +135,7 @@ async function gatherSourceText(
         // An uploaded document lives behind a URL; the PDF/DOCX extractors
         // read a local path, so this one goes through the website reader.
         try {
-          const extracted = await extractFromWebsite(content.url)
+          const extracted = await readWebsite(content.url)
           parts.push(extracted.text)
           warnings.push(...extracted.warnings)
         } catch {
@@ -131,7 +146,7 @@ async function gatherSourceText(
       const content = (block.content_ref ?? {}) as Partial<WebsiteContent>
       if (content.url) {
         try {
-          const extracted = await extractFromWebsite(content.url)
+          const extracted = await readWebsite(content.url)
           parts.push(extracted.text)
           warnings.push(...extracted.warnings)
           sourceType = 'website'
