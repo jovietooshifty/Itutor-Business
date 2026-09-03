@@ -258,9 +258,32 @@ export async function requestPasswordReset(email: string): Promise<ActionResult>
   // either a code exchange or a token_hash depending on the flow, and only one
   // of those carries a `type` we could branch on — so the destination travels
   // on the link itself rather than being inferred at the other end.
-  await supabase.auth.resetPasswordForEmail(email.trim(), {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/reset-password`,
   })
+
+  /*
+   * Whether the address has an account stays hidden — but a send that failed
+   * for a reason having nothing to do with the account must not be reported as
+   * success. Rate limits and SMTP failures are project-wide facts, identical
+   * for a registered address and an unknown one, so surfacing them leaks
+   * nothing while turning "the email never arrived" from a mystery into a
+   * message. Supabase's shared mailer allows only a couple of sends an hour,
+   * which is exactly the case this was hiding.
+   */
+  if (error) {
+    console.error('[requestPasswordReset]', error.status, error.message)
+
+    const status = error.status ?? 0
+    const rateLimited = status === 429 || /rate limit|too many/i.test(error.message)
+
+    return {
+      ok: false,
+      error: rateLimited
+        ? 'Too many emails have been sent recently. Wait a few minutes and try again.'
+        : 'We could not send the email just now. Try again shortly.',
+    }
+  }
 
   return { ok: true }
 }
