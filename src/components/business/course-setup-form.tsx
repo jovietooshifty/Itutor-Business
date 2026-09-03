@@ -10,40 +10,11 @@ import {
   NAVIGATION_LABELS,
   RETRY_COOLDOWN_OPTIONS,
   retriesAllowed,
+  type CourseSetupInitial,
   type CourseVisibility,
   type QuizNavigation,
 } from '@/lib/course'
 import { createCourse, type CourseSetupInput } from '@/app/(business)/courses/actions'
-
-export type CourseSetupInitial = {
-  businessId: string
-  title: string
-  description: string
-  durationLabel: string
-  visibility: CourseVisibility
-  tags: string[]
-  whatYouWillLearn: string[]
-  thumbnailUrl: string | null
-  quizNavigationDefault: QuizNavigation
-  retryMaxDefault: number | null
-  retryCooldownHoursDefault: number | null
-}
-
-export function emptyCourseSetup(businessId: string): CourseSetupInitial {
-  return {
-    businessId,
-    title: '',
-    description: '',
-    durationLabel: '',
-    visibility: 'private',
-    tags: [],
-    whatYouWillLearn: [],
-    thumbnailUrl: null,
-    quizNavigationDefault: 'allow_back',
-    retryMaxDefault: null,
-    retryCooldownHoursDefault: null,
-  }
-}
 
 /**
  * Course Builder screen 1 — "Create a course". Collects the basics, then hands

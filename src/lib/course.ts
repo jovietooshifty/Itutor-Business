@@ -151,3 +151,33 @@ export const COURSE_TAG_SUGGESTIONS = [
   'Loss Prevention',
   'Conflict Resolution',
 ] as const
+
+export type CourseSetupInitial = {
+  businessId: string
+  title: string
+  description: string
+  durationLabel: string
+  visibility: CourseVisibility
+  tags: string[]
+  whatYouWillLearn: string[]
+  thumbnailUrl: string | null
+  quizNavigationDefault: QuizNavigation
+  retryMaxDefault: number | null
+  retryCooldownHoursDefault: number | null
+}
+
+export function emptyCourseSetup(businessId: string): CourseSetupInitial {
+  return {
+    businessId,
+    title: '',
+    description: '',
+    durationLabel: '',
+    visibility: 'private',
+    tags: [],
+    whatYouWillLearn: [],
+    thumbnailUrl: null,
+    quizNavigationDefault: 'allow_back',
+    retryMaxDefault: null,
+    retryCooldownHoursDefault: null,
+  }
+}

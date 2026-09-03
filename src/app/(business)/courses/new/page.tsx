@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { CourseSetupForm, emptyCourseSetup } from '@/components/business/course-setup-form'
+import { CourseSetupForm } from '@/components/business/course-setup-form'
 import { getBusinessContext } from '@/lib/business'
+import { emptyCourseSetup } from '@/lib/course'
 
 export const metadata: Metadata = { title: 'Create a course — iTutor Business' }
 
