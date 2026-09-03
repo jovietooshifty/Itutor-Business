@@ -1,18 +1,21 @@
 'use client'
 
 import * as React from 'react'
-import { MailCheck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Button, Field, Input } from '@/components/ui'
-import { requestPasswordReset } from '@/app/(auth)/actions'
+import { OtpInput } from '@/components/auth/otp-input'
+import { requestPasswordReset, verifyRecoveryCode } from '@/app/(auth)/actions'
 
 export function ForgotPasswordForm() {
+  const router = useRouter()
   const [email, setEmail] = React.useState('')
   const [sent, setSent] = React.useState(false)
+  const [code, setCode] = React.useState('')
   const [error, setError] = React.useState<string | null>(null)
   const [pending, startTransition] = React.useTransition()
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function send(e?: React.FormEvent) {
+    e?.preventDefault()
     setError(null)
 
     startTransition(async () => {
@@ -25,26 +28,67 @@ export function ForgotPasswordForm() {
     })
   }
 
+  function verify() {
+    setError(null)
+    startTransition(async () => {
+      const result = await verifyRecoveryCode({ email, code })
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      // The code established a session; that is what /reset-password needs.
+      router.replace('/reset-password')
+      router.refresh()
+    })
+  }
+
   /*
-   * Deliberately says "if that address has an account" rather than confirming
-   * one exists — the action does not reveal it either, so this screen must not
-   * become the thing that does.
+   * The code is the primary path, not a fallback. Mail scanners follow links
+   * in email, and these tokens are single-use, so a robot routinely burns the
+   * link before the person clicks it — which is exactly what was happening.
+   * A typed code cannot be consumed that way.
    */
   if (sent) {
     return (
-      <div className="rounded-lg bg-brand-light px-4 py-5 text-center">
-        <MailCheck size={26} className="mx-auto text-[var(--itutor-green)]" aria-hidden />
-        <p className="m-0 mt-2.5 text-sm font-semibold text-ink">Check your inbox</p>
-        <p className="m-0 mt-1 text-sm text-ink-muted">
-          If <span className="font-semibold text-ink">{email.trim()}</span> has an account, a reset
-          link is on its way.
+      <div>
+        <p className="m-0 mb-1 text-sm text-ink">
+          We sent a 6-digit code to <span className="font-semibold">{email.trim()}</span>.
+        </p>
+        <p className="m-0 mb-5 text-xs text-[#9ca3af]">
+          If that address has an account, the code is on its way. Enter it below.
+        </p>
+
+        <OtpInput value={code} onChange={setCode} idPrefix="recovery" disabled={pending} />
+
+        {error && <p className="mb-3 text-xs font-semibold text-danger-fg">{error}</p>}
+
+        <Button
+          size="lg"
+          fullWidth
+          loading={pending}
+          disabled={code.length !== 6}
+          onClick={verify}
+        >
+          {pending ? 'Checking…' : 'Continue'}
+        </Button>
+
+        <p className="m-0 mt-4 text-center text-xs text-[#9ca3af]">
+          Didn&apos;t get it?{' '}
+          <button
+            type="button"
+            onClick={() => send()}
+            disabled={pending}
+            className="font-semibold text-[var(--itutor-green)] underline disabled:opacity-50"
+          >
+            Send another
+          </button>
         </p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={send} noValidate>
       <Field label="Email" htmlFor="reset-email">
         <Input
           id="reset-email"
@@ -62,7 +106,7 @@ export function ForgotPasswordForm() {
 
       <div className="mt-6">
         <Button type="submit" size="lg" fullWidth loading={pending} disabled={!email.trim()}>
-          {pending ? 'Sending…' : 'Send reset link'}
+          {pending ? 'Sending…' : 'Send reset code'}
         </Button>
       </div>
     </form>

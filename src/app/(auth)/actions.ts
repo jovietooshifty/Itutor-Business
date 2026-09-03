@@ -320,3 +320,33 @@ export async function resetPassword(input: {
   revalidatePath('/', 'layout')
   return { ok: true }
 }
+
+/**
+ * Verifies a reset code typed by hand, and signs them in so /reset-password
+ * has a session to update.
+ *
+ * This exists because the emailed link cannot be relied on: it is single-use,
+ * and mail scanners follow links in email, so a robot regularly consumes the
+ * token before the person clicks it. A code the user types is immune to that.
+ */
+export async function verifyRecoveryCode(input: {
+  email: string
+  code: string
+}): Promise<ActionResult> {
+  if (!/^\d{6}$/.test(input.code)) {
+    return { ok: false, error: 'Enter the 6-digit code from your email.' }
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: input.email.trim(),
+    token: input.code,
+    type: 'recovery',
+  })
+
+  if (error) return { ok: false, error: error.message }
+  if (!data.user) return { ok: false, error: 'That code did not work. Request a new one.' }
+
+  revalidatePath('/', 'layout')
+  return { ok: true }
+}
