@@ -3,9 +3,15 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Design tokens — transcribed verbatim from the Claude Design export at
-   design-reference/_ds/itutor-design-system-*/tokens/*.css
+   Design tokens — transcribed verbatim from the Claude Design export under
+   design-reference/_ds/itutor-design-system-<id>/tokens/ (colors, typography,
+   spacing, effects, fonts).
    Values are not to be adjusted by hand; re-sync from the export instead.
+
+   Do NOT write a glob containing a star followed by a slash in this comment:
+   that sequence closes the CSS comment early, and whatever follows becomes
+   part of the next selector. That exact bug silently scoped this whole :root
+   block to a non-existent element, killing every token app-wide.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Raw brand palette ─────────────────────────────────────────────── */
