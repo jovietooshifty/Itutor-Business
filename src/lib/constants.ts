@@ -5,19 +5,79 @@
  *          design-reference/Learner Sign-Up.dc.html (bottom <script> blocks).
  */
 
+/**
+ * Suggestions, not a closed set — the combobox accepts anything typed, so a
+ * title that is not here is still a valid answer. Kept broad on purpose: the
+ * original list was food-service only, which left whole categories of the
+ * people who actually sign a company up (founders, finance, IT, executives)
+ * with nothing to pick.
+ */
 export const ORG_ROLES = [
+  // Ownership and executive
   'Owner / Founder',
+  'Co-Founder',
+  'Chief Executive Officer',
+  'Chief Operating Officer',
+  'Chief Financial Officer',
+  'Chief Technical Officer',
+  'Chief People Officer',
+  'Managing Director',
+  'Director',
+  'Partner',
+  // Management
   'General Manager',
   'Operations Manager',
   'Regional / District Manager',
-  'Franchise Owner',
-  'HR Manager',
-  'Training Coordinator',
-  'Compliance / Food Safety Officer',
-  'Executive Chef',
-  'Kitchen Manager',
+  'Branch Manager',
+  'Store Manager',
+  'Assistant Manager',
   'Shift Supervisor',
+  'Team Lead',
+  'Project Manager',
+  // People and training
+  'HR Manager',
+  'HR Officer',
+  'Recruiter',
+  'Training Coordinator',
+  'Training Manager',
+  'Learning & Development Lead',
+  'Onboarding Specialist',
+  // Compliance, safety and quality
+  'Compliance / Food Safety Officer',
   'Health & Safety Officer',
+  'Quality Assurance Manager',
+  'Risk & Compliance Manager',
+  'Auditor',
+  // Food service and hospitality
+  'Franchise Owner',
+  'Executive Chef',
+  'Head Chef',
+  'Sous Chef',
+  'Kitchen Manager',
+  'Restaurant Manager',
+  'Front of House Manager',
+  'Bar Manager',
+  'Catering Manager',
+  // Retail, supply and logistics
+  'Retail Manager',
+  'Inventory Manager',
+  'Warehouse Manager',
+  'Supply Chain Manager',
+  'Procurement Officer',
+  'Logistics Coordinator',
+  // Commercial and support
+  'Marketing Manager',
+  'Sales Manager',
+  'Account Manager',
+  'Customer Service Manager',
+  'Finance Manager',
+  'Accountant',
+  'Office Manager',
+  'Administrator',
+  'Executive Assistant',
+  'IT Manager',
+  'Systems Administrator',
+  'Consultant',
   'Other',
 ] as const
 

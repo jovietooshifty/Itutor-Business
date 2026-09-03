@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { BookOpen, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Badge, Button, Card } from '@/components/ui'
+import { CourseCard } from '@/components/course-card'
 import { ShareCourseButton } from '@/components/business/share-course-modal'
 import { getBusinessContext } from '@/lib/business'
 import { createClient } from '@/lib/supabase/server'
@@ -61,72 +62,54 @@ export default async function Page() {
           {courses.map((course) => {
             const blockCount = (course.course_blocks as { id: string }[] | null)?.length ?? 0
             return (
-              <Card
-                key={course.id}
-                className="relative h-full overflow-hidden p-0 transition-shadow duration-fast hover:shadow-md"
-              >
-                {/* The whole tile is the link — management is what you want on
-                    a course you already built. Everything interactive sits
-                    above it in the stacking order so it can still be clicked. */}
-                <Link
+              <div key={course.id} className="relative">
+                <CourseCard
                   href={`/courses/${course.id}/manage`}
-                  className="absolute inset-0 z-0"
-                  aria-label={`Manage ${course.title}`}
+                  title={course.title}
+                  thumbnailUrl={course.thumbnail_url}
+                  providerName={context.businessName}
+                  description={course.description}
+                  meta={
+                    blockCount === 0
+                      ? 'No blocks yet'
+                      : `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}${
+                          course.duration_label ? ` · ${course.duration_label}` : ''
+                        }`
+                  }
+                  chips={
+                    <>
+                      <Badge tone={course.status === 'published' ? 'success' : 'neutral'}>
+                        {course.status === 'published' ? 'Published' : 'Draft'}
+                      </Badge>
+                      <Badge tone="neutral">
+                        {course.visibility === 'public' ? 'Public' : 'Private'}
+                      </Badge>
+                    </>
+                  }
+                  thumbnailPrompt={
+                    canCreate
+                      ? { href: `/courses/${course.id}/basics`, label: 'Add a thumbnail' }
+                      : undefined
+                  }
+                  footerLeft={
+                    course.status === 'published' ? 'Live' : 'Not published yet'
+                  }
+                  actionLabel="Manage"
                 />
 
-                <div className="relative grid h-[120px] place-items-center bg-brand-light">
-                  {course.thumbnail_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={course.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <BookOpen
-                      size={38}
-                      strokeWidth={1.6}
-                      className="text-[var(--itutor-green)]"
-                      aria-hidden
+                {canCreate && (
+                  <div className="absolute right-2.5 top-2.5 z-20">
+                    <ShareCourseButton
+                      course={{
+                        id: course.id,
+                        title: course.title,
+                        shareToken: course.share_token,
+                        isPrivate: course.visibility === 'private',
+                      }}
                     />
-                  )}
-                  {canCreate && (
-                    <div className="absolute right-2.5 top-2.5 z-10">
-                      <ShareCourseButton
-                        course={{
-                          id: course.id,
-                          title: course.title,
-                          shareToken: course.share_token,
-                          isPrivate: course.visibility === 'private',
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-[18px]">
-                  <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-                    <Badge tone={course.status === 'published' ? 'success' : 'neutral'}>
-                      {course.status === 'published' ? 'Published' : 'Draft'}
-                    </Badge>
-                    <Badge tone="neutral">
-                      {course.visibility === 'public' ? 'Public' : 'Private'}
-                    </Badge>
                   </div>
-
-                  <h2 className="m-0 font-display text-base font-bold leading-snug text-ink">
-                    {course.title}
-                  </h2>
-                  {course.description && (
-                    <p className="m-0 mt-1.5 line-clamp-2 text-sm text-ink-muted">
-                      {course.description}
-                    </p>
-                  )}
-
-                  <p className="m-0 mt-3 text-xs text-[#9ca3af]">
-                    {blockCount === 0
-                      ? 'No blocks yet'
-                      : `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`}
-                    {course.duration_label ? ` · ${course.duration_label}` : ''}
-                  </p>
-                </div>
-              </Card>
+                )}
+              </div>
             )
           })}
         </div>

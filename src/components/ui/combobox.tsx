@@ -28,6 +28,12 @@ export function RoleCombobox({
   const [open, setOpen] = React.useState(false)
   const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()))
 
+  // Offer the typed value unless it already IS one of the options, in which
+  // case picking the option itself does the same thing.
+  const typed = query.trim()
+  const canUseTyped =
+    typed.length > 0 && !options.some((o) => o.toLowerCase() === typed.toLowerCase())
+
   return (
     <div className="relative">
       <input
@@ -69,8 +75,32 @@ export function RoleCombobox({
               {option}
             </div>
           ))}
-          {filtered.length === 0 && (
-            <div className="px-3.5 py-2.5 text-sm text-[#9ca3af]">No matches</div>
+
+          {/*
+            The list is suggestions, not a closed set — no list of job titles
+            covers every business. Without this, typing a title that is not
+            listed reached "No matches" and simply stopped, with no way to keep
+            what you had already written.
+          */}
+          {canUseTyped && (
+            <div
+              role="option"
+              aria-selected={false}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                onPick(typed)
+                setOpen(false)
+              }}
+              className="cursor-pointer border-t border-surface-border px-3.5 py-2.5 text-sm text-ink hover:bg-surface-inset"
+            >
+              Use &ldquo;<span className="font-semibold">{typed}</span>&rdquo;
+            </div>
+          )}
+
+          {filtered.length === 0 && !canUseTyped && (
+            <div className="px-3.5 py-2.5 text-sm text-[#9ca3af]">
+              Start typing to add your own
+            </div>
           )}
         </div>
       )}

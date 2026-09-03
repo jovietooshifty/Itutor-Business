@@ -41,7 +41,13 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main>
+      {/*
+        A light green ground for the whole page. Sections that need to sit
+        apart — the course preview, the closing band — set their own
+        background over it, so this reads as a tint rather than flattening
+        the page into one colour.
+      */}
+      <main className="bg-mint-wash">
         <Hero />
         <CoursePreview />
         <HowItWorks />
