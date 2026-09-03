@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { RolePickerTrigger } from '@/components/marketing/role-picker-modal'
 import { Logo, PUBLIC_HOME } from '@/components/ui/logo'
 
 /**
@@ -32,12 +33,9 @@ export function SiteHeader() {
           >
             Log in
           </Link>
-          <Link
-            href="#role-picker"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-[image:var(--gradient-brand)] px-5 text-sm font-bold text-white no-underline shadow-button-green transition-[filter] duration-fast hover:brightness-110"
-          >
+          <RolePickerTrigger className="inline-flex h-10 cursor-pointer items-center justify-center rounded-lg bg-[image:var(--gradient-brand)] px-5 text-sm font-bold text-white shadow-button-green transition-[filter] duration-fast hover:brightness-110">
             Sign up
-          </Link>
+          </RolePickerTrigger>
         </div>
       </nav>
     </header>

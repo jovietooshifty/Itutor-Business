@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
+import { RolePickerTrigger } from '@/components/marketing/role-picker-modal'
 import Link from 'next/link'
 import {
   ArrowRight,
   BarChart3,
   Briefcase,
   Building,
-  Building2,
   Check,
   Factory,
-  GraduationCap,
   LayoutDashboard,
   LayoutGrid,
   Layers,
@@ -45,7 +44,6 @@ export default function HomePage() {
       <main>
         <Hero />
         <CoursePreview />
-        <RolePicker />
         <HowItWorks />
         <Stats />
         <TrustStrip />
@@ -96,12 +94,9 @@ function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="#role-picker"
-              className="inline-flex h-[52px] items-center justify-center rounded-lg bg-[image:var(--gradient-brand)] px-9 text-base font-bold text-white no-underline shadow-button-green transition-[filter] duration-fast hover:brightness-110"
-            >
+            <RolePickerTrigger className="inline-flex h-[52px] cursor-pointer items-center justify-center rounded-lg bg-[image:var(--gradient-brand)] px-9 text-base font-bold text-white shadow-button-green transition-[filter] duration-fast hover:brightness-110">
               Get Started
-            </Link>
+            </RolePickerTrigger>
           </div>
         </div>
 
@@ -134,91 +129,6 @@ function Hero() {
         </div>
       </div>
     </section>
-  )
-}
-
-/* ── Role picker ───────────────────────────────────────────────────────── */
-
-function RolePicker() {
-  return (
-    <section id="role-picker" className="bg-white px-6 py-16">
-      <div className="mx-auto max-w-content">
-        <div className="mb-10 text-center">
-          <h2 className="m-0 mb-2.5 text-[clamp(28px,4vw,36px)] font-bold tracking-heading text-ink">
-            How would you like to get started?
-          </h2>
-          <p className="m-0 text-base text-ink-muted">
-            You can always invite the rest of your team, or switch roles, later.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <RoleCard
-            href="/business/signup"
-            icon={<Building2 size={30} strokeWidth={2} aria-hidden />}
-            title="I'm a Business"
-            description="Onboard and train your contractors"
-            accent="brand"
-          />
-          <RoleCard
-            href="/learner/signup"
-            icon={<GraduationCap size={30} strokeWidth={2} aria-hidden />}
-            title="I'm a Learner"
-            description="Take courses and grow your skills"
-            accent="coral"
-          />
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function RoleCard({
-  href,
-  icon,
-  title,
-  description,
-  accent,
-}: {
-  href: string
-  icon: React.ReactNode
-  title: string
-  description: string
-  accent: 'brand' | 'coral'
-}) {
-  const isBrand = accent === 'brand'
-
-  return (
-    <Link
-      href={href}
-      className={[
-        'block rounded-2xl border border-[#f3f4f6] bg-white/80 p-10 no-underline shadow-sm',
-        'transition-[transform,box-shadow,border-color] duration-slow ease-out',
-        'hover:-translate-y-1 hover:shadow-md',
-        isBrand
-          ? 'hover:border-[color:color-mix(in_oklab,var(--brand)_30%,transparent)]'
-          : 'hover:border-[color:color-mix(in_oklab,var(--coral)_30%,transparent)]',
-      ].join(' ')}
-    >
-      <span
-        className={[
-          'mb-6 grid h-16 w-16 place-items-center rounded-2xl',
-          isBrand ? 'bg-brand-light text-[var(--itutor-green)]' : 'bg-coral-soft text-coral',
-        ].join(' ')}
-      >
-        {icon}
-      </span>
-      <h3 className="m-0 mb-2 font-display text-[24px] font-bold text-ink">{title}</h3>
-      <p className="mb-5 mt-0 text-base text-ink-muted">{description}</p>
-      <span
-        className={[
-          'inline-flex items-center gap-1.5 text-sm font-semibold',
-          isBrand ? 'text-[var(--itutor-green)]' : 'text-coral',
-        ].join(' ')}
-      >
-        Get started <ArrowRight size={15} aria-hidden />
-      </span>
-    </Link>
   )
 }
 
@@ -430,12 +340,9 @@ function CtaBand() {
           Sign up in minutes — no approval wait, no setup fees.
         </p>
         <div className="relative mt-7">
-          <Link
-            href="#role-picker"
-            className="inline-flex h-[52px] items-center justify-center rounded-lg bg-white px-9 text-base font-bold text-forest no-underline transition-colors duration-fast hover:bg-white/90"
-          >
+          <RolePickerTrigger className="inline-flex h-[52px] cursor-pointer items-center justify-center rounded-lg bg-white px-9 text-base font-bold text-forest transition-colors duration-fast hover:bg-white/90">
             Sign up
-          </Link>
+          </RolePickerTrigger>
         </div>
       </div>
     </section>

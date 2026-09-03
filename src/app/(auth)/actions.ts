@@ -2,8 +2,10 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { REMEMBER_COOKIE } from '@/lib/supabase/cookies'
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -36,6 +38,7 @@ export async function signUpBusiness(input: {
   email: string
   password: string
   confirmPassword: string
+  rememberMe?: boolean
 }): Promise<ActionResult> {
   const fieldErrors: Record<string, string> = {}
   if (!input.orgName.trim()) fieldErrors.orgName = 'Enter your organization name'
@@ -48,6 +51,10 @@ export async function signUpBusiness(input: {
   if (Object.keys(fieldErrors).length) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors }
   }
+
+  // Recorded now so the session created after email verification already
+  // honours it.
+  await rememberPreference(input.rememberMe !== false)
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
@@ -73,6 +80,7 @@ export async function signUpLearner(input: {
   password: string
   confirmPassword: string
   dateOfBirth: string
+  rememberMe?: boolean
 }): Promise<ActionResult> {
   const fieldErrors: Record<string, string> = {}
   if (!EMAIL_RE.test(input.email)) fieldErrors.email = 'Enter a valid email address'
@@ -84,6 +92,8 @@ export async function signUpLearner(input: {
   if (Object.keys(fieldErrors).length) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors }
   }
+
+  await rememberPreference(input.rememberMe !== false)
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
@@ -179,10 +189,32 @@ export async function acceptInvite(input: {
 
 /* ── Sign in / out ──────────────────────────────────────────────────────── */
 
+/**
+ * Records whether this browser should stay signed in after it closes.
+ *
+ * The flag itself is always a persistent cookie — otherwise it would vanish
+ * with the session it is meant to describe, and the next sign-in would forget
+ * the choice. It is the AUTH cookies that become session cookies; see
+ * lib/supabase/cookies.ts.
+ */
+async function rememberPreference(remember: boolean) {
+  const store = await cookies()
+  store.set(REMEMBER_COOKIE, remember ? 'true' : 'false', {
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+    path: '/',
+  })
+}
+
 export async function signIn(input: {
   email: string
   password: string
+  rememberMe?: boolean
 }): Promise<ActionResult<{ userType: string }>> {
+  // Written BEFORE signing in, because the sign-in is what sets the auth
+  // cookies and createClient() reads this to decide their lifetime.
+  await rememberPreference(input.rememberMe !== false)
+
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithPassword({
     email: input.email.trim(),

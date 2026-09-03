@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { REMEMBER_COOKIE } from '@/lib/supabase/cookies'
 import type { Database } from '@/lib/types/database'
 
 /**
@@ -53,11 +54,19 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
+          // Mirrors createClient()'s rule: without "Remember me" the auth
+          // cookies are session cookies. This refresh runs on nearly every
+          // request, so re-adding maxAge here would quietly undo the choice.
+          const remember = request.cookies.get(REMEMBER_COOKIE)?.value !== 'false'
+
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            if (remember) return response.cookies.set(name, value, options)
+
+            const { maxAge: _maxAge, expires: _expires, ...sessionOptions } = options ?? {}
+            response.cookies.set(name, value, sessionOptions)
+          })
         },
       },
     }

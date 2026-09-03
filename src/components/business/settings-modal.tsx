@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Bell, Building2, ExternalLink, Search, Settings, User, Users, X } from 'lucide-react'
 import { Avatar, Badge, Button, Checkbox, cn, Field, Input, Select } from '@/components/ui'
+import { LogoutButton } from '@/components/auth/logout-button'
 import { TIMEZONE_OPTIONS } from '@/lib/constants'
 import {
   changeMemberRole,
@@ -317,6 +318,13 @@ function AccountTab({ email }: { email: string }) {
       <p className="mt-3 text-xs text-ink-muted">
         Changing your email sends a confirmation link to the new address.
       </p>
+
+      <div className="mt-7 border-t border-border pt-5">
+        <LogoutButton className="text-danger-fg hover:underline" />
+        <p className="m-0 mt-1.5 text-xs text-ink-muted">
+          Signs you out of this browser.
+        </p>
+      </div>
     </>
   )
 }

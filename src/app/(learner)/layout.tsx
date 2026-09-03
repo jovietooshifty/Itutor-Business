@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Logo } from '@/components/ui/logo'
+import { LogoutButton } from '@/components/auth/logout-button'
 import { createClient } from '@/lib/supabase/server'
 
 /**
@@ -51,6 +52,7 @@ export default async function LearnerLayout({ children }: { children: React.Reac
           >
             Edit profile
           </Link>
+          <LogoutButton className="text-ink-muted hover:text-ink" />
         </div>
       </header>
 

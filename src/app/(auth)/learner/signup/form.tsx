@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Field, Input } from '@/components/ui'
+import { Button, Checkbox, Field, Input } from '@/components/ui'
 import { PasswordMeter } from '@/components/auth/auth-shell'
 import { passwordStrength } from '@/lib/constants'
 import { signUpLearner } from '../../actions'
@@ -17,6 +17,7 @@ export function LearnerSignupForm() {
   const [dateOfBirth, setDateOfBirth] = React.useState('')
 
   const [errors, setErrors] = React.useState<Record<string, string>>({})
+  const [rememberMe, setRememberMe] = React.useState(true)
   const [formError, setFormError] = React.useState<string | null>(null)
 
   const strength = passwordStrength(password)
@@ -26,7 +27,7 @@ export function LearnerSignupForm() {
     setFormError(null)
 
     startTransition(async () => {
-      const result = await signUpLearner({ email, password, confirmPassword, dateOfBirth })
+      const result = await signUpLearner({ email, password, confirmPassword, dateOfBirth, rememberMe })
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {})
         setFormError(result.fieldErrors ? null : result.error)
@@ -88,6 +89,14 @@ export function LearnerSignupForm() {
             invalid={!!errors.dateOfBirth}
           />
         </Field>
+      </div>
+
+      <div className="mt-4">
+        <Checkbox
+          label="Remember me on this device"
+          checked={rememberMe}
+          onChange={(e) => setRememberMe(e.target.checked)}
+        />
       </div>
 
       {formError && (

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Field, Input } from '@/components/ui'
+import { Button, Checkbox, Field, Input } from '@/components/ui'
 import { RoleCombobox } from '@/components/ui/combobox'
 import { PasswordMeter } from '@/components/auth/auth-shell'
 import { ORG_ROLES, passwordStrength } from '@/lib/constants'
@@ -21,6 +21,7 @@ export function BusinessSignupForm() {
   const [confirmPassword, setConfirmPassword] = React.useState('')
 
   const [errors, setErrors] = React.useState<Record<string, string>>({})
+  const [rememberMe, setRememberMe] = React.useState(true)
   const [formError, setFormError] = React.useState<string | null>(null)
 
   const strength = passwordStrength(password)
@@ -49,6 +50,7 @@ export function BusinessSignupForm() {
         email,
         password,
         confirmPassword,
+        rememberMe,
       })
 
       if (!result.ok) {
@@ -141,6 +143,14 @@ export function BusinessSignupForm() {
             autoComplete="new-password"
           />
         </Field>
+      </div>
+
+      <div className="mt-4">
+        <Checkbox
+          label="Remember me on this device"
+          checked={rememberMe}
+          onChange={(e) => setRememberMe(e.target.checked)}
+        />
       </div>
 
       {formError && (

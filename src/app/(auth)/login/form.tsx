@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button, Field, Input } from '@/components/ui'
+import { Button, Checkbox, Field, Input } from '@/components/ui'
 import { signIn } from '../actions'
 
 export function LoginForm() {
@@ -12,6 +12,7 @@ export function LoginForm() {
 
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
+  const [rememberMe, setRememberMe] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
@@ -19,7 +20,7 @@ export function LoginForm() {
     setError(null)
 
     startTransition(async () => {
-      const result = await signIn({ email, password })
+      const result = await signIn({ email, password, rememberMe })
       if (!result.ok) {
         setError(result.error)
         return
@@ -55,6 +56,14 @@ export function LoginForm() {
             autoComplete="current-password"
           />
         </Field>
+      </div>
+
+      <div className="mt-4">
+        <Checkbox
+          label="Remember me on this device"
+          checked={rememberMe}
+          onChange={(e) => setRememberMe(e.target.checked)}
+        />
       </div>
 
       {error && (
