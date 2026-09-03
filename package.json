@@ -6,23 +6,35 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pipeline:test": "tsx --env-file-if-exists=.env.local scripts/test-pipeline.ts",
+    "pipeline:verify": "tsx scripts/verify-quiz-client.ts"
+  },
+  "engines": {
+    "node": ">=20.6"
   },
   "dependencies": {
+    "@mozilla/readability": "^0.6.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.47.10",
+    "jsdom": "^29.1.1",
     "lucide-react": "^0.469.0",
+    "mammoth": "^1.12.2",
     "next": "^15.5.25",
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.13",
     "typescript": "^5.7.2"
   }
 }
