@@ -14,10 +14,31 @@ export type BusinessContext = {
 }
 
 /**
+ * Local-only escape hatch: mirrors the one in supabase/middleware.ts. When
+ * active, getBusinessContext() below returns a fake context instead of
+ * hitting Supabase, so layouts/pages that redirect on null render normally.
+ * Writes that reference this fake businessId will fail (no matching row in
+ * the DB) since this is for browsing, not exercising persistence.
+ */
+const DEV_AUTH_BYPASS =
+  process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true'
+
+const DEV_BUSINESS_CONTEXT: BusinessContext = {
+  userId: 'dev-bypass-user',
+  email: 'dev@localhost',
+  fullName: 'Dev User',
+  businessId: 'dev-bypass-business',
+  role: 'admin',
+  businessName: 'Dev Business (local bypass)',
+}
+
+/**
  * Resolves the signed-in user's active business membership. Returns null when
  * the user has none (which the callers turn into a redirect).
  */
 export async function getBusinessContext(): Promise<BusinessContext | null> {
+  if (DEV_AUTH_BYPASS) return DEV_BUSINESS_CONTEXT
+
   const supabase = await createClient()
 
   const {

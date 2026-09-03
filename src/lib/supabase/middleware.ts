@@ -17,7 +17,19 @@ function matches(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p.endsWith('/') ? p : `${p}/`))
 }
 
+/**
+ * Local-only escape hatch: skips every auth check so you can click through
+ * protected routes without signing in. Requires NODE_ENV=development (true
+ * for `next dev`, never for a deployed build) AND an explicit opt-in var, so
+ * it can't activate by accident in a real environment. Set in .env.local only
+ * — never commit it, never set it anywhere a real user could hit.
+ */
+const DEV_AUTH_BYPASS =
+  process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_BYPASS === 'true'
+
 export async function updateSession(request: NextRequest) {
+  if (DEV_AUTH_BYPASS) return NextResponse.next({ request })
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient<Database>(
