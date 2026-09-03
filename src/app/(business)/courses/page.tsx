@@ -20,13 +20,21 @@ export default async function Page() {
   if (!context) redirect('/login')
 
   const supabase = await createClient()
-  const { data: courses } = await supabase
+  /* The embed names its foreign key. Two relationships now exist between
+     courses and course_blocks — the course's blocks, and courses.build_block_id
+     pointing back at one — so a bare `course_blocks(id)` is ambiguous and
+     PostgREST refuses the whole query. */
+  const { data: courses, error } = await supabase
     .from('courses')
     .select(
-      'id, title, description, thumbnail_url, visibility, status, share_token, duration_label, updated_at, course_blocks(id)'
+      'id, title, description, thumbnail_url, visibility, status, share_token, duration_label, updated_at, course_blocks!course_blocks_course_id_fkey(id)'
     )
     .eq('business_id', context.businessId)
     .order('updated_at', { ascending: false })
+
+  /* Without this, a failed query is indistinguishable from an empty account:
+     the page rendered "No courses yet" while three courses sat in the table. */
+  if (error) throw new Error(`Could not load courses: ${error.message}`)
 
   const canCreate = context.role !== 'auditor'
 

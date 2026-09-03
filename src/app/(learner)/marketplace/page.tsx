@@ -19,15 +19,20 @@ export default async function Page() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: courses }, { data: enrollments }] = await Promise.all([
+  const [{ data: courses, error }, { data: enrollments }] = await Promise.all([
     supabase
       .from('courses')
+      /* course_blocks is disambiguated by foreign key: courses.build_block_id
+         gives a second relationship between these tables, which makes a bare
+         embed ambiguous and fails the query outright. */
       .select(
-        'id, title, description, thumbnail_url, duration_label, businesses(name), course_tags(tag), course_blocks(id)'
+        'id, title, description, thumbnail_url, duration_label, businesses(name), course_tags(tag), course_blocks!course_blocks_course_id_fkey(id)'
       )
       .order('updated_at', { ascending: false }),
     supabase.from('enrollments').select('course_id').eq('learner_id', user.id),
   ])
+
+  if (error) throw new Error(`Could not load the marketplace: ${error.message}`)
 
   const enrolledIds = new Set((enrollments ?? []).map((e) => e.course_id))
 
