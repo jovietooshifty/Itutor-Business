@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { loadBusinessLearners, type LearnerRow } from '@/lib/learners'
-import { materialView, type MaterialView } from '@/lib/material-view'
+import { bytesFromSignedUrl, materialView, type MaterialView } from '@/lib/material-view'
 import { parseResumeData, type ResumeData } from '@/lib/resume'
 
 /** Where the private resume/certification files live. */
@@ -91,10 +91,7 @@ export async function loadLearnerRecord(
             path,
             fileName: path.split('/').pop() ?? 'Resume',
             url: signed.signedUrl,
-            loadBytes: async () => {
-              const { data } = await supabase.storage.from(PRIVATE_BUCKET).download(path)
-              return data ? Buffer.from(await data.arrayBuffer()) : null
-            },
+            loadBytes: () => bytesFromSignedUrl(signed.signedUrl),
           })
         : null,
     }

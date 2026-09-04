@@ -40,6 +40,43 @@ function extensionOf(path: string): string {
 }
 
 /**
+ * Every path that gives up on showing a document in the page says so in the
+ * logs, loudly enough to find.
+ *
+ * The first version of this swallowed all three failure modes and returned a
+ * download link, which is indistinguishable from "this format is not
+ * supported" — so a document that failed to convert looked exactly like one
+ * that was never going to, and there was nothing to search for.
+ */
+function fellBack(reason: string, detail?: unknown): void {
+  console.error(`[material-view] falling back to a download link: ${reason}`, detail ?? '')
+}
+
+/**
+ * Reads a file through the signed URL that was already minted for it.
+ *
+ * Deliberately not `storage.download()`. That is a second, independent
+ * authorization check against the same object, and the two can disagree —
+ * minting a signed URL and fetching the bytes go through different Storage
+ * endpoints. Since the page has already produced a working signed URL for
+ * this reader, using it is one decision rather than two, and the bytes the
+ * server converts are exactly the bytes the browser would have downloaded.
+ */
+export async function bytesFromSignedUrl(url: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) {
+      fellBack(`signed URL returned HTTP ${res.status}`, url.split('?')[0])
+      return null
+    }
+    return Buffer.from(await res.arrayBuffer())
+  } catch (cause) {
+    fellBack('fetching the signed URL threw', cause)
+    return null
+  }
+}
+
+/**
  * Strips anything executable from converted markup.
  *
  * Defence in depth rather than the primary control: mammoth builds its output
@@ -91,6 +128,7 @@ export async function materialView({
   if (ext === 'docx' || ext === 'doc') {
     const buffer = await loadBytes()
     if (!buffer) {
+      fellBack('could not read the file bytes', { path, ext })
       return { kind: 'link', url, fileName: name, reason: 'It could not be read for display.' }
     }
 
@@ -101,6 +139,7 @@ export async function materialView({
       const html = sanitizeDocumentHtml(result.value)
 
       if (!html.trim()) {
+        fellBack('conversion produced no markup', { path })
         return {
           kind: 'link',
           url,
@@ -109,6 +148,10 @@ export async function materialView({
         }
       }
       if (Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
+        fellBack('converted markup exceeded the size cap', {
+          path,
+          bytes: Buffer.byteLength(html, 'utf8'),
+        })
         return {
           kind: 'link',
           url,
@@ -124,7 +167,8 @@ export async function materialView({
         url,
         warnings: result.messages.map((m) => m.message),
       }
-    } catch {
+    } catch (cause) {
+      fellBack('mammoth threw while converting', cause)
       return {
         kind: 'link',
         url,
@@ -140,10 +184,12 @@ export async function materialView({
   if (ext === 'txt' || ext === 'md' || ext === 'markdown') {
     const buffer = await loadBytes()
     if (!buffer) {
+      fellBack('could not read the file bytes', { path, ext })
       return { kind: 'link', url, fileName: name, reason: 'It could not be read for display.' }
     }
     return { kind: 'text', text: buffer.toString('utf8'), fileName: name, url }
   }
 
+  fellBack('no viewer for this file type', { path, ext })
   return { kind: 'link', url, fileName: name, reason: null }
 }

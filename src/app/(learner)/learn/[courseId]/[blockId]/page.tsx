@@ -13,7 +13,7 @@ import {
   effectiveNavigation,
   type BlockType,
 } from '@/lib/course'
-import { materialView } from '@/lib/material-view'
+import { bytesFromSignedUrl, materialView } from '@/lib/material-view'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Lesson — iTutor' }
@@ -125,10 +125,9 @@ export default async function Page({
       path: materialPath,
       fileName: asText(block.content_ref).fileName,
       url: materialUrl,
-      loadBytes: async () => {
-        const { data } = await supabase.storage.from(MATERIAL_BUCKET).download(materialPath)
-        return data ? Buffer.from(await data.arrayBuffer()) : null
-      },
+      // Through the signed URL just minted, not a second storage call — see
+      // bytesFromSignedUrl.
+      loadBytes: () => bytesFromSignedUrl(materialUrl),
     })
   }
 
