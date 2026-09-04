@@ -87,9 +87,17 @@ export function QuizPlayer({
     startedAt.current = new Date().toISOString()
   }
 
+  /**
+   * Always changeable while the question is on screen.
+   *
+   * Forward-only navigation means you cannot RETURN to a question, not that
+   * your answer freezes the instant you touch an option. This used to reject
+   * the second click, so a misclick on a single-attempt quiz cost a mark with
+   * no recourse — and it contradicted the rules panel, which promises only
+   * that you cannot go back. Moving on is what makes an answer final, and the
+   * Back button is what enforces that.
+   */
   function choose(optionIndex: number) {
-    // Under forward-only navigation an answer is final once given.
-    if (!allowBack && answers[question.id] !== undefined) return
     setAnswers((prev) => ({ ...prev, [question.id]: optionIndex }))
   }
 
@@ -267,7 +275,7 @@ export function QuizPlayer({
         icon: allowBack ? ArrowRightLeft : Lock,
         text: allowBack
           ? 'You can go back and change your answers before submitting'
-          : 'You cannot return to previous questions — each answer is final',
+          : 'You cannot return to a question once you move on — but you can change your answer before you do',
         loud: !allowBack,
       },
     ]
@@ -328,8 +336,6 @@ export function QuizPlayer({
     )
   }
 
-  const locked = !allowBack && answers[question.id] !== undefined
-
   return (
     <Card className="p-7 md:p-8">
       <div className="flex items-center justify-between gap-3">
@@ -353,14 +359,12 @@ export function QuizPlayer({
               key={optionIndex}
               type="button"
               onClick={() => choose(optionIndex)}
-              disabled={locked && !selected}
               aria-pressed={selected}
               className={cn(
                 'flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors duration-fast',
                 selected
                   ? 'border-coral bg-coral-soft font-semibold text-ink'
-                  : 'border-surface-border bg-white text-ink hover:border-coral',
-                locked && !selected && 'cursor-not-allowed opacity-50'
+                  : 'border-surface-border bg-white text-ink hover:border-coral'
               )}
             >
               <span
@@ -377,9 +381,13 @@ export function QuizPlayer({
         })}
       </div>
 
-      {locked && (
+      {/* Shown before the choice is made, not after it. Warning someone that
+          they cannot come back is only useful while coming back is still
+          something they might have wanted. */}
+      {!allowBack && (
         <p className="m-0 mt-3 text-xs text-[#9ca3af]">
-          This quiz is forward-only — answers are final once given.
+          This quiz is forward-only — change your answer now if you need to, because{' '}
+          {isLast ? 'submitting' : 'moving to the next question'} is final.
         </p>
       )}
 
