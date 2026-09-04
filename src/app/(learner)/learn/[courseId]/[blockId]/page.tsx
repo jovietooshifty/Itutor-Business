@@ -36,13 +36,16 @@ export default async function Page({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: enrollment } = await supabase
+  const { data: enrollmentRows } = await supabase
     .from('enrollments')
     .select('id')
     .eq('course_id', courseId)
     .eq('learner_id', user.id)
-    .maybeSingle()
+    // Highest cycle — see enrolmentFor() in (learner)/actions.ts.
+    .order('cycle', { ascending: false })
+    .limit(1)
 
+  const enrollment = enrollmentRows?.[0]
   // Not enrolled: the landing page is where they enrol.
   if (!enrollment) redirect(`/learn/${courseId}`)
 
@@ -113,12 +116,15 @@ export default async function Page({
     attemptsUsed: number
     attemptsAllowed: number
     alreadyPassed: boolean
+    retryCooldownHours: number | null
+    /** When the cooldown lets them start again; null if they can start now. */
+    retryReadyAt: string | null
   } | null = null
 
   if (block.type === 'quiz') {
     const { data: quizRow } = await supabase
       .from('quizzes')
-      .select('id, passing_score, retry_max')
+      .select('id, passing_score, retry_max, retry_cooldown_hours')
       .eq('block_id', blockId)
       .maybeSingle()
 
@@ -129,10 +135,22 @@ export default async function Page({
         supabase.rpc('quiz_questions_for_learner', { p_quiz_id: quizRow.id }),
         supabase
           .from('quiz_attempts')
-          .select('passed')
+          .select('passed, attempted_at')
           .eq('quiz_id', quizRow.id)
-          .eq('learner_id', user.id),
+          .eq('learner_id', user.id)
+          .order('attempted_at', { ascending: false }),
       ])
+
+      /* The same window submitQuiz enforces, worked out here so the rules
+         panel can say when they may start rather than letting them answer
+         every question and then be refused. */
+      const cooldownHours = quizRow.retry_cooldown_hours
+      const lastAttemptAt = attempts?.[0]?.attempted_at ?? null
+      let retryReadyAt: string | null = null
+      if (cooldownHours && lastAttemptAt) {
+        const readyAt = new Date(lastAttemptAt).getTime() + cooldownHours * 3_600_000
+        if (Date.now() < readyAt) retryReadyAt = new Date(readyAt).toISOString()
+      }
 
       quiz = {
         questions: (questions ?? []).map((q) => ({
@@ -148,6 +166,8 @@ export default async function Page({
         // null means no retries, i.e. one attempt (see submitQuiz).
         attemptsAllowed: quizRow.retry_max ?? 1,
         alreadyPassed: (attempts ?? []).some((a) => a.passed),
+        retryCooldownHours: cooldownHours,
+        retryReadyAt,
       }
     }
   }
@@ -186,6 +206,8 @@ export default async function Page({
             attemptsUsed={quiz.attemptsUsed}
             attemptsAllowed={quiz.attemptsAllowed}
             alreadyPassed={quiz.alreadyPassed}
+            retryCooldownHours={quiz.retryCooldownHours}
+            retryReadyAt={quiz.retryReadyAt}
           />
         ) : (
           <p className="text-sm text-ink-muted">This quiz is not set up yet.</p>

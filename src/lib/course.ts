@@ -203,7 +203,6 @@ export const QUIZ_SCOPE_OPTIONS: { value: QuizScope; label: string }[] = [
   { value: 'since_last_quiz', label: 'All material since the last quiz' },
   { value: 'specific_blocks', label: 'Specific blocks' },
   { value: 'whole_course', label: 'Whole course' },
-  { value: 'none', label: 'None — general knowledge' },
 ]
 
 export const PASSING_SCORE_OPTIONS = [60, 70, 80, 90] as const
@@ -254,18 +253,130 @@ export function retriesAllowed(navigation: QuizNavigation): boolean {
 
 /* ── Setup screen ──────────────────────────────────────────────────────── */
 
-export const COURSE_TAG_SUGGESTIONS = [
-  'Food Safety',
-  'Sanitation',
-  'Allergen Awareness',
-  'Customer Service',
-  'Cash Handling',
-  'Safety',
-  'Inventory Management',
-  'Leadership',
-  'Loss Prevention',
-  'Conflict Resolution',
+/**
+ * What a course is ABOUT, grouped for browsing.
+ *
+ * These were ten fixed strings rendered as chips with no text input, so those
+ * ten were the only categories that could exist. They are now seeds for a
+ * typeahead that also takes anything typed — a list of categories cannot
+ * anticipate every trade, and a course nobody can categorise is a course
+ * nobody can find.
+ *
+ * Kept separate from SKILL_GROUPS in constants.ts, which answers the different
+ * question of what a *person* can do.
+ */
+export const COURSE_TAG_GROUPS = [
+  {
+    label: 'Compliance & Safety',
+    options: [
+      'Food Safety',
+      'HACCP',
+      'Sanitation',
+      'Allergen Awareness',
+      'Workplace Safety',
+      'PPE',
+      'Fire Safety',
+      'First Aid',
+      'Electrical Safety',
+      'Working at Heights',
+      'Confined Spaces',
+      'Manual Handling',
+      'Chemical Handling',
+      'Environmental Compliance',
+    ],
+  },
+  {
+    label: 'Operations',
+    options: [
+      'Inventory Management',
+      'Loss Prevention',
+      'Quality Control',
+      'Equipment Operation',
+      'Maintenance',
+      'Logistics',
+      'Scheduling',
+    ],
+  },
+  {
+    label: 'Customer & Sales',
+    options: [
+      'Customer Service',
+      'Sales',
+      'Upselling',
+      'Complaint Handling',
+      'Cash Handling',
+      'POS Systems',
+    ],
+  },
+  {
+    label: 'People',
+    options: [
+      'Leadership',
+      'Onboarding',
+      'Conflict Resolution',
+      'Communication',
+      'Time Management',
+      'Teamwork',
+      'Performance Management',
+    ],
+  },
+  {
+    label: 'Technical & Trade',
+    options: [
+      'Installation',
+      'Troubleshooting',
+      'Blueprint Reading',
+      'Welding',
+      'Plumbing',
+      'HVAC',
+      'Solar Installation',
+      'Battery Systems',
+    ],
+  },
+  {
+    label: 'Digital & Admin',
+    options: [
+      'Data Entry',
+      'Spreadsheets',
+      'Reporting',
+      'Documentation',
+      'Cybersecurity Basics',
+    ],
+  },
 ] as const
+
+export const COURSE_TAG_SUGGESTIONS = COURSE_TAG_GROUPS.flatMap((group) => group.options)
+
+/** More than this and a category stops narrowing anything down. */
+export const COURSE_TAG_MAX = 5
+
+/**
+ * One spelling per concept. Without this you get `Safety`, `safety` and
+ * `Safety ` as three separate tags, which browse as three separate categories
+ * holding a third of the courses each.
+ *
+ * Words already capitalised in an unusual way are left alone — HACCP and HVAC
+ * must not become Haccp and Hvac.
+ */
+export function normalizeCourseTag(tag: string): string {
+  const trimmed = tag.trim().replace(/\s+/g, ' ')
+  if (!trimmed) return ''
+
+  // An exact case-insensitive hit on a seeded tag wins, so the canonical
+  // spelling is whatever the taxonomy says it is.
+  const seeded = COURSE_TAG_SUGGESTIONS.find(
+    (option) => option.toLowerCase() === trimmed.toLowerCase()
+  )
+  if (seeded) return seeded
+
+  return trimmed
+    .split(' ')
+    .map((word) =>
+      // Already mixed- or all-caps beyond the first letter: the author meant it.
+      /[A-Z]/.test(word.slice(1)) ? word : word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join(' ')
+}
 
 /* ── Builder steps ─────────────────────────────────────────────────────── */
 

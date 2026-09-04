@@ -3,8 +3,21 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { slugify } from '@/lib/constants'
+import {
+  LEARNER_BIO_MAX_CHARS,
+  LEARNER_BIO_MAX_WORDS,
+  countWords,
+} from '@/lib/constants'
+import {
+  RESUME_MAX_BYTES,
+  parseResumeData,
+  resumeIsUsable,
+  type ResumeData,
+} from '@/lib/resume'
 import type { ActionResult } from '@/app/(auth)/actions'
+
+/** Private bucket; resumes sit under learner/{user_id}/ like certifications. */
+const RESUME_BUCKET = 'certifications'
 
 export type LearnerCertificationInput = {
   name: string
@@ -27,7 +40,10 @@ export type LearnerProfileInput = {
   timezone: string
   skills: string[]
   certifications: LearnerCertificationInput[]
-  publicPortfolio: boolean
+  /** Storage path of an uploaded resume, when that path was taken. */
+  resumeUrl: string | null
+  /** The in-app resume, when that path was taken instead. */
+  resumeData: ResumeData | null
 }
 
 export async function saveLearnerProfile(input: LearnerProfileInput): Promise<ActionResult> {
@@ -38,12 +54,26 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'You are not signed in.' }
 
-  if (!input.fullName.trim()) {
-    return {
-      ok: false,
-      error: 'Your name is required.',
-      fieldErrors: { fullName: 'Enter your full name' },
-    }
+  /* Mandatory now, and enforced here rather than only in the form: a photo
+     and a resume are what turn a profile into something an admin can make a
+     decision from, and the client is not the place that decision is protected. */
+  const fieldErrors: Record<string, string> = {}
+
+  if (!input.fullName.trim()) fieldErrors.fullName = 'Enter your full name'
+  if (!input.avatarUrl) fieldErrors.avatarUrl = 'Add a profile photo'
+
+  if (!input.resumeUrl && !resumeIsUsable(input.resumeData)) {
+    fieldErrors.resume = 'Upload a resume, or build one here'
+  }
+
+  if (input.bio.length > LEARNER_BIO_MAX_CHARS) {
+    fieldErrors.bio = `Keep your bio under ${LEARNER_BIO_MAX_CHARS} characters`
+  } else if (countWords(input.bio) > LEARNER_BIO_MAX_WORDS) {
+    fieldErrors.bio = `Keep your bio under ${LEARNER_BIO_MAX_WORDS} words`
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { ok: false, error: 'Check the highlighted fields.', fieldErrors }
   }
 
   const { error: userError } = await supabase
@@ -60,10 +90,12 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
     .eq('user_id', user.id)
     .maybeSingle()
 
-  const slug =
-    existing?.portfolio_slug ??
-    `${slugify(input.fullName) || 'learner'}-${user.id.slice(0, 6)}`
-
+  /* The slug is no longer derived from the name. With the public/private
+     toggle gone, possession of the link IS the access control, and
+     slugify(name) + 6 hex characters of a uuid is guessable by anyone who
+     knows the name. The column now defaults to 9 random bytes — the same
+     construction certificates.certificate_id uses — so this leaves it alone
+     and lets the database generate it. See 20260904000400. */
   const { error: profileError } = await supabase.from('learner_profiles').upsert({
     user_id: user.id,
     date_of_birth: input.dateOfBirth || null,
@@ -81,8 +113,14 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
     phone: input.phone.trim() || null,
     preferred_language: input.preferredLanguage || null,
     timezone: input.timezone || null,
-    public_portfolio: input.publicPortfolio,
-    portfolio_slug: slug,
+    resume_url: input.resumeUrl,
+    // Exactly one of the two. Clearing the other keeps "which resume is the
+    // real one" from being a question anyone has to answer later.
+    resume_data: input.resumeUrl ? null : (input.resumeData as never),
+    /* Portfolios are reached by an unguessable link and nothing else, so there
+       is no public/private state left to store. The column stays until it can
+       be dropped; true is the only value the product has. */
+    public_portfolio: true,
   })
   if (profileError) return { ok: false, error: profileError.message }
 
@@ -114,7 +152,70 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
   return { ok: true }
 }
 
+/* ── Resume upload ─────────────────────────────────────────────────────── */
+
+/**
+ * Stores an uploaded resume and returns its storage PATH, not a URL.
+ *
+ * The bucket is private, so there is no public URL to hand back; admins get a
+ * short-lived signed one when they open the learner's record. A resume carries
+ * a phone number and often an address — putting it in the public `avatars`
+ * bucket, as first specified, would have made all of that readable by anyone
+ * holding the link, with no login at all.
+ */
+export async function uploadResume(form: FormData): Promise<ActionResult<{ path: string }>> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'You are not signed in.' }
+
+  const file = form.get('file')
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: 'No file was received.' }
+  }
+  if (file.size > RESUME_MAX_BYTES) {
+    return { ok: false, error: `Keep the file under ${RESUME_MAX_BYTES / 1024 / 1024}MB.` }
+  }
+
+  const extension = file.name.match(/\.(pdf|docx?)$/i)?.[0].toLowerCase()
+  if (!extension) return { ok: false, error: 'Upload a PDF or a Word document.' }
+
+  /* The path has to start `learner/{user_id}/` — every storage policy on this
+     bucket keys off those two segments. The timestamp is what makes replacing
+     a resume a new object rather than a cache-busting problem. */
+  const path = `learner/${user.id}/resume-${Date.now()}${extension}`
+
+  const { error } = await supabase.storage
+    .from(RESUME_BUCKET)
+    .upload(path, file, { contentType: file.type || undefined, upsert: true })
+  if (error) return { ok: false, error: error.message }
+
+  return { ok: true, data: { path } }
+}
+
 /* ── Enrolment ─────────────────────────────────────────────────────────── */
+
+/**
+ * What a learner must have on file before they can join a course: a photo, and
+ * a resume one way or the other. Both are what the admin on the other side is
+ * being asked to make a decision from.
+ */
+async function enrolmentBlockers(userId: string): Promise<string[]> {
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('learner_profiles')
+    .select('avatar_url, resume_url, resume_data')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  const missing: string[] = []
+  if (!profile?.avatar_url) missing.push('a profile photo')
+  if (!profile?.resume_url && !resumeIsUsable(parseResumeData(profile?.resume_data))) {
+    missing.push('a resume')
+  }
+  return missing
+}
 
 /**
  * Enrols the signed-in learner and lays down the progress rows the player
@@ -134,13 +235,25 @@ export async function enrolInCourse(courseId: string): Promise<ActionResult<{ id
 
   // Already enrolled is a no-op, not an error — the button just becomes
   // "Continue" on the next render.
-  const { data: existing } = await supabase
+  const { data: existingRows } = await supabase
     .from('enrollments')
     .select('id')
     .eq('course_id', courseId)
     .eq('learner_id', user.id)
-    .maybeSingle()
+    .order('cycle', { ascending: false })
+    .limit(1)
+  const existing = existingRows?.[0]
   if (existing) return { ok: true, data: { id: existing.id } }
+
+  // Checked after the already-enrolled short-circuit, so tightening the
+  // requirements never locks someone out of a course they are already on.
+  const missing = await enrolmentBlockers(user.id)
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      error: `Add ${missing.join(' and ')} to your profile before joining a course.`,
+    }
+  }
 
   const { data: course } = await supabase
     .from('courses')
@@ -191,14 +304,19 @@ async function enrolmentFor(courseId: string) {
   } = await supabase.auth.getUser()
   if (!user) return null
 
+  /* The highest cycle, not the only one: an admin offering a retake creates a
+     second enrolment for the same pair, and the course a learner is doing now
+     is always the newest. See 20260904000600. */
   const { data } = await supabase
     .from('enrollments')
     .select('id, status')
     .eq('course_id', courseId)
     .eq('learner_id', user.id)
-    .maybeSingle()
+    .order('cycle', { ascending: false })
+    .limit(1)
 
-  return data ? { ...data, userId: user.id } : null
+  const current = data?.[0]
+  return current ? { ...current, userId: user.id } : null
 }
 
 /**
@@ -319,7 +437,13 @@ export type QuizOutcome = {
 export async function submitQuiz(
   courseId: string,
   blockId: string,
-  answers: Record<string, number>
+  answers: Record<string, number>,
+  /**
+   * When the learner opened the quiz, from the player. Recorded so the admin's
+   * view can show time taken. Client-supplied and therefore advisory — it is
+   * display only, and never used to decide anything.
+   */
+  startedAt?: string | null
 ): Promise<ActionResult<QuizOutcome>> {
   const enrolment = await enrolmentFor(courseId)
   if (!enrolment) return { ok: false, error: 'You are not enrolled in this course.' }
@@ -376,9 +500,17 @@ export async function submitQuiz(
   const score = Math.round((correct / questions.length) * 100)
   const passed = score >= quiz.passing_score
 
-  const { error: attemptError } = await supabase
-    .from('quiz_attempts')
-    .insert({ quiz_id: quiz.id, learner_id: enrolment.userId, score, passed })
+  /* attempt_number is assigned by trigger rather than sent from here — a
+     client cannot be trusted to count its own tries, and two submits racing
+     would otherwise pick the same number. */
+  const { error: attemptError } = await supabase.from('quiz_attempts').insert({
+    quiz_id: quiz.id,
+    learner_id: enrolment.userId,
+    score,
+    passed,
+    started_at: startedAt ?? null,
+    submitted_at: new Date().toISOString(),
+  })
   if (attemptError) return { ok: false, error: attemptError.message }
 
   const attemptsUsed = prior.length + 1

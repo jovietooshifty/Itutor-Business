@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { Check, Lock } from 'lucide-react'
 import { Badge, Button } from '@/components/ui'
 import { Logo, PUBLIC_HOME } from '@/components/ui/logo'
+import { CompanyPanel } from '@/components/company-panel'
+import { loadCompanyPanel } from '@/lib/company-panel'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Course — iTutor' }
@@ -21,6 +23,10 @@ export default async function Page({ params }: { params: Promise<{ token: string
   const { data } = await supabase.rpc('course_by_share_token', { p_token: token })
   const course = data?.[0]
   if (!course) notFound()
+
+  /* Who is asking. This page used to print course.business_name and nothing
+     else, which is not enough to decide whether to hand over a resume. */
+  const company = await loadCompanyPanel(course.business_id)
 
   const outcomes = course.what_you_will_learn ?? []
 
@@ -97,6 +103,12 @@ export default async function Page({ params }: { params: Promise<{ token: string
             </Link>
           </div>
         </div>
+
+        {company && (
+          <div className="mt-5">
+            <CompanyPanel company={company} />
+          </div>
+        )}
       </div>
     </main>
   )

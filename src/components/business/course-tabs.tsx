@@ -1,18 +1,19 @@
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
 
-export type CourseTab = 'overview' | 'sequence' | 'learners' | 'settings'
+export type CourseTab = 'overview' | 'learners' | 'settings'
 
 /**
- * Course management tabs. Every one of them stays inside the tab set — the
- * Sequence tab used to link out to the builder, so clicking a tab made the tab
- * bar disappear. It now renders the same editor in its 'manage' variant, and
- * the build flow is a separate, clearly-labelled action.
+ * Course management tabs. Every one of them stays inside the tab set, and none
+ * of them leads back into the build flow — a course that exists is managed
+ * here, not re-walked through the wizard.
+ *
+ * Sequence was a fourth tab. Its editor is on Overview now: the two were a
+ * summary of the content and the content itself, and the summary added nothing.
  */
 export function CourseTabs({ courseId, active }: { courseId: string; active: CourseTab }) {
   const tabs: { key: CourseTab; label: string; href: string }[] = [
     { key: 'overview', label: 'Overview', href: `/courses/${courseId}/manage` },
-    { key: 'sequence', label: 'Sequence', href: `/courses/${courseId}/manage/sequence` },
     { key: 'learners', label: 'Learners', href: `/courses/${courseId}/manage/learners` },
     { key: 'settings', label: 'Settings', href: `/courses/${courseId}/manage/settings` },
   ]

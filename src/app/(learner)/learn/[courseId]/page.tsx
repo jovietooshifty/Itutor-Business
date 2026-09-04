@@ -4,6 +4,8 @@ import { notFound, redirect } from 'next/navigation'
 import { Check, CircleCheck, Lock } from 'lucide-react'
 import { Badge, Button, Card, ProgressBar } from '@/components/ui'
 import { EnrolButton } from '@/components/learner/enrol-button'
+import { CompanyPanel } from '@/components/company-panel'
+import { loadCompanyPanel } from '@/lib/company-panel'
 import { blockTypeMeta, type BlockType } from '@/lib/course'
 import { createClient } from '@/lib/supabase/server'
 
@@ -27,11 +29,11 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: course }, { data: blocks }, { data: enrollment }] = await Promise.all([
+  const [{ data: course }, { data: blocks }, { data: enrollmentRows }] = await Promise.all([
     supabase
       .from('courses')
       .select(
-        'id, title, description, tagline, thumbnail_url, duration_label, what_you_will_learn, businesses(name)'
+        'id, business_id, title, description, tagline, thumbnail_url, duration_label, what_you_will_learn, businesses(name)'
       )
       .eq('id', courseId)
       .maybeSingle(),
@@ -40,16 +42,19 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
       .select('id, type, title, position')
       .eq('course_id', courseId)
       .order('position'),
+    // Highest cycle: a retake supersedes the completed enrolment before it.
     supabase
       .from('enrollments')
       .select('id, status')
       .eq('course_id', courseId)
       .eq('learner_id', user.id)
-      .maybeSingle(),
+      .order('cycle', { ascending: false })
+      .limit(1),
   ])
 
   if (!course) notFound()
 
+  const enrollment = enrollmentRows?.[0]
   const lessons = blocks ?? []
 
   // Progress only exists once enrolled; the landing page is also the pre-enrol
@@ -71,6 +76,12 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
 
   const outcomes = course.what_you_will_learn ?? []
   const businessName = (course.businesses as { name: string } | null)?.name
+
+  /* The full company panel, not just the name — this is the other surface
+     where someone decides whether to join. */
+  const company = await loadCompanyPanel(course.business_id)
+
+  const courseComplete = enrollment?.status === 'completed'
 
   return (
     <main className="mx-auto max-w-[880px] p-6 md:p-10">
@@ -111,14 +122,40 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
                   <span className="text-sm text-ink-muted">{percent}%</span>
                 </div>
                 <ProgressBar value={percent} accent="coral" />
-                {nextBlock && (
-                  <div className="mt-4">
-                    <Link href={`/learn/${course.id}/${nextBlock.id}`} className="no-underline">
-                      <Button size="lg" accent="coral">
-                        {completed === 0 ? 'Start course' : 'Continue'}
-                      </Button>
-                    </Link>
+
+                {/* Finishing a course is the moment a portfolio first has
+                    something in it — which is why the question of sharing one
+                    is asked here rather than during signup, when a learner has
+                    no idea what a portfolio is or what would be on it. */}
+                {courseComplete ? (
+                  <div className="mt-4 rounded-xl bg-brand-light px-4 py-4">
+                    <p className="m-0 flex items-center gap-2 font-display text-base font-bold text-forest">
+                      <CircleCheck size={18} aria-hidden /> Course completed
+                    </p>
+                    <p className="m-0 mt-1 text-sm text-forest/80">
+                      Your certificate is on your portfolio — a page you can share with employers.
+                    </p>
+                    <div className="mt-3.5 flex flex-wrap gap-2.5">
+                      <Link href="/my-portfolio" className="no-underline">
+                        <Button accent="coral">View your portfolio</Button>
+                      </Link>
+                      {nextBlock && (
+                        <Link href={`/learn/${course.id}/${nextBlock.id}`} className="no-underline">
+                          <Button variant="secondary">Review the course</Button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
+                ) : (
+                  nextBlock && (
+                    <div className="mt-4">
+                      <Link href={`/learn/${course.id}/${nextBlock.id}`} className="no-underline">
+                        <Button size="lg" accent="coral">
+                          {completed === 0 ? 'Start course' : 'Continue'}
+                        </Button>
+                      </Link>
+                    </div>
+                  )
                 )}
               </div>
             )}
@@ -201,6 +238,12 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
           </ol>
         )}
       </Card>
+
+      {company && (
+        <div className="mt-5">
+          <CompanyPanel company={company} />
+        </div>
+      )}
     </main>
   )
 }

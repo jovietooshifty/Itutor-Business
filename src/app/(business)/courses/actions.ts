@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getBusinessContext } from '@/lib/business'
 import {
   DEFAULT_COURSE_DETAILS,
@@ -1004,6 +1005,93 @@ export async function removeEnrollment(
   revalidatePath(`/courses/${courseId}/manage/learners`)
   revalidatePath('/learners')
   return { ok: true }
+}
+
+/**
+ * Offers a past student the course again, as a NEW enrolment.
+ *
+ * The old one is not touched. Reopening it would destroy the record of having
+ * passed — the completion date, the block-count snapshot the 100% is measured
+ * against, and the certificate's provenance — which is the whole reason a
+ * "past student" is marked as complete rather than dragged back to 60%.
+ *
+ * `enrollments` used to be unique on (course_id, learner_id), which made this
+ * impossible; it is now unique on (course_id, learner_id, cycle) and a trigger
+ * assigns the next cycle. See 20260904000600.
+ */
+export async function inviteToRetake(
+  courseId: string,
+  learnerId: string
+): Promise<ActionResult<{ enrollmentId: string }>> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+
+  /* Only a finished enrolment can be retaken. Someone still working through
+     the course does not need a second copy of it, and handing them one would
+     split their progress across two rows. */
+  const { data: cycles } = await supabase
+    .from('enrollments')
+    .select('id, status, cycle')
+    .eq('course_id', courseId)
+    .eq('learner_id', learnerId)
+    .order('cycle', { ascending: false })
+    .limit(1)
+
+  const latest = cycles?.[0]
+  if (!latest) return { ok: false, error: 'That learner is not enrolled in this course.' }
+  if (latest.status !== 'completed') {
+    return { ok: false, error: 'They are still working through this course.' }
+  }
+
+  // Through the caller's own session: enrollments_insert_editor is what decides
+  // whether this member may enrol anyone on this course at all.
+  const { data: enrollment, error } = await supabase
+    .from('enrollments')
+    .insert({ course_id: courseId, learner_id: learnerId, business_id: auth.businessId })
+    .select('id')
+    .single()
+
+  if (error || !enrollment) {
+    return { ok: false, error: error?.message ?? 'Could not create the new enrolment.' }
+  }
+
+  const { data: blocks } = await supabase
+    .from('course_blocks')
+    .select('id')
+    .eq('course_id', courseId)
+    .order('position')
+
+  /* block_progress is learner-write-only by RLS (block_progress_write_learner),
+     so the scaffold goes in with the service role — the same reasoning
+     issueCertificate uses. The authority to enrol was already established by
+     the insert above; laying down the progress rows is a mechanical
+     consequence of it, not a second decision. */
+  if (blocks?.length) {
+    const admin = createAdminClient()
+    const { error: progressError } = await admin.from('block_progress').insert(
+      blocks.map((block, index) => ({
+        enrollment_id: enrollment.id,
+        block_id: block.id,
+        status: index === 0 ? ('unlocked' as const) : ('locked' as const),
+      }))
+    )
+    if (progressError) {
+      // A retake with no unlocked blocks is a dead end, so the half-made
+      // enrolment goes rather than sitting there unopenable.
+      await supabase.from('enrollments').delete().eq('id', enrollment.id)
+      return { ok: false, error: progressError.message }
+    }
+  }
+
+  revalidatePath(`/courses/${courseId}/manage/learners`)
+  revalidatePath(`/courses/${courseId}/manage`)
+  revalidatePath('/learners')
+  return { ok: true, data: { enrollmentId: enrollment.id } }
 }
 
 /* ── Sharing ───────────────────────────────────────────────────────────── */

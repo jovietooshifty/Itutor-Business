@@ -3,14 +3,13 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, RefreshCw, Sparkles, Trash2, Upload } from 'lucide-react'
+import { Plus, RefreshCw, Sparkles, Trash2 } from 'lucide-react'
 import { Button, Field, SegmentedControl, Input, Select, Textarea, cn } from '@/components/ui'
 import { GENERATION_COUNT_CHOICES } from '@/lib/course'
 import {
   addQuestion,
   deleteQuestion,
   generateQuestions,
-  importQuestionsCsv,
   regenerateOneQuestion,
   updateQuestion,
   type QuestionInput,
@@ -33,12 +32,15 @@ const emptyDraft = (): QuestionInput => ({
   explanation: null,
 })
 
-type Mode = 'idle' | 'generate' | 'manual' | 'csv'
+type Mode = 'idle' | 'generate' | 'manual'
 
 /**
- * Questions for one quiz block: AI generation, manual entry and CSV import,
- * all landing in the same editable list — the three paths the handoff asks
- * for, converging rather than branching.
+ * Questions for one quiz block: AI generation and manual entry, both landing
+ * in the same editable list rather than branching.
+ *
+ * CSV import is deliberately absent from the UI. `importQuestionsCsv` is still
+ * in quiz-actions and still works; it is unreferenced until the import gets
+ * the attention it needs.
  */
 export function QuestionEditor({
   courseId,
@@ -78,7 +80,6 @@ export function QuestionEditor({
      switching back does not lose what was set. That is why the last chosen
      number lives here rather than being derived from `generationCount`. */
   const [lastCount, setLastCount] = React.useState(generationCount ?? 5)
-  const [csv, setCsv] = React.useState('')
   const [draft, setDraft] = React.useState<QuestionInput>(emptyDraft)
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [edit, setEdit] = React.useState<QuestionInput>(emptyDraft)
@@ -164,13 +165,6 @@ export function QuestionEditor({
             onClick={() => setMode(mode === 'manual' ? 'idle' : 'manual')}
           >
             <Plus size={13} /> Add
-          </Button>
-          <Button
-            size="sm"
-            variant={mode === 'csv' ? 'primary' : 'secondary'}
-            onClick={() => setMode(mode === 'csv' ? 'idle' : 'csv')}
-          >
-            <Upload size={13} /> CSV
           </Button>
         </div>
       </div>
@@ -265,51 +259,6 @@ export function QuestionEditor({
         </div>
       )}
 
-      {mode === 'csv' && (
-        <div className="mt-4 rounded-md border border-surface-border bg-white p-4">
-          <p className="m-0 mb-2 text-xs leading-relaxed text-ink-muted">
-            One question per line:{' '}
-            <span className="font-mono">question, option 1, option 2, option 3, option 4, correct, explanation</span>
-            . &ldquo;Correct&rdquo; may be 1&ndash;4 or A&ndash;D. A header row is optional.
-          </p>
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            className="mb-3 block w-full text-xs text-ink-muted file:mr-3 file:rounded-md file:border file:border-surface-border file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-ink"
-            onChange={async (e) => {
-              const file = e.target.files?.[0]
-              if (file) setCsv(await file.text())
-            }}
-          />
-          <Textarea
-            rows={5}
-            value={csv}
-            onChange={(e) => setCsv(e.target.value)}
-            placeholder="Or paste rows here…"
-          />
-          <div className="mt-3 flex gap-2">
-            <Button
-              loading={pending}
-              disabled={!csv.trim()}
-              onClick={() =>
-                run(
-                  () => importQuestionsCsv(courseId, blockId, csv),
-                  () => {
-                    setCsv('')
-                    setMode('idle')
-                  }
-                )
-              }
-            >
-              Import
-            </Button>
-            <Button variant="ghost" onClick={() => setMode('idle')}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-
       {error && (
         <div className="mt-3 rounded-md bg-danger-bg px-3 py-2 text-xs text-danger-fg">
           <p>{error}</p>
@@ -338,7 +287,7 @@ export function QuestionEditor({
 
       {questions.length === 0 ? (
         <p className="m-0 mt-4 text-xs text-[#9ca3af]">
-          No questions yet — generate them from the material, add one by hand, or import a CSV.
+          No questions yet — generate them from the material, or add one by hand.
         </p>
       ) : (
         <ol className="m-0 mt-4 grid list-none gap-2.5 p-0">

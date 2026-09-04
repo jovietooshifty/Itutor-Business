@@ -1,9 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowLeft, ArrowRight, Clock, ListOrdered, Sparkles } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Clock, Sparkles } from 'lucide-react'
 import {
   Button,
   Checkbox,
@@ -181,6 +180,14 @@ export function BlockWalkthrough({
 
   const isLast = nextBlockId === null
 
+  /**
+   * Where leaving this page goes. Opened from course management it goes back
+   * to the course, not to the builder's sequence step — management never
+   * hands you back into the build flow. Inside the flow, the sequence step is
+   * exactly where Back belongs.
+   */
+  const leaveHref = mode === 'manage' ? `/courses/${courseId}/manage` : `/courses/${courseId}`
+
   return (
     <main className="mx-auto max-w-[880px] p-6 md:p-10">
       {mode === 'wizard' && <CourseSteps current="content" courseId={courseId} />}
@@ -196,12 +203,10 @@ export function BlockWalkthrough({
             </span>
             Step {index + 1} of {total} · {meta.label}
           </span>
-          <Link
-            href={`/courses/${courseId}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted no-underline hover:text-ink"
-          >
-            <ListOrdered size={13} aria-hidden /> Back to the sequence
-          </Link>
+          {/* No second way out up here. The footer's Back already leaves this
+              page, and it goes somewhere that depends on how you arrived —
+              this link always went to the builder's sequence step, which is
+              the wrong place entirely when the block was opened to be fixed. */}
         </div>
         <ProgressBar value={Math.round(((index + 1) / Math.max(total, 1)) * 100)} />
       </div>
@@ -287,12 +292,13 @@ export function BlockWalkthrough({
               router.push(
                 previousBlockId
                   ? `/courses/${courseId}/content/${previousBlockId}${mode === 'manage' ? '?from=manage' : ''}`
-                  : `/courses/${courseId}`
+                  : leaveHref
               )
             )
           }
         >
-          <ArrowLeft size={15} /> {previousBlockId ? 'Back' : 'Back to the sequence'}
+          <ArrowLeft size={15} />{' '}
+          {previousBlockId ? 'Back' : mode === 'manage' ? 'Back to the course' : 'Back to the sequence'}
         </Button>
 
         <div className="flex items-center gap-3">
@@ -304,7 +310,7 @@ export function BlockWalkthrough({
             <Button
               size="lg"
               loading={pending}
-              onClick={() => save(() => router.push(`/courses/${courseId}/manage/sequence`))}
+              onClick={() => save(() => router.push(`/courses/${courseId}/manage`))}
             >
               Save and close
             </Button>

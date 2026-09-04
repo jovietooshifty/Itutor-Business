@@ -170,7 +170,7 @@ export function SettingsModal({
           {tab === 'general' && (
             <GeneralTab initial={initial} isAdmin={isAdmin} onSaved={() => router.refresh()} />
           )}
-          {tab === 'account' && <AccountTab email={initial.email} />}
+          {tab === 'account' && <AccountTab email={initial.email} onClose={onClose} />}
           {tab === 'team' && (
             <TeamTab
               businessId={initial.businessId}
@@ -271,7 +271,7 @@ function GeneralTab({
   )
 }
 
-function AccountTab({ email }: { email: string }) {
+function AccountTab({ email, onClose }: { email: string; onClose: () => void }) {
   const [nextEmail, setNextEmail] = React.useState(email)
   const [password, setPassword] = React.useState('')
   const [pending, startTransition] = React.useTransition()
@@ -282,7 +282,28 @@ function AccountTab({ email }: { email: string }) {
   return (
     <>
       <PanelHeading>Account</PanelHeading>
-      <div className="mt-5 grid max-w-[380px] gap-4">
+
+      {/* Your profile is a routed page like Company Profile, and until now
+          nothing linked to it once onboarding was done — the form was still
+          there at /my-profile with no way in. This tab is where people came
+          looking for it. */}
+      <Link
+        href="/my-profile"
+        onClick={onClose}
+        className="mt-5 flex max-w-[380px] items-center gap-3 rounded-lg border border-border bg-surface-inset px-4 py-3.5 no-underline transition-colors duration-fast hover:bg-white"
+      >
+        <User size={16} className="shrink-0 text-[#9ca3af]" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-ink">Your profile</span>
+          <span className="block text-xs text-ink-muted">
+            Name, photo, bio, job title, phone and language
+          </span>
+        </span>
+        <ExternalLink size={13} className="shrink-0 text-[#9ca3af]" aria-hidden />
+      </Link>
+
+      <h3 className="mb-0 mt-7 font-display text-sm font-bold text-ink">Sign-in details</h3>
+      <div className="mt-3 grid max-w-[380px] gap-4">
         <Field label="Login email">
           <Input
             type="email"

@@ -45,7 +45,11 @@ function oneQuiz(embedded: unknown): QuizRow | null {
 function quizState(row: QuizRow | null): QuizState {
   return {
     passingScore: row?.passing_score ?? 80,
-    scope: row?.scope ?? 'preceding_block',
+    /* 'none' — general knowledge, no material — is gone from the UI, so a
+       quiz saved with it has a value no option can show. Reading it back as
+       'preceding_block' is what the select would otherwise fall to silently,
+       and it keeps the enum value intact on the row until it is next saved. */
+    scope: !row?.scope || row.scope === 'none' ? 'preceding_block' : row.scope,
     scopeBlockIds: row?.scope_block_ids ?? [],
     revealAnswers: row?.reveal_answers ?? false,
     retryMax: row?.retry_max ?? null,

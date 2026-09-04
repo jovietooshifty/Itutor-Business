@@ -535,7 +535,9 @@ export type Database = {
         Row: {
           business_id: string | null
           completed_at: string | null
+          completed_block_total: number | null
           course_id: string
+          cycle: number
           enrolled_at: string
           id: string
           learner_id: string
@@ -544,7 +546,9 @@ export type Database = {
         Insert: {
           business_id?: string | null
           completed_at?: string | null
+          completed_block_total?: number | null
           course_id: string
+          cycle?: number
           enrolled_at?: string
           id?: string
           learner_id: string
@@ -553,7 +557,9 @@ export type Database = {
         Update: {
           business_id?: string | null
           completed_at?: string | null
+          completed_block_total?: number | null
           course_id?: string
+          cycle?: number
           enrolled_at?: string
           id?: string
           learner_id?: string
@@ -633,6 +639,8 @@ export type Database = {
           portfolio_slug: string | null
           preferred_language: string | null
           public_portfolio: boolean
+          resume_data: Json | null
+          resume_url: string | null
           timezone: string | null
           updated_at: string
           user_id: string
@@ -652,6 +660,8 @@ export type Database = {
           portfolio_slug?: string | null
           preferred_language?: string | null
           public_portfolio?: boolean
+          resume_data?: Json | null
+          resume_url?: string | null
           timezone?: string | null
           updated_at?: string
           user_id: string
@@ -671,6 +681,8 @@ export type Database = {
           portfolio_slug?: string | null
           preferred_language?: string | null
           public_portfolio?: boolean
+          resume_data?: Json | null
+          resume_url?: string | null
           timezone?: string | null
           updated_at?: string
           user_id?: string
@@ -762,28 +774,37 @@ export type Database = {
       }
       quiz_attempts: {
         Row: {
+          attempt_number: number | null
           attempted_at: string
           id: string
           learner_id: string
           passed: boolean
           quiz_id: string
           score: number
+          started_at: string | null
+          submitted_at: string | null
         }
         Insert: {
+          attempt_number?: number | null
           attempted_at?: string
           id?: string
           learner_id: string
           passed: boolean
           quiz_id: string
           score: number
+          started_at?: string | null
+          submitted_at?: string | null
         }
         Update: {
+          attempt_number?: number | null
           attempted_at?: string
           id?: string
           learner_id?: string
           passed?: boolean
           quiz_id?: string
           score?: number
+          started_at?: string | null
+          submitted_at?: string | null
         }
         Relationships: [
           {
@@ -931,18 +952,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      block_business_id: { Args: { p_block_id: string }; Returns: string }
-      business_role: {
+      company_for_join: {
         Args: { p_business_id: string }
-        Returns: Database["public"]["Enums"]["member_role"]
+        Returns: {
+          city: string
+          contact_email: string
+          contact_phone: string
+          country: string
+          course_count: number
+          cover_url: string
+          description: string
+          id: string
+          industry: string
+          learner_count: number
+          logo_url: string
+          name: string
+          region: string
+          tagline: string
+          website: string
+        }[]
       }
-      can_edit_business_content: {
-        Args: { p_business_id: string }
-        Returns: boolean
-      }
-      can_read_course: { Args: { p_course_id: string }; Returns: boolean }
-      can_read_learner: { Args: { p_learner_id: string }; Returns: boolean }
-      course_business_id: { Args: { p_course_id: string }; Returns: string }
       course_by_share_token: {
         Args: { p_token: string }
         Returns: {
@@ -958,24 +987,6 @@ export type Database = {
           what_you_will_learn: string[]
         }[]
       }
-      current_user_type: {
-        Args: never
-        Returns: Database["public"]["Enums"]["user_type"]
-      }
-      effective_quiz_navigation: {
-        Args: { p_block_id: string }
-        Returns: Database["public"]["Enums"]["quiz_navigation"]
-      }
-      has_business_role: {
-        Args: {
-          p_business_id: string
-          p_roles: Database["public"]["Enums"]["member_role"][]
-        }
-        Returns: boolean
-      }
-      is_business_admin: { Args: { p_business_id: string }; Returns: boolean }
-      is_business_member: { Args: { p_business_id: string }; Returns: boolean }
-      quiz_business_id: { Args: { p_quiz_id: string }; Returns: string }
       portfolio_by_slug: {
         Args: { p_slug: string }
         Returns: {
@@ -1058,12 +1069,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1087,11 +1098,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1112,11 +1123,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1137,11 +1148,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1154,11 +1165,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

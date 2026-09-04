@@ -13,16 +13,18 @@ import {
   SectionCard,
   Select,
   Textarea,
-  Toggle,
 } from '@/components/ui'
 import { RoleCombobox } from '@/components/ui/combobox'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { ProfileStrength, StickyFooterBar, type StrengthItem } from '@/components/ui/profile-strength'
+import { ResumeField, type ResumeValue } from '@/components/learner/resume-field'
 import {
   COUNTRY_CODES,
   countWords,
   DEFAULT_PHONE_COUNTRY,
-  LEARNER_BIO_TARGET_WORDS,
+  LEARNER_BIO_MAX_CHARS,
+  LEARNER_BIO_MAX_WORDS,
+  bioWithinLimits,
   LEARNER_LANGUAGES,
   ORG_ROLES,
   SUGGESTED_SKILLS,
@@ -30,6 +32,7 @@ import {
   YEARS_EXPERIENCE_OPTIONS,
 } from '@/lib/constants'
 import { saveLearnerProfile, type LearnerCertificationInput } from '@/app/(learner)/actions'
+import type { ResumeData } from '@/lib/resume'
 
 export type LearnerProfileInitial = {
   userId: string
@@ -50,7 +53,10 @@ export type LearnerProfileInitial = {
   timezone: string
   skills: string[]
   certifications: LearnerCertificationInput[]
-  publicPortfolio: boolean
+  /** Storage path of an uploaded resume, if there is one. */
+  resumeUrl: string | null
+  /** The in-app resume, if that path was taken instead. */
+  resumeData: ResumeData | null
   portfolioSlug: string
 }
 
@@ -87,17 +93,28 @@ export function LearnerProfileForm({
   const [certifications, setCertifications] = React.useState<LearnerCertificationInput[]>(
     initial.certifications
   )
-  const [publicPortfolio, setPublicPortfolio] = React.useState(initial.publicPortfolio)
-  const [copied, setCopied] = React.useState(false)
+  const [resume, setResume] = React.useState<ResumeValue>({
+    url: initial.resumeUrl,
+    data: initial.resumeData,
+    fileName: null,
+  })
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
 
   const bioWordCount = countWords(bio)
+  const bioOverLimit =
+    bioWordCount > LEARNER_BIO_MAX_WORDS || bio.length > LEARNER_BIO_MAX_CHARS
+  const hasResume = Boolean(resume.url) || Boolean(resume.data?.work.length) ||
+    (resume.data?.summary.trim().length ?? 0) >= 40
 
   // Employment is a gate: answering "No" marks the employment-dependent rows
   // complete rather than leaving them permanently unsatisfiable.
   const strengthItems: StrengthItem[] = [
+    // Required, not merely scored — see the two "Required" markers below.
+    { label: 'Profile photo', done: !!avatarUrl },
+    { label: 'Resume', done: hasResume },
     { label: 'Full name', done: !!fullName.trim() },
     { label: 'Date of birth', done: !!dateOfBirth },
-    { label: `Bio (~${LEARNER_BIO_TARGET_WORDS} words)`, done: bioWordCount >= LEARNER_BIO_TARGET_WORDS },
+    { label: 'Bio', done: !!bio.trim() && !bioOverLimit },
     { label: 'Employment status answered', done: employed !== null },
     { label: 'Job title', done: employed === false ? true : !!jobTitle.trim() },
     { label: 'Years of experience', done: employed === false ? true : !!yearsExperience },
@@ -132,11 +149,10 @@ export function LearnerProfileForm({
     }
   }
 
-  const portfolioUrl = `myitutor.com/p/${initial.portfolioSlug}`
-
   function handleSave() {
     setError(null)
     setSaved(false)
+    setFieldErrors({})
     startTransition(async () => {
       const result = await saveLearnerProfile({
         fullName,
@@ -153,11 +169,13 @@ export function LearnerProfileForm({
         timezone,
         skills,
         certifications,
-        publicPortfolio,
+        resumeUrl: resume.url,
+        resumeData: resume.url ? null : resume.data,
       })
 
       if (!result.ok) {
         setError(result.error)
+        setFieldErrors(result.fieldErrors ?? {})
         return
       }
 
@@ -181,16 +199,30 @@ export function LearnerProfileForm({
               Your profile
             </p>
             <div className="flex items-start gap-5">
-              <ImageUpload
-                bucket="avatars"
-                path={initial.userId}
-                value={avatarUrl}
-                onChange={setAvatarUrl}
-                width={88}
-                height={88}
-                placeholder="Photo"
-                className="shrink-0"
-              />
+              <div className="shrink-0">
+                <ImageUpload
+                  bucket="avatars"
+                  path={initial.userId}
+                  value={avatarUrl}
+                  onChange={setAvatarUrl}
+                  preset="avatar"
+                  width={88}
+                  height={88}
+                  placeholder="Photo"
+                />
+                <p
+                  className={cn(
+                    'm-0 mt-1.5 text-center text-[11px] font-semibold',
+                    fieldErrors.avatarUrl
+                      ? 'text-danger-fg'
+                      : avatarUrl
+                        ? 'text-[#9ca3af]'
+                        : 'text-coral'
+                  )}
+                >
+                  {avatarUrl ? 'Photo' : 'Photo — required'}
+                </p>
+              </div>
               <div className="grid flex-1 gap-4 sm:grid-cols-2">
                 <Field label="Full name">
                   <Input
@@ -213,25 +245,49 @@ export function LearnerProfileForm({
           <SectionCard title="About you">
             <Field
               label="Bio"
-              hint={`Tell us about your role and experience — helps trainers understand your background. Around ${LEARNER_BIO_TARGET_WORDS} words is a good length, but it's not required.`}
+              hint={`A short introduction for the trainers running your courses. Up to ${LEARNER_BIO_MAX_WORDS} words.`}
+              error={fieldErrors.bio}
             >
               <Textarea
                 rows={4}
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                /* Rejects the keystroke at the cap rather than truncating —
+                   silently cutting a pasted paragraph leaves a sentence that
+                   stops with nothing to say why. */
+                onChange={(e) => {
+                  if (bioWithinLimits(e.target.value, bio)) setBio(e.target.value)
+                }}
                 placeholder="Tell us a bit about yourself..."
+                invalid={bioOverLimit || Boolean(fieldErrors.bio)}
               />
               <div className="mt-1 text-right">
                 <span
-                  className="text-xs font-semibold"
-                  style={{
-                    color: bioWordCount >= LEARNER_BIO_TARGET_WORDS ? '#16a34a' : '#9ca3af',
-                  }}
+                  className={cn(
+                    'text-xs font-semibold',
+                    bioOverLimit ? 'text-danger-fg' : 'text-[#9ca3af]'
+                  )}
                 >
-                  {bioWordCount} words
+                  {bioWordCount} / {LEARNER_BIO_MAX_WORDS} words · {bio.length} /{' '}
+                  {LEARNER_BIO_MAX_CHARS} characters
                 </span>
               </div>
             </Field>
+          </SectionCard>
+
+          <SectionCard
+            title="Resume"
+            subtitle="Required. Upload a file, or answer a few questions and we will build one — only businesses running a course you join can see it."
+          >
+            <ResumeField
+              value={resume}
+              onChange={setResume}
+              invalid={Boolean(fieldErrors.resume)}
+            />
+            {fieldErrors.resume && (
+              <p className="m-0 mt-2 text-xs font-semibold text-danger-fg">
+                {fieldErrors.resume}
+              </p>
+            )}
           </SectionCard>
 
           <SectionCard title="Role & experience">
@@ -487,50 +543,12 @@ export function LearnerProfileForm({
             </button>
           </SectionCard>
 
-          <SectionCard title="Privacy">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="m-0 text-sm font-semibold text-ink">Public portfolio</p>
-                <p className="m-0 mt-0.5 text-xs text-[#9ca3af]">
-                  A shareable page showing your bio, skills and visible certificates — no login
-                  required to view.
-                </p>
-              </div>
-              <Toggle
-                checked={publicPortfolio}
-                onChange={setPublicPortfolio}
-                accent="coral"
-                label="Public portfolio"
-              />
-            </div>
-
-            {publicPortfolio && (
-              <>
-                <div className="mt-3.5 flex gap-2">
-                  <Input value={portfolioUrl} readOnly className="flex-1 text-[12.5px]" />
-                  <Button
-                    type="button"
-                    accent="coral"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(`https://${portfolioUrl}`)
-                      setCopied(true)
-                      window.setTimeout(() => setCopied(false), 2000)
-                    }}
-                  >
-                    {copied ? 'Copied!' : 'Copy link'}
-                  </Button>
-                </div>
-                <p className="mt-2.5">
-                  <Link
-                    href={`/p/${initial.portfolioSlug}`}
-                    className="text-[13px] font-semibold text-coral"
-                  >
-                    View public page →
-                  </Link>
-                </p>
-              </>
-            )}
-          </SectionCard>
+          {/* "Public portfolio" was a toggle and a share link here.
+              Nobody being asked to fill in a profile knows what a portfolio
+              is yet, and there is no longer a public/private state to set:
+              a portfolio is reached by an unguessable link and nothing else.
+              It is introduced after the first course is completed, on the
+              certificate screen, where it finally has something in it. */}
 
           {error && (
             <p className="rounded-md bg-danger-bg px-3 py-2 text-sm text-danger-fg">{error}</p>

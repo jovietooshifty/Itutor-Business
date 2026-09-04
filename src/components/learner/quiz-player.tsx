@@ -3,7 +3,16 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CircleAlert, CircleCheck, RotateCcw } from 'lucide-react'
+import {
+  ArrowRightLeft,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  ListChecks,
+  Lock,
+  RotateCcw,
+  Target,
+} from 'lucide-react'
 import { Button, Card, cn } from '@/components/ui'
 import { submitQuiz, type QuizOutcome } from '@/app/(learner)/actions'
 
@@ -27,6 +36,8 @@ export function QuizPlayer({
   attemptsUsed,
   attemptsAllowed,
   alreadyPassed,
+  retryCooldownHours = null,
+  retryReadyAt = null,
 }: {
   courseId: string
   blockId: string
@@ -37,17 +48,44 @@ export function QuizPlayer({
   attemptsUsed: number
   attemptsAllowed: number
   alreadyPassed: boolean
+  /** Wait imposed between attempts, when the quiz sets one. */
+  retryCooldownHours?: number | null
+  /** ISO time the cooldown expires; null when they can start now. */
+  retryReadyAt?: string | null
 }) {
   const router = useRouter()
+  /**
+   * The rules come first, on their own screen. Attempt count, pass mark and
+   * navigation mode were a line of small grey text inside the first question
+   * card — which is to say you learned the quiz was one-shot and forward-only
+   * at the moment that had already stopped being useful.
+   */
+  const [started, setStarted] = React.useState(false)
   const [index, setIndex] = React.useState(0)
   const [answers, setAnswers] = React.useState<Record<string, number>>({})
   const [outcome, setOutcome] = React.useState<QuizOutcome | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [pending, startTransition] = React.useTransition()
+  /** When this sitting began, so the admin's record can show time taken. */
+  const startedAt = React.useRef<string | null>(null)
 
   const question = questions[index]
   const isLast = index === questions.length - 1
   const answeredAll = questions.every((q) => answers[q.id] !== undefined)
+  const attemptsLeft = Math.max(0, attemptsAllowed - attemptsUsed)
+
+  function begin() {
+    startedAt.current = new Date().toISOString()
+    setStarted(true)
+  }
+
+  function retry() {
+    setOutcome(null)
+    setAnswers({})
+    setIndex(0)
+    // A retry is a new sitting, so it is timed as one.
+    startedAt.current = new Date().toISOString()
+  }
 
   function choose(optionIndex: number) {
     // Under forward-only navigation an answer is final once given.
@@ -58,7 +96,7 @@ export function QuizPlayer({
   function submit() {
     setError(null)
     startTransition(async () => {
-      const result = await submitQuiz(courseId, blockId, answers)
+      const result = await submitQuiz(courseId, blockId, answers, startedAt.current)
       if (!result.ok) {
         setError(result.error)
         return
@@ -176,15 +214,7 @@ export function QuizPlayer({
               </Button>
             </Link>
           ) : (
-            <Button
-              accent="coral"
-              size="lg"
-              onClick={() => {
-                setOutcome(null)
-                setAnswers({})
-                setIndex(0)
-              }}
-            >
+            <Button accent="coral" size="lg" onClick={retry}>
               <RotateCcw size={15} /> Try again
             </Button>
           )}
@@ -201,6 +231,99 @@ export function QuizPlayer({
         <p className="m-0 text-sm text-ink-muted">
           This quiz has no questions yet — check back once your trainer has added them.
         </p>
+      </Card>
+    )
+  }
+
+  /* ── Rules, before the first question ────────────────────────────────── */
+
+  if (!started) {
+    const rules: { icon: typeof Target; text: React.ReactNode; loud?: boolean }[] = [
+      {
+        icon: ListChecks,
+        text: `${questions.length} question${questions.length === 1 ? '' : 's'}`,
+      },
+      { icon: Target, text: `Pass mark ${passingScore}%` },
+      {
+        icon: RotateCcw,
+        // One attempt is where a surprise does the most damage, so it is the
+        // one that gets said plainly rather than as "1 of 1".
+        text:
+          attemptsAllowed === 1 ? (
+            <>
+              <strong>One attempt only</strong> — there is no retry on this quiz.
+            </>
+          ) : (
+            <>
+              {attemptsAllowed} attempts allowed — you have{' '}
+              <strong>
+                {attemptsLeft} left
+              </strong>
+            </>
+          ),
+        loud: attemptsAllowed === 1 || attemptsLeft === 1,
+      },
+      {
+        icon: allowBack ? ArrowRightLeft : Lock,
+        text: allowBack
+          ? 'You can go back and change your answers before submitting'
+          : 'You cannot return to previous questions — each answer is final',
+        loud: !allowBack,
+      },
+    ]
+
+    if (retryCooldownHours) {
+      rules.push({
+        icon: Clock,
+        text: `If you do not pass, you must wait ${retryCooldownHours} hour${
+          retryCooldownHours === 1 ? '' : 's'
+        } before trying again`,
+      })
+    }
+
+    const waiting = Boolean(retryReadyAt)
+
+    return (
+      <Card className="p-7 md:p-8">
+        <h2 className="m-0 font-display text-xl font-bold text-ink">Before you start</h2>
+        <p className="m-0 mt-1 text-sm text-ink-muted">How this quiz works.</p>
+
+        <ul className="m-0 mt-5 grid list-none gap-2.5 p-0">
+          {rules.map((rule, i) => (
+            <li
+              key={i}
+              className={cn(
+                'flex items-start gap-3 rounded-lg px-3.5 py-2.5 text-sm',
+                rule.loud ? 'bg-coral-soft text-ink' : 'bg-surface-inset text-ink'
+              )}
+            >
+              <rule.icon
+                size={16}
+                aria-hidden
+                className={cn('mt-0.5 shrink-0', rule.loud ? 'text-coral' : 'text-[#9ca3af]')}
+              />
+              <span>{rule.text}</span>
+            </li>
+          ))}
+        </ul>
+
+        {waiting ? (
+          <p className="m-0 mt-5 rounded-md bg-danger-bg px-4 py-3 text-sm text-danger-fg">
+            You have used an attempt recently. You can try again after{' '}
+            {new Date(retryReadyAt!).toLocaleString()}.
+          </p>
+        ) : attemptsLeft === 0 ? (
+          <p className="m-0 mt-5 rounded-md bg-danger-bg px-4 py-3 text-sm text-danger-fg">
+            You have used all {attemptsAllowed} attempts. Contact your training administrator to
+            have this quiz reset for you.
+          </p>
+        ) : (
+          <div className="mt-6">
+            <Button accent="coral" size="lg" onClick={begin}>
+              Start quiz
+            </Button>
+          </div>
+        )}
       </Card>
     )
   }

@@ -5,7 +5,9 @@ import { Plus } from 'lucide-react'
 import { Badge, Button, Card } from '@/components/ui'
 import { CourseCard } from '@/components/course-card'
 import { ShareCourseButton } from '@/components/business/share-course-modal'
+import { CompanyGateBanner } from '@/components/business/company-gate-banner'
 import { getBusinessContext } from '@/lib/business'
+import { loadCompanyGate } from '@/lib/company-gate'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Courses — iTutor Business' }
@@ -19,11 +21,20 @@ export default async function Page() {
   const context = await getBusinessContext()
   if (!context) redirect('/login')
 
-  const supabase = await createClient()
+  const [supabase, gate] = await Promise.all([createClient(), loadCompanyGate(context.businessId)])
   /* The embed names its foreign key. Two relationships now exist between
      courses and course_blocks — the course's blocks, and courses.build_block_id
      pointing back at one — so a bare `course_blocks(id)` is ambiguous and
      PostgREST refuses the whole query. */
+  /* The company cover doubles as the default course artwork, so a card is
+     never blank while a thumbnail is outstanding. A course thumbnail_url
+     always wins. */
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('logo_url, cover_url')
+    .eq('id', context.businessId)
+    .maybeSingle()
+
   const { data: courses, error } = await supabase
     .from('courses')
     .select(
@@ -37,6 +48,9 @@ export default async function Page() {
   if (error) throw new Error(`Could not load courses: ${error.message}`)
 
   const canCreate = context.role !== 'auditor'
+  // Editing an existing course stays open; making a NEW one waits on the
+  // company profile, because that is what a learner reads before joining.
+  const canCreateNew = canCreate && gate.complete
 
   return (
     <main className="mx-auto max-w-[1120px] p-6 md:p-10">
@@ -47,14 +61,21 @@ export default async function Page() {
             Build training your team can be assigned to.
           </p>
         </div>
-        {canCreate && (
-          <Link href="/courses/new">
-            <Button>
+        {canCreate &&
+          (canCreateNew ? (
+            <Link href="/courses/new">
+              <Button>
+                <Plus size={16} /> Create course
+              </Button>
+            </Link>
+          ) : (
+            <Button disabled>
               <Plus size={16} /> Create course
             </Button>
-          </Link>
-        )}
+          ))}
       </div>
+
+      {canCreate && <CompanyGateBanner gate={gate} action="create a course" className="mb-6" />}
 
       {!courses || courses.length === 0 ? (
         <Card className="py-14 text-center">
@@ -75,7 +96,9 @@ export default async function Page() {
                   href={`/courses/${course.id}/manage`}
                   title={course.title}
                   thumbnailUrl={course.thumbnail_url}
+                  fallbackThumbnailUrl={business?.cover_url ?? null}
                   providerName={context.businessName}
+                  providerLogoUrl={business?.logo_url ?? null}
                   description={course.description}
                   meta={
                     blockCount === 0

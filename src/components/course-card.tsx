@@ -16,6 +16,7 @@ export function CourseCard({
   href,
   title,
   thumbnailUrl,
+  fallbackThumbnailUrl = null,
   providerName,
   providerLogoUrl,
   meta,
@@ -30,6 +31,13 @@ export function CourseCard({
   href: string
   title: string
   thumbnailUrl: string | null
+  /**
+   * Shown when the course has no artwork of its own — in practice the
+   * provider's cover image. A card is never blank, and "Add a thumbnail"
+   * becomes a nudge over real artwork instead of sitting in a gap. Setting a
+   * course's own thumbnail_url overrides it.
+   */
+  fallbackThumbnailUrl?: string | null
   providerName: string
   providerLogoUrl?: string | null
   meta?: string
@@ -41,6 +49,7 @@ export function CourseCard({
   thumbnailPrompt?: { href: string; label: string }
 }) {
   const isBrand = accent === 'brand'
+  const artwork = thumbnailUrl ?? fallbackThumbnailUrl
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-card border border-[#e5e7eb] bg-white transition-[transform,box-shadow] duration-slow ease-out hover:-translate-y-1 hover:shadow-hover-card">
@@ -53,9 +62,9 @@ export function CourseCard({
           isBrand ? 'bg-brand-light' : 'bg-coral-soft'
         )}
       >
-        {thumbnailUrl ? (
+        {artwork ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" />
+          <img src={artwork} alt="" className="h-full w-full object-cover" />
         ) : (
           <BookOpen
             size={40}
@@ -67,7 +76,8 @@ export function CourseCard({
 
         {chips && <div className="absolute left-2.5 top-2.5 z-10 flex gap-1.5">{chips}</div>}
 
-        {/* Sits over the empty artwork area, where the gap actually is. */}
+        {/* Keyed on the course's OWN artwork, not on what is displayed: the
+            fallback fills the space but is still not this course's picture. */}
         {!thumbnailUrl && thumbnailPrompt && (
           <Link
             href={thumbnailPrompt.href}
@@ -115,7 +125,9 @@ export function CourseCard({
           <span className="min-w-0 text-xs text-[#9ca3af]">{footerLeft}</span>
           <span
             className={cn(
-              'relative z-10 shrink-0 rounded-full px-4 py-2 text-xs font-bold text-white',
+              // The whole tile is one link underneath; the pill is a label, not a
+              // second target, so clicks have to fall through to it.
+              'pointer-events-none shrink-0 rounded-full px-4 py-2 text-xs font-bold text-white',
               isBrand ? 'bg-itutor-green' : 'bg-coral'
             )}
           >

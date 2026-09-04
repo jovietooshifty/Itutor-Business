@@ -81,6 +81,7 @@ export function MemberProfileForm({
               <ImageUpload
                 bucket="avatars"
                 path={userId}
+                preset="avatar"
                 value={avatarUrl}
                 onChange={setAvatarUrl}
                 width={88}
@@ -205,9 +206,11 @@ export function MemberProfileForm({
                 setError(result.error)
                 return
               }
+              // Saving is the end of this page's job, so it hands you back to
+              // the dashboard rather than flashing "Saved" and staying put.
               setSaved(true)
+              router.replace('/dashboard')
               router.refresh()
-              window.setTimeout(() => setSaved(false), 2500)
             })
           }
         >

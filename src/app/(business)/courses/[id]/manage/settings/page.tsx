@@ -3,7 +3,10 @@ import { notFound, redirect } from 'next/navigation'
 import { CourseTabs } from '@/components/business/course-tabs'
 import { CourseBasicsForm } from '@/components/business/course-basics-form'
 import { CourseDetailsForm } from '@/components/business/course-details-form'
+import { CoursePublishToggle } from '@/components/business/course-publish-toggle'
+import { DeleteCourse } from '@/components/business/delete-course'
 import { getBusinessContext } from '@/lib/business'
+import { currentCycles, loadCourseLearners } from '@/lib/learners'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Course settings — iTutor Business' }
@@ -29,19 +32,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (context.role === 'auditor') redirect(`/courses/${id}/manage`)
 
   const supabase = await createClient()
-  const [{ data: course }, { data: tags }, { data: blocks }] = await Promise.all([
+  const [{ data: course }, { data: tags }, { data: blocks }, allEnrolments] = await Promise.all([
     supabase
       .from('courses')
       // One unbroken literal: supabase-js infers the row type from this string.
       // prettier-ignore
-      .select('id, business_id, title, description, visibility, what_you_will_learn, thumbnail_url, duration_label, quiz_navigation_default, quiz_retry_max_default, quiz_retry_cooldown_hours_default')
+      .select('id, business_id, title, description, visibility, status, what_you_will_learn, thumbnail_url, duration_label, quiz_navigation_default, quiz_retry_max_default, quiz_retry_cooldown_hours_default')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('course_tags').select('tag').eq('course_id', id),
     supabase.from('course_blocks').select('type').eq('course_id', id),
+    loadCourseLearners(id),
   ])
 
   if (!course || course.business_id !== context.businessId) notFound()
+
+  const learners = currentCycles(allEnrolments)
 
   return (
     <main className="mx-auto max-w-[960px] p-6 md:p-10">
@@ -50,6 +56,20 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <CourseTabs courseId={course.id} active="settings" />
 
       <section>
+        <h2 className="m-0 mb-1 font-display text-lg font-bold text-ink">Publishing</h2>
+        <p className="m-0 mb-4 text-sm text-ink-muted">
+          Whether anyone outside your business can reach this course at all.
+        </p>
+        <CoursePublishToggle
+          courseId={course.id}
+          status={course.status}
+          visibility={course.visibility}
+          blockCount={(blocks ?? []).length}
+          hasTitle={Boolean(course.title.trim())}
+        />
+      </section>
+
+      <section className="mt-10">
         <h2 className="m-0 mb-1 font-display text-lg font-bold text-ink">About this course</h2>
         <p className="m-0 mb-4 text-sm text-ink-muted">
           What learners see before they join — the marketplace card, the landing page, and who can
@@ -86,6 +106,19 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             retryMaxDefault: course.quiz_retry_max_default,
             retryCooldownHoursDefault: course.quiz_retry_cooldown_hours_default,
           }}
+        />
+      </section>
+
+      {/* Last on the page, on the tab you have to go looking for. It used to
+          sit under the Overview tab, directly below "Resume building". */}
+      <section className="mt-10">
+        <h2 className="m-0 mb-1 font-display text-lg font-bold text-ink">Danger zone</h2>
+        <p className="m-0 text-sm text-ink-muted">Irreversible, and not only for you.</p>
+        <DeleteCourse
+          courseId={course.id}
+          courseTitle={course.title}
+          enrolledCount={learners.length}
+          isAdmin={context.role === 'admin'}
         />
       </section>
     </main>

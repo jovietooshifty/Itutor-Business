@@ -135,13 +135,22 @@ export const Input = React.forwardRef<
 
 export const Textarea = React.forwardRef<
   HTMLTextAreaElement,
-  React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(function Textarea({ className, ...props }, ref) {
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    /** Red border, matching <Input invalid>. */
+    invalid?: boolean
+  }
+>(function Textarea({ className, invalid, ...props }, ref) {
   return (
     <textarea
       ref={ref}
+      aria-invalid={invalid || undefined}
       {...props}
-      className={cn(CONTROL_BASE, 'resize-y border-surface-border', className)}
+      className={cn(
+        CONTROL_BASE,
+        'resize-y',
+        invalid ? 'border-[#fca5a5]' : 'border-surface-border',
+        className
+      )}
     />
   )
 })

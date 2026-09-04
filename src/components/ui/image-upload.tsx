@@ -3,11 +3,22 @@
 import * as React from 'react'
 import { ImagePlus, Loader2 } from 'lucide-react'
 import { cn } from '@/components/ui'
+import {
+  ImageCropModal,
+  checkImageFile,
+  IMAGE_PRESETS,
+  type ImagePreset,
+} from '@/components/ui/image-crop'
 import { createClient } from '@/lib/supabase/client'
 
 /**
- * Real replacement for the export's <image-slot> tag: uploads straight to
- * Supabase Storage and hands the parent the resulting public URL.
+ * Real replacement for the export's <image-slot> tag: crops the chosen image
+ * to a known aspect and size, uploads the result to Supabase Storage, and
+ * hands the parent the resulting public URL.
+ *
+ * The crop step is what stops the same file rendering differently on every
+ * surface. `preset` decides the shape, the output dimensions, the minimum
+ * acceptable upload and whether transparency is preserved — see IMAGE_PRESETS.
  *
  * KNOWN ISSUE #4 (handoff §7) — "stamp should render only if uploaded, no
  * placeholder gap". This component is the *editor*, so it always shows a drop
@@ -19,7 +30,8 @@ export function ImageUpload({
   path,
   value,
   onChange,
-  shape = 'circle',
+  shape,
+  preset,
   width,
   height,
   placeholder = 'Upload',
@@ -30,7 +42,17 @@ export function ImageUpload({
   path: string
   value: string | null
   onChange: (url: string | null) => void
+  /**
+   * Preview shape only. Left for the callers that set it; `preset` is the one
+   * that decides what actually gets stored, and implies a shape of its own.
+   */
   shape?: 'circle' | 'rect'
+  /**
+   * What this image is for. Omitting it keeps the old behaviour — the raw file
+   * straight to Storage — so an unconverted caller is unchanged rather than
+   * silently re-cropped.
+   */
+  preset?: ImagePreset
   width: number | string
   height: number | string
   placeholder?: string
@@ -39,18 +61,28 @@ export function ImageUpload({
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  /** Set while the crop modal is open, holding the file being positioned. */
+  const [cropping, setCropping] = React.useState<File | null>(null)
 
-  async function handleFile(file: File) {
+  const effectiveShape =
+    shape ?? (preset && !IMAGE_PRESETS[preset].circular ? 'rect' : 'circle')
+
+  /** Uploads a Blob under `name`'s extension and reports the public URL. */
+  async function put(body: Blob, name: string) {
     setBusy(true)
     setError(null)
     try {
       const supabase = createClient()
-      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
+      const ext = name.split('.').pop()?.toLowerCase() ?? 'png'
       const objectPath = `${path}/${Date.now()}.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(objectPath, file, { upsert: true, cacheControl: '3600' })
+        .upload(objectPath, body, {
+          upsert: true,
+          cacheControl: '3600',
+          contentType: body.type || undefined,
+        })
       if (uploadError) throw uploadError
 
       const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath)
@@ -62,8 +94,38 @@ export function ImageUpload({
     }
   }
 
+  function handleFile(file: File) {
+    setError(null)
+
+    if (!preset) {
+      void put(file, file.name)
+      return
+    }
+
+    // Size and type are rejected before decoding, so a 30MB file never has to
+    // be read into memory just to be refused.
+    const problem = checkImageFile(file, preset)
+    if (problem) {
+      setError(problem)
+      return
+    }
+    setCropping(file)
+  }
+
   return (
     <div className={className}>
+      {cropping && preset && (
+        <ImageCropModal
+          file={cropping}
+          preset={preset}
+          onCancel={() => setCropping(null)}
+          onCropped={(blob, name) => {
+            setCropping(null)
+            void put(blob, name)
+          }}
+        />
+      )}
+
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -72,7 +134,7 @@ export function ImageUpload({
         className={cn(
           'relative grid place-items-center overflow-hidden border border-dashed border-[#d1d5db] bg-surface-inset',
           'cursor-pointer text-[#9ca3af] transition-colors hover:border-[color:var(--itutor-green)] hover:text-[var(--itutor-green)]',
-          shape === 'circle' ? 'rounded-full' : 'rounded-xl'
+          effectiveShape === 'circle' ? 'rounded-full' : 'rounded-xl'
         )}
         style={{ width, height }}
       >
@@ -101,8 +163,8 @@ export function ImageUpload({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) void handleFile(file)
           e.target.value = ''
+          if (file) handleFile(file)
         }}
       />
 

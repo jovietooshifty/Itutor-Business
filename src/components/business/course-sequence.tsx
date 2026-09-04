@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Clock, GripVertical, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, Check, Clock, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { Button, cn } from '@/components/ui'
 import { CourseSteps } from '@/components/business/course-steps'
 import {
@@ -214,9 +214,14 @@ export function CourseSequence({
       )}
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-4 shadow-sm md:p-6">
-        {blocks.length === 0 && insertAt === null && (
-          <p className="py-6 text-center text-sm text-[#9ca3af]">
-            Nothing here yet — add your first block below.
+        {/* A course with no blocks is the one state where the + has to be
+            pointed at rather than merely present: there is no list yet for it
+            to sit between, so it reads as a divider ornament. Goes as soon as
+            there is a block, because by then it has been understood. */}
+        {blocks.length === 0 && (
+          <p className="m-0 mb-3 flex items-start gap-2 rounded-md bg-brand-light px-3.5 py-2.5 text-sm font-semibold text-[var(--itutor-green)]">
+            <ArrowDown size={15} className="mt-0.5 shrink-0" aria-hidden />
+            Click the + to add your first block — video, text, or quiz.
           </p>
         )}
 
@@ -330,13 +335,17 @@ function InsertRow({
           aria-label={open ? 'Cancel adding a block' : 'Add a block here'}
           aria-expanded={open}
           className={cn(
-            'grid h-7 w-7 shrink-0 place-items-center rounded-full border transition-colors duration-fast',
+            // Solid and filled, not an outline. A 28px white circle with a grey
+            // icon between two hairlines read as part of the divider rather
+            // than as the control that builds the course.
+            'grid h-9 w-9 shrink-0 place-items-center rounded-full text-white shadow-sm',
+            'transition-colors duration-fast',
             open
-              ? 'border-[color:var(--itutor-green)] bg-brand-light text-[var(--itutor-green)]'
-              : 'border-surface-border bg-white text-ink-muted hover:border-[color:var(--itutor-green)] hover:text-[var(--itutor-green)]'
+              ? 'bg-[var(--itutor-green)]'
+              : 'bg-ink hover:bg-[color:var(--itutor-green)]'
           )}
         >
-          <Plus size={13} className={cn('transition-transform', open && 'rotate-45')} />
+          <Plus size={18} strokeWidth={2.5} className={cn('transition-transform', open && 'rotate-45')} />
         </button>
         <span className="h-px flex-1 bg-surface-border" />
       </div>

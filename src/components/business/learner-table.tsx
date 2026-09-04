@@ -18,12 +18,20 @@ export function LearnerTable({
   rows,
   showCourse = false,
   canRemove = false,
+  hrefBase = '/learners',
 }: {
   rows: LearnerRow[]
   /** The business-wide list spans courses, so it names them per row. */
   showCourse?: boolean
   /** Admin/Operator get an unenrol control on each row. */
   canRemove?: boolean
+  /**
+   * Where a row leads, with the learner id appended. The course's own Learners
+   * tab passes its course-scoped route so that opening a learner — and coming
+   * back — stays inside the course. Left at the global directory, clicking a
+   * learner from inside a course dropped you into the all-learners list.
+   */
+  hrefBase?: string
 }) {
   const router = useRouter()
   const [search, setSearch] = React.useState('')
@@ -120,7 +128,7 @@ export function LearnerTable({
               {/* The row links through, but the remove control has to sit
                   outside the anchor or clicking it would navigate. */}
               <Link
-                href={`/learners/${row.learnerId}`}
+                href={`${hrefBase}/${row.learnerId}`}
                 className="absolute inset-0 z-0"
                 aria-label={`View ${row.name}`}
               />
@@ -156,8 +164,26 @@ export function LearnerTable({
                 )}
               </div>
 
+              {/* "Past student" is still a completion — it says the course
+                  grew after they finished it, not that they fell short. */}
               <Badge tone={row.status === 'completed' ? 'success' : 'neutral'}>
-                {row.status === 'completed' ? 'Completed' : 'In progress'}
+                <span
+                  title={
+                    row.isPastStudent
+                      ? `Completed before ${row.liveBlockTotal - (row.completedBlockTotal ?? 0)} ${
+                          row.liveBlockTotal - (row.completedBlockTotal ?? 0) === 1
+                            ? 'block was'
+                            : 'blocks were'
+                        } added`
+                      : undefined
+                  }
+                >
+                  {row.status !== 'completed'
+                    ? 'In progress'
+                    : row.isPastStudent
+                      ? 'Past student'
+                      : 'Completed'}
+                </span>
               </Badge>
 
               {canRemove && (

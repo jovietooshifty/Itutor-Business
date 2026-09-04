@@ -6,7 +6,13 @@ import { Avatar, Badge, Card } from '@/components/ui'
 import { Logo, PUBLIC_HOME } from '@/components/ui/logo'
 import { createClient } from '@/lib/supabase/server'
 
-export const metadata: Metadata = { title: 'Portfolio — iTutor' }
+export const metadata: Metadata = {
+  title: 'Portfolio — iTutor',
+  /* A portfolio is private by being unguessable, and an unguessable link that
+     Google has crawled is not unguessable. Paired with the /p/ disallow in
+     robots.ts — the meta tag is what stops a crawler that ignores the file. */
+  robots: { index: false, follow: false },
+}
 
 /**
  * A learner's public portfolio (handoff flow 10). No account needed.

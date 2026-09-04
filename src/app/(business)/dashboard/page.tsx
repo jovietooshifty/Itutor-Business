@@ -3,7 +3,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { BarChart3, BookOpen, CheckCircle2, PlusCircle, Users } from 'lucide-react'
 import { Badge, Button, Card, ProgressBar } from '@/components/ui'
+import { CompanyGateBanner } from '@/components/business/company-gate-banner'
 import { getBusinessContext } from '@/lib/business'
+import { loadCompanyGate } from '@/lib/company-gate'
+import { loadCompletionRate } from '@/lib/metrics'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Dashboard — iTutor Business' }
@@ -14,7 +17,7 @@ export default async function DashboardPage() {
 
   const supabase = await createClient()
 
-  const [{ count: teamCount }, { count: courseCount }, { data: business }, { data: memberProfile }] =
+  const [{ count: teamCount }, { count: courseCount }, { data: business }, { data: memberProfile }, completion, gate] =
     await Promise.all([
       supabase
         .from('business_members')
@@ -30,6 +33,8 @@ export default async function DashboardPage() {
         .select('avatar_url, bio, job_title, phone, preferred_language')
         .eq('user_id', context.userId)
         .maybeSingle(),
+      loadCompletionRate(context.businessId),
+      loadCompanyGate(context.businessId),
     ])
 
   // "Complete your personal profile" banner, driven by the same five checks
@@ -46,11 +51,20 @@ export default async function DashboardPage() {
   const memberLabel = `${memberDone}/${memberChecks.length} complete`
 
   const invitedCount = (teamCount ?? 1) - 1
-  const isProfileStarted = !!business?.description?.trim()
 
   return (
     <main className="mx-auto max-w-[960px] p-10">
-      {!isProfileStarted && (
+      <CompanyGateBanner
+        gate={gate}
+        action="create courses or invite your team"
+        className="mb-5"
+      />
+
+      {/* "You're all set" is only true once the profile actually clears the
+          gate. It used to appear precisely when the description was empty,
+          so a brand-new account was congratulated and blocked at the same
+          time — and now would be told both things in adjacent banners. */}
+      {gate.complete && (courseCount ?? 0) === 0 && (
         <div className="mb-5 flex items-center gap-3.5 rounded-xl border border-[color:color-mix(in_oklab,var(--brand)_30%,transparent)] bg-brand-light px-5 py-4">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-itutor-green text-white">
             <CheckCircle2 size={20} />
@@ -109,7 +123,16 @@ export default async function DashboardPage() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <StatCard label="Team members" value={String(teamCount ?? 0)} icon={<Users size={18} />} />
         <StatCard label="Courses created" value={String(courseCount ?? 0)} icon={<BookOpen size={18} />} />
-        <StatCard label="Completion rate" value="—" icon={<BarChart3 size={18} />} />
+        <StatCard
+          label="Completion rate"
+          value={completion.pct === null ? '—' : `${completion.pct}%`}
+          hint={
+            completion.pct === null
+              ? 'No enrolments yet'
+              : `${completion.completed} of ${completion.total} finished`
+          }
+          icon={<BarChart3 size={18} />}
+        />
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -124,12 +147,12 @@ export default async function DashboardPage() {
           {invitedCount > 0 ? (
             <div className="flex items-center gap-2.5">
               <Badge tone="success">{invitedCount} invited</Badge>
-              <Button variant="secondary" disabled={context.role !== 'admin'}>
+              <Button variant="secondary" disabled={context.role !== 'admin' || !gate.complete}>
                 Invite more
               </Button>
             </div>
           ) : (
-            <Button disabled={context.role !== 'admin'}>Invite team</Button>
+            <Button disabled={context.role !== 'admin' || !gate.complete}>Invite team</Button>
           )}
         </Card>
 
@@ -141,9 +164,15 @@ export default async function DashboardPage() {
           <p className="m-0 mb-5 text-sm leading-relaxed text-[#6b7280]">
             Build a course from scratch, or start with a template.
           </p>
-          <Link href="/courses/new">
-            <Button disabled={context.role === 'auditor'}>Create a course</Button>
-          </Link>
+          {gate.complete ? (
+            <Link href="/courses/new">
+              <Button disabled={context.role === 'auditor'}>Create a course</Button>
+            </Link>
+          ) : (
+            // Not a link at all while the profile is short — a disabled button
+            // inside an <a> is still navigable.
+            <Button disabled>Create a course</Button>
+          )}
         </Card>
       </div>
     </main>
@@ -153,10 +182,13 @@ export default async function DashboardPage() {
 function StatCard({
   label,
   value,
+  hint,
   icon,
 }: {
   label: string
   value: string
+  /** Small line under the figure — what it is a share of, or why it is a dash. */
+  hint?: string
   icon: React.ReactNode
 }) {
   return (
@@ -169,6 +201,7 @@ function StatCard({
           {label}
         </p>
         <p className="m-0 font-display text-2xl font-bold text-ink">{value}</p>
+        {hint && <p className="m-0 mt-0.5 text-xs text-[#9ca3af]">{hint}</p>}
       </div>
     </div>
   )

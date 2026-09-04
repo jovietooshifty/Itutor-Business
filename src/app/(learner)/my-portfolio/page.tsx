@@ -32,7 +32,7 @@ export default async function Page() {
   const [{ data: profile }, { data: certificates }] = await Promise.all([
     supabase
       .from('learner_profiles')
-      .select('public_portfolio, portfolio_slug')
+      .select('portfolio_slug')
       .eq('user_id', user.id)
       .maybeSingle(),
     supabase
@@ -57,14 +57,10 @@ export default async function Page() {
     <main className="mx-auto max-w-[820px] p-6 md:p-10">
       <h1 className="m-0 font-display text-[28px] font-bold text-ink">My portfolio</h1>
       <p className="m-0 mb-6 mt-1 text-sm text-ink-muted">
-        Choose what employers see when you share your link.
+        Share your link, and choose which certificates it shows.
       </p>
 
-      <PortfolioControls
-        isPublic={profile?.public_portfolio ?? false}
-        slug={profile?.portfolio_slug ?? null}
-        certificates={rows}
-      />
+      <PortfolioControls slug={profile?.portfolio_slug ?? null} certificates={rows} />
     </main>
   )
 }

@@ -3,11 +3,18 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import { Button, Field, Input, SegmentedControl, Textarea } from '@/components/ui'
 import { ImageUpload } from '@/components/ui/image-upload'
+import { MultiSelectCombobox } from '@/components/ui/combobox'
 import { CourseSteps } from '@/components/business/course-steps'
-import { COURSE_TAG_SUGGESTIONS, type CourseBasics, type CourseVisibility } from '@/lib/course'
+import {
+  COURSE_TAG_GROUPS,
+  COURSE_TAG_MAX,
+  normalizeCourseTag,
+  type CourseBasics,
+  type CourseVisibility,
+} from '@/lib/course'
 import { createCourse, updateCourseBasics } from '@/app/(business)/courses/actions'
 
 /**
@@ -63,7 +70,30 @@ export function CourseBasicsForm({
   const [outcomeDraft, setOutcomeDraft] = React.useState('')
   const [thumbnailUrl, setThumbnailUrl] = React.useState(initial.thumbnailUrl)
 
+  /**
+   * The id of a course this form created, so a second submit edits it instead
+   * of inserting a second one. Without this, every submit on /courses/new is
+   * another INSERT — which is where the duplicate zero-block drafts came from.
+   */
+  const [createdId, setCreatedId] = React.useState<string | null>(null)
+  const activeId = courseId ?? createdId
+
   const isEdit = Boolean(courseId)
+
+  /**
+   * Normalised on the way in, not on save — the chip the author sees is then
+   * the string that gets stored, so "safety" typed by hand and "Safety" from
+   * the list cannot both end up on the same course.
+   */
+  function toggleTag(raw: string) {
+    const tag = normalizeCourseTag(raw)
+    if (!tag) return
+    setTags((prev) => {
+      if (prev.includes(tag)) return prev.filter((t) => t !== tag)
+      if (prev.length >= COURSE_TAG_MAX) return prev
+      return [...prev, tag]
+    })
+  }
 
   function addOutcome() {
     const value = outcomeDraft.trim()
@@ -87,8 +117,8 @@ export function CourseBasicsForm({
     }
 
     startTransition(async () => {
-      const result = courseId
-        ? await updateCourseBasics(courseId, input)
+      const result = activeId
+        ? await updateCourseBasics(activeId, input)
         : await createCourse(input)
 
       if (!result.ok) {
@@ -97,18 +127,24 @@ export function CourseBasicsForm({
         return
       }
 
+      const id = activeId ?? (result as { data?: { id: string } }).data?.id
+      if (!activeId && id) setCreatedId(id)
+
       if (!isWizard) {
         setSaved(true)
         router.refresh()
         return
       }
 
-      const id = courseId ?? (result as { data?: { id: string } }).data?.id
-      router.push(`/courses/${id}`)
+      /* Creating replaces /courses/new in history rather than stacking on it.
+         The course exists now, so that URL no longer describes anything — and
+         going Back to it and submitting again was the other way duplicate
+         drafts got made. Editing keeps its push, so Back still means basics. */
+      if (courseId) router.push(`/courses/${id}`)
+      else router.replace(`/courses/${id}`)
     })
   }
 
-  const suggestions = COURSE_TAG_SUGGESTIONS.filter((t) => !tags.includes(t))
 
   const Wrapper = isWizard ? 'main' : 'div'
 
@@ -132,6 +168,7 @@ export function CourseBasicsForm({
           <ImageUpload
             bucket="business-assets"
             path={`${businessId}/course-thumbnails`}
+            preset="cover"
             value={thumbnailUrl}
             onChange={setThumbnailUrl}
             shape="rect"
@@ -170,34 +207,37 @@ export function CourseBasicsForm({
 
         <div className="mt-6">
           <span className="mb-1.5 block text-sm font-medium text-[#374151]">Category / tags</span>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-3 py-1.5 text-[13px] font-semibold text-[var(--itutor-green)]"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
-                  aria-label={`Remove ${tag}`}
-                  className="cursor-pointer opacity-70 hover:opacity-100"
+          <p className="mb-2 text-xs text-[#9ca3af]">
+            Up to {COURSE_TAG_MAX}. Search the list, or type your own and press Enter.
+          </p>
+          {tags.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-3 py-1.5 text-[13px] font-semibold text-[var(--itutor-green)]"
                 >
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-            {suggestions.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setTags((prev) => [...prev, tag])}
-                className="inline-flex items-center gap-1 rounded-full border border-dashed border-surface-border px-3 py-1.5 text-[13px] text-ink-muted transition-colors duration-fast hover:border-[color:var(--itutor-green)] hover:text-[var(--itutor-green)]"
-              >
-                <Plus size={12} /> {tag}
-              </button>
-            ))}
-          </div>
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    aria-label={`Remove ${tag}`}
+                    className="cursor-pointer opacity-70 hover:opacity-100"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <MultiSelectCombobox
+            groups={COURSE_TAG_GROUPS}
+            selected={tags}
+            onToggle={toggleTag}
+            max={COURSE_TAG_MAX}
+            allowCustom
+            placeholder="Search categories…"
+          />
         </div>
 
         <div className="mt-6">

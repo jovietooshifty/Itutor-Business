@@ -3,15 +3,28 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { Badge, Button, Card } from '@/components/ui'
 import { CourseTabs } from '@/components/business/course-tabs'
-import { DeleteCourse } from '@/components/business/delete-course'
+import { CourseSequence } from '@/components/business/course-sequence'
 import { getBusinessContext } from '@/lib/business'
+import { loadSequence } from '@/lib/builder'
 import { resumeHref } from '@/lib/course'
-import { loadCourseLearners } from '@/lib/learners'
+import { currentCycles, loadCourseLearners } from '@/lib/learners'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Course overview — iTutor Business' }
 
-/** Course management, Overview tab (handoff flow 7). */
+/**
+ * Course management, Overview tab (handoff flow 7).
+ *
+ * This is where a course is worked on once it exists, so the sequence editor
+ * is here rather than behind its own tab: the two screens were a summary of
+ * the content and the content itself, one click apart, and the summary said
+ * nothing the editor below does not show directly.
+ *
+ * Nothing on this page leads back into the build flow. The one exception is
+ * "Resume building" on a draft — an unfinished course, where the flow is still
+ * the thing being walked, and resumeHref() returns to the screen it was left
+ * on rather than to step one.
+ */
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -19,18 +32,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!context) redirect('/login')
 
   const supabase = await createClient()
-  const [{ data: course }, { data: blocks }, learners] = await Promise.all([
+  const [{ data: course }, sequence, allEnrolments] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, business_id, title, description, visibility, status, duration_label, build_stage, build_block_id')
+      .select('id, business_id, title, description, visibility, status, build_stage, build_block_id')
       .eq('id', id)
       .maybeSingle(),
-    supabase.from('course_blocks').select('id, type').eq('course_id', id),
+    loadSequence(id),
     loadCourseLearners(id),
   ])
 
   if (!course || course.business_id !== context.businessId) notFound()
+  if (!sequence) notFound()
 
+  // One row per learner, not one per retake — see currentCycles().
+  const learners = currentCycles(allEnrolments)
   const scored = learners.filter((l) => l.latestQuizScore !== null)
   const stats = [
     { label: 'Enrolled', value: String(learners.length) },
@@ -52,9 +68,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     },
   ]
 
-  const blockCount = (blocks ?? []).length
-  const quizCount = (blocks ?? []).filter((b) => b.type === 'quiz').length
-
   return (
     <main className="mx-auto max-w-[960px] p-6 md:p-10">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -64,6 +77,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <p className="m-0 mt-1 text-sm text-ink-muted">{course.description}</p>
           )}
         </div>
+        {/* Publishing state, stated once. The action that changes it is on the
+            Settings tab — see CoursePublishToggle. */}
         <div className="flex shrink-0 items-center gap-2">
           <Badge tone={course.status === 'published' ? 'success' : 'neutral'}>
             {course.status === 'published' ? 'Published' : 'Draft'}
@@ -85,45 +100,33 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         ))}
       </div>
 
-      <Card className="mt-5 p-6">
-        <h2 className="m-0 mb-3 font-display text-base font-bold text-ink">Content</h2>
-        <p className="m-0 text-sm text-ink-muted">
-          {blockCount === 0
-            ? 'No blocks yet.'
-            : `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}${
-                quizCount ? `, ${quizCount} ${quizCount === 1 ? 'quiz' : 'quizzes'}` : ''
-              }`}
-          {course.duration_label ? ` · ${course.duration_label}` : ''}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {/* A draft is a course someone walked away from part way through, so
-              the first thing offered is the screen they were on — not the top
-              of a four-step flow they have already been through. */}
-          {course.status === 'draft' && (
-            <Link
-              href={resumeHref(course.id, course.build_stage, course.build_block_id)}
-              className="no-underline"
-            >
-              <Button>Resume building</Button>
-            </Link>
-          )}
-          <Link href={`/courses/${course.id}/manage/sequence`} className="no-underline">
-            <Button variant="secondary">Edit the sequence</Button>
+      {course.status === 'draft' && (
+        <Card className="mt-5 flex flex-wrap items-center justify-between gap-3 p-5">
+          <p className="m-0 text-sm text-ink-muted">
+            This course is still a draft. Pick the build flow back up where you left it, or edit it
+            directly below.
+          </p>
+          <Link
+            href={resumeHref(course.id, course.build_stage, course.build_block_id)}
+            className="shrink-0 no-underline"
+          >
+            <Button>Resume building</Button>
           </Link>
-          <Link href={`/courses/${course.id}/publish`} className="no-underline">
-            <Button variant="secondary">
-              {course.status === 'published' ? 'Publishing' : 'Review & publish'}
-            </Button>
-          </Link>
-        </div>
-      </Card>
+        </Card>
+      )}
 
-      <DeleteCourse
-        courseId={course.id}
-        courseTitle={course.title}
-        enrolledCount={learners.length}
-        isAdmin={context.role === 'admin'}
-      />
+      <section className="mt-7">
+        <h2 className="m-0 mb-1 font-display text-lg font-bold text-ink">Content</h2>
+        <p className="m-0 mb-4 text-sm text-ink-muted">
+          What learners work through, in this order. Each row opens that block on its own page.
+        </p>
+        <CourseSequence
+          variant="manage"
+          course={{ id: course.id, title: course.title }}
+          initialBlocks={sequence.blocks}
+          canDelete={context.role === 'admin'}
+        />
+      </section>
     </main>
   )
 }

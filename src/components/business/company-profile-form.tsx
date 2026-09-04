@@ -3,14 +3,14 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Chip, Field, Input, SectionCard, Select, Textarea } from '@/components/ui'
-import { MultiSelectCombobox } from '@/components/ui/combobox'
+import { MultiSelectCombobox, RoleCombobox } from '@/components/ui/combobox'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { ProfileStrength, StickyFooterBar, type StrengthItem } from '@/components/ui/profile-strength'
 import {
   COMPANY_SIZE_OPTIONS,
   countWords,
   DESCRIPTION_MIN_WORDS,
-  INDUSTRY_OPTIONS,
+  INDUSTRY_GROUPS,
   BUSINESS_TYPE_OPTIONS,
   STANDARD_LANGUAGES,
   TAGLINE_MAX_LENGTH,
@@ -98,7 +98,6 @@ export function CompanyProfileForm({
     },
     { label: 'Contact phone', done: !!contactPhone.trim() },
     { label: 'Contact email', done: !!contactEmail.trim() },
-    { label: 'A certification added', done: certifications.some((c) => c.name.trim()) },
     { label: 'A training language added', done: languages.length > 0 },
   ]
   const done = strengthItems.filter((i) => i.done).length
@@ -136,14 +135,13 @@ export function CompanyProfileForm({
         return
       }
 
-      if (mode === 'onboarding') {
-        router.replace('/dashboard')
-        router.refresh()
-      } else {
-        setSaved(true)
-        router.refresh()
-        window.setTimeout(() => setSaved(false), 2500)
-      }
+      /* Both modes land on the dashboard. Only 'onboarding' used to, and
+         /company-profile passes mode="manage" — so the page people actually
+         use set a "Saved" flag and then sat there, with nothing saying the work
+         was finished or where to go next. */
+      setSaved(true)
+      router.replace('/dashboard')
+      router.refresh()
     })
   }
 
@@ -164,6 +162,7 @@ export function CompanyProfileForm({
             <ImageUpload
               bucket="business-assets"
               path={`${initial.businessId}/cover`}
+              preset="cover"
               value={coverUrl}
               onChange={setCoverUrl}
               shape="rect"
@@ -178,6 +177,7 @@ export function CompanyProfileForm({
                   <ImageUpload
                     bucket="business-assets"
                     path={`${initial.businessId}/logo`}
+                    preset="avatar"
                     value={logoUrl}
                     onChange={setLogoUrl}
                     width={88}
@@ -189,6 +189,7 @@ export function CompanyProfileForm({
                   <ImageUpload
                     bucket="business-assets"
                     path={`${initial.businessId}/stamp`}
+                    preset="stamp"
                     value={stampUrl}
                     onChange={setStampUrl}
                     width={56}
@@ -210,19 +211,19 @@ export function CompanyProfileForm({
                     disabled={disabled}
                   />
                 </Field>
-                <Field label="Industry">
-                  <Select
-                    value={industry}
-                    onChange={(e) => setIndustry(e.target.value)}
-                    disabled={disabled}
-                  >
-                    <option value="">Select industry</option>
-                    {INDUSTRY_OPTIONS.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
+                {/* A searchable combobox over grouped industries, the same
+                    treatment ORG_ROLES already has. As a plain <select> over
+                    eight food-service options, a solar installer or a haulage
+                    firm had nothing to pick but "Other". */}
+                <Field label="Industry" htmlFor="company-industry">
+                  <RoleCombobox
+                    id="company-industry"
+                    groups={INDUSTRY_GROUPS}
+                    query={industry}
+                    onQueryChange={setIndustry}
+                    onPick={setIndustry}
+                    placeholder="Search or type your industry…"
+                  />
                 </Field>
               </div>
             </div>
@@ -397,52 +398,12 @@ export function CompanyProfileForm({
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Compliance & certifications"
-            optional
-            subtitle="HACCP, ServSafe, local health department certs, and similar."
-          >
-            <div className="grid gap-2.5">
-              {certifications.map((cert, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2.5 rounded-lg border border-surface-border px-3.5 py-2.5"
-                >
-                  <Input
-                    className="flex-1 border-none px-0 py-2 focus:border-none"
-                    value={cert.name}
-                    onChange={(e) =>
-                      setCertifications((prev) =>
-                        prev.map((c, idx) => (idx === i ? { ...c, name: e.target.value } : c))
-                      )
-                    }
-                    placeholder="Certification name"
-                    disabled={disabled}
-                  />
-                  {!disabled && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCertifications((prev) => prev.filter((_, idx) => idx !== i))
-                      }
-                      className="text-xs text-[#9ca3af] hover:text-danger-fg"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            {!disabled && (
-              <button
-                type="button"
-                onClick={() => setCertifications((prev) => [...prev, { name: '', file_url: null }])}
-                className="mt-3.5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--itutor-green)]"
-              >
-                + Add certification
-              </button>
-            )}
-          </SectionCard>
+          {/* "Compliance & certifications" was here. Nobody is asked for their
+              company's certificates in a job interview, and this screen is
+              meant to read like one. business_certifications and the save
+              path both remain — `certifications` is still submitted, unchanged
+              — so nothing already entered is lost, and the section can come
+              back without a migration. */}
 
           <SectionCard title="Training preferences">
             <Field label="Training language(s)">

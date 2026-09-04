@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { LearnerTable } from '@/components/business/learner-table'
 import { getBusinessContext } from '@/lib/business'
-import { loadBusinessLearners } from '@/lib/learners'
+import { currentCycles, loadBusinessLearners } from '@/lib/learners'
 
 export const metadata: Metadata = { title: 'Learners — iTutor Business' }
 
@@ -11,7 +11,7 @@ export default async function Page() {
   const context = await getBusinessContext()
   if (!context) redirect('/login')
 
-  const learners = await loadBusinessLearners(context.businessId)
+  const learners = currentCycles(await loadBusinessLearners(context.businessId))
 
   return (
     <main className="mx-auto max-w-[960px] p-6 md:p-10">

@@ -3,9 +3,9 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff } from 'lucide-react'
-import { Card, Toggle, cn } from '@/components/ui'
-import { setCertificateVisibility, setPortfolioVisibility } from '@/app/(learner)/actions'
+import { Check, Copy, ExternalLink, Eye, EyeOff, Share2 } from 'lucide-react'
+import { Button, Card, cn } from '@/components/ui'
+import { setCertificateVisibility } from '@/app/(learner)/actions'
 
 export type PortfolioCertificate = {
   certificateId: string
@@ -16,24 +16,28 @@ export type PortfolioCertificate = {
 }
 
 /**
- * The two visibility switches from the handoff: the portfolio as a whole, and
- * each certificate on it. Both have to be on for anything to be publicly
- * readable — which is exactly what certificates_select_public_portfolio
- * checks — so the per-certificate rows are disabled while the portfolio itself
- * is private, rather than implying they do something on their own.
+ * The learner's own portfolio: a share bar, then per-certificate visibility.
+ *
+ * The public/private toggle is gone. A portfolio is reached by a link nobody
+ * can guess — a random 18-character slug, the same construction as a
+ * certificate id — and that is the privacy model in full. The toggle was asked
+ * during signup, before a learner had any idea what a portfolio was, and it
+ * answered a question they had no way to have an opinion on yet.
+ *
+ * Per-certificate visibility stays: choosing which of your courses an employer
+ * sees is a real decision, and it is made here, with the list in front of you.
  */
 export function PortfolioControls({
-  isPublic,
   slug,
   certificates,
 }: {
-  isPublic: boolean
   slug: string | null
   certificates: PortfolioCertificate[]
 }) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [error, setError] = React.useState<string | null>(null)
+  const [copied, setCopied] = React.useState(false)
 
   function run(action: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null)
@@ -47,36 +51,94 @@ export function PortfolioControls({
     })
   }
 
+  /* Built in the browser so the link is right on any host — a preview
+     deployment, localhost, or the real domain. */
+  const [origin, setOrigin] = React.useState('')
+  React.useEffect(() => setOrigin(window.location.origin), [])
+  const shareUrl = slug ? `${origin}/p/${slug}` : ''
+  const shareText = 'Here is my training portfolio:'
+
+  const shareTargets = slug
+    ? [
+        {
+          label: 'WhatsApp',
+          href: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+        },
+        {
+          label: 'X',
+          href: `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+        },
+      ]
+    : []
+
   return (
     <>
       <Card className="p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="m-0 font-display text-base font-bold text-ink">Public portfolio</h2>
-            <p className="m-0 mt-1 text-sm text-ink-muted">
-              {isPublic
-                ? 'Anyone with your link can see the certificates you’ve chosen to show.'
-                : 'Your portfolio is private. Nobody else can open it.'}
-            </p>
-          </div>
-          <Toggle
-            checked={isPublic}
-            accent="coral"
-            label="Make my portfolio public"
-            onChange={(next) => {
-              if (pending) return
-              run(() => setPortfolioVisibility(next))
-            }}
-          />
-        </div>
+        <h2 className="m-0 flex items-center gap-2 font-display text-base font-bold text-ink">
+          <Share2 size={16} aria-hidden /> Share your portfolio
+        </h2>
+        <p className="m-0 mt-1 text-sm text-ink-muted">
+          Anyone with this link can see the certificates you show below. It is not listed
+          anywhere and cannot be searched for — only people you send it to can open it.
+        </p>
 
-        {isPublic && slug && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md bg-surface-inset px-3.5 py-2.5">
-            <span className="text-xs text-ink-muted">Your link:</span>
-            <Link href={`/p/${slug}`} className="text-xs font-semibold text-coral">
-              /p/{slug}
-            </Link>
-          </div>
+        {slug ? (
+          <>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <input
+                readOnly
+                value={shareUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                aria-label="Your portfolio link"
+                className="min-w-[200px] flex-1 rounded-md border border-surface-border bg-surface-inset px-3 py-2.5 text-[12.5px] font-sans text-ink outline-none"
+              />
+              <Button
+                accent="coral"
+                onClick={() => {
+                  void navigator.clipboard.writeText(shareUrl)
+                  setCopied(true)
+                  window.setTimeout(() => setCopied(false), 2000)
+                }}
+              >
+                {copied ? <Check size={15} /> : <Copy size={15} />}
+                {copied ? 'Copied' : 'Copy link'}
+              </Button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {shareTargets.map((target) => (
+                <a
+                  key={target.label}
+                  href={target.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-surface-border px-3.5 py-1.5 text-xs font-semibold text-ink no-underline transition-colors duration-fast hover:border-coral hover:text-coral"
+                >
+                  {target.label}
+                </a>
+              ))}
+              {/* Instagram has no web share URL — it takes a link from the
+                  clipboard, pasted into a bio or a DM — so this says what to
+                  do rather than pretending to be a share button. */}
+              <span className="text-xs text-[#9ca3af]">
+                For Instagram, copy the link and paste it in your bio or a message.
+              </span>
+            </div>
+
+            <p className="m-0 mt-3">
+              <Link
+                href={`/p/${slug}`}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-coral"
+              >
+                See what employers see <ExternalLink size={13} aria-hidden />
+              </Link>
+            </p>
+          </>
+        ) : (
+          <p className="m-0 mt-4 rounded-md bg-surface-inset px-3.5 py-2.5 text-sm text-ink-muted">
+            Your link is created with your profile. Finish setting your profile up and it will
+            appear here.
+          </p>
         )}
       </Card>
 
@@ -113,13 +175,11 @@ export function PortfolioControls({
 
                 <button
                   type="button"
-                  disabled={pending || !isPublic}
+                  disabled={pending}
                   title={
-                    isPublic
-                      ? cert.visible
-                        ? 'Hide from my public portfolio'
-                        : 'Show on my public portfolio'
-                      : 'Make your portfolio public first'
+                    cert.visible
+                      ? 'Hide from my portfolio'
+                      : 'Show on my portfolio'
                   }
                   onClick={() =>
                     run(() => setCertificateVisibility(cert.certificateId, !cert.visible))
