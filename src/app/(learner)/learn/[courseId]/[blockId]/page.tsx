@@ -244,6 +244,7 @@ export default async function Page({
           content={block.content_ref}
           completed={status === 'completed'}
           materialUrl={materialUrl}
+          materialDisplay={materialDisplay}
         />
       )}
     </main>
