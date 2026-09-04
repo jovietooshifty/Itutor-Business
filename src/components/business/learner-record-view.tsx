@@ -205,34 +205,61 @@ function ResumePanel({ resume, name }: { resume: LearnerRecord['resume']; name: 
   }
 
   if (resume.kind === 'file') {
-    return (
-      <Card className="overflow-hidden p-0">
-        {resume.url ? (
-          <>
-            {/* Read in place. A download link makes an admin leave the page,
-                open a file manager, and come back — for something they are
-                only going to glance at. */}
-            <iframe
-              src={resume.url}
-              title={`${name}'s resume`}
-              className="h-[720px] w-full border-0 bg-surface-inset"
-            />
-            <div className="border-t border-border px-4 py-2.5">
-              <a
-                href={resume.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted no-underline hover:text-ink"
-              >
-                <FileText size={13} aria-hidden /> Open in a new tab
-              </a>
-            </div>
-          </>
-        ) : (
+    const view = resume.view
+    if (!view) {
+      return (
+        <Card>
           <p className="m-0 p-6 text-sm text-ink-muted">
             The uploaded resume could not be opened. It may have been removed.
           </p>
+        </Card>
+      )
+    }
+
+    /* Read in place, whatever the format. A download makes an admin leave the
+       page, open a file manager and come back — for something they are only
+       going to glance at. A PDF goes to the browser's viewer; a .docx is
+       converted to its own markup, because browsers have no viewer for one. */
+    return (
+      <Card className="overflow-hidden p-0">
+        {view.kind === 'embed' && (
+          <iframe
+            src={view.url}
+            title={`${name}'s resume`}
+            className="h-[720px] w-full border-0 bg-surface-inset"
+          />
         )}
+
+        {view.kind === 'html' && (
+          <div
+            className="prose-material max-h-[720px] overflow-y-auto p-6 text-sm leading-relaxed text-ink md:p-7"
+            // Sanitised server-side — see sanitizeDocumentHtml.
+            dangerouslySetInnerHTML={{ __html: view.html }}
+          />
+        )}
+
+        {view.kind === 'text' && (
+          <div className="max-h-[720px] overflow-y-auto whitespace-pre-wrap p-6 text-sm leading-relaxed text-ink md:p-7">
+            {view.text}
+          </div>
+        )}
+
+        {view.kind === 'link' && (
+          <p className="m-0 px-6 pt-6 text-sm text-ink-muted">
+            {view.reason ?? 'This resume cannot be shown in the page.'}
+          </p>
+        )}
+
+        <div className="border-t border-border px-4 py-2.5">
+          <a
+            href={view.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted no-underline hover:text-ink"
+          >
+            <FileText size={13} aria-hidden /> Open the original
+          </a>
+        </div>
       </Card>
     )
   }

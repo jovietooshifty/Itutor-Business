@@ -13,6 +13,7 @@ import {
   effectiveNavigation,
   type BlockType,
 } from '@/lib/course'
+import { materialView } from '@/lib/material-view'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Lesson — iTutor' }
@@ -105,6 +106,30 @@ export default async function Page({
       .from(MATERIAL_BUCKET)
       .createSignedUrl(materialPath, 60 * 60)
     materialUrl = signed?.signedUrl ?? null
+  }
+
+  /**
+   * How that file gets shown. A signed URL alone means a browser download for
+   * anything it has no viewer for — .docx above all — which sends a learner
+   * out of the lesson and into Word to read two paragraphs. `materialView`
+   * renders a document inline instead: PDFs natively, .docx converted to its
+   * own markup.
+   *
+   * The bytes are only fetched for formats that need converting; the loader is
+   * never called for a PDF. Text blocks only, since a video is streamed from
+   * the signed URL by the player itself.
+   */
+  let materialDisplay = null
+  if (materialPath && materialUrl && block.type === 'text') {
+    materialDisplay = await materialView({
+      path: materialPath,
+      fileName: asText(block.content_ref).fileName,
+      url: materialUrl,
+      loadBytes: async () => {
+        const { data } = await supabase.storage.from(MATERIAL_BUCKET).download(materialPath)
+        return data ? Buffer.from(await data.arrayBuffer()) : null
+      },
+    })
   }
 
   /* ── Quiz blocks need their config, questions and attempt history ────── */

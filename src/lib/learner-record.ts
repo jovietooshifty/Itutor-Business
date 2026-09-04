@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { loadBusinessLearners, type LearnerRow } from '@/lib/learners'
+import { materialView, type MaterialView } from '@/lib/material-view'
 import { parseResumeData, type ResumeData } from '@/lib/resume'
 
 /** Where the private resume/certification files live. */
@@ -24,7 +25,8 @@ export type LearnerRecord = {
   /** Optional and ungated — no verification, no bearing on enrolment. */
   certifications: { id: string; name: string; fileUrl: string | null }[]
   resume:
-    | { kind: 'file'; url: string | null }
+    /** An uploaded file, already resolved to how it should be displayed. */
+    | { kind: 'file'; view: MaterialView | null }
     | { kind: 'built'; data: ResumeData }
     | null
   /** This learner's enrolments in the caller's courses. */
@@ -74,10 +76,28 @@ export async function loadLearnerRecord(
      number and an address, and a public object URL needs no login at all. */
   let resume: LearnerRecord['resume'] = null
   if (profile?.resume_url) {
+    const path = profile.resume_url
     const { data: signed } = await supabase.storage
       .from(PRIVATE_BUCKET)
-      .createSignedUrl(profile.resume_url, SIGNED_URL_SECONDS)
-    resume = { kind: 'file', url: signed?.signedUrl ?? null }
+      .createSignedUrl(path, SIGNED_URL_SECONDS)
+
+    /* A browser has no .docx viewer, so a signed URL to one is a download and
+       the admin ends up reading a resume in Word. materialView renders it in
+       the page instead — the same path the lesson player takes. */
+    resume = {
+      kind: 'file',
+      view: signed?.signedUrl
+        ? await materialView({
+            path,
+            fileName: path.split('/').pop() ?? 'Resume',
+            url: signed.signedUrl,
+            loadBytes: async () => {
+              const { data } = await supabase.storage.from(PRIVATE_BUCKET).download(path)
+              return data ? Buffer.from(await data.arrayBuffer()) : null
+            },
+          })
+        : null,
+    }
   } else {
     const built = parseResumeData(profile?.resume_data)
     if (built) resume = { kind: 'built', data: built }

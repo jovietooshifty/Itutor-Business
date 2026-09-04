@@ -205,3 +205,63 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* An uploaded .docx, converted to its own markup by mammoth and rendered in
+   the lesson rather than downloaded (see lib/material-view.ts).
+   
+   Tailwind's preflight strips heading sizes and list markers, so without this
+   a converted document arrives as one undifferentiated wall of text — losing
+   exactly the structure that made it worth reading in place. Scoped tightly:
+   these selectors only apply inside a converted document. */
+.prose-material > * + * { margin-top: 0.85em; }
+
+.prose-material h1,
+.prose-material h2,
+.prose-material h3,
+.prose-material h4,
+.prose-material h5,
+.prose-material h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1.5em;
+  margin-bottom: 0.4em;
+}
+.prose-material h1 { font-size: 1.5rem; }
+.prose-material h2 { font-size: 1.25rem; }
+.prose-material h3 { font-size: 1.1rem; }
+.prose-material h4,
+.prose-material h5,
+.prose-material h6 { font-size: 1rem; }
+.prose-material > :first-child { margin-top: 0; }
+
+.prose-material ul,
+.prose-material ol { padding-left: 1.4em; }
+.prose-material ul { list-style: disc; }
+.prose-material ol { list-style: decimal; }
+.prose-material li + li { margin-top: 0.3em; }
+
+/* Bold and italic are the whole point when an author says "focus on the bold
+   areas", so they are stated rather than inherited. */
+.prose-material strong, .prose-material b { font-weight: 700; color: var(--ink); }
+.prose-material em, .prose-material i { font-style: italic; }
+
+.prose-material a { color: var(--coral); text-decoration: underline; }
+
+/* Wide tables scroll with the document instead of stretching the lesson. */
+.prose-material table { display: block; overflow-x: auto; border-collapse: collapse; max-width: 100%; }
+.prose-material th,
+.prose-material td {
+  border: 1px solid var(--surface-border);
+  padding: 0.45em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-material th { background: var(--surface-inset); font-weight: 700; }
+
+.prose-material img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+.prose-material blockquote {
+  border-left: 3px solid var(--surface-border);
+  padding-left: 0.9em;
+  color: var(--ink-muted);
+}

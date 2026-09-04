@@ -2,10 +2,11 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ExternalLink, Lightbulb, Target } from 'lucide-react'
+import { Download, ExternalLink, FileText, Lightbulb, Target } from 'lucide-react'
 import { Button, Card, Checkbox } from '@/components/ui'
 import { completeBlock } from '@/app/(learner)/actions'
 import { asText, asVideo, type BlockType } from '@/lib/course'
+import type { MaterialView } from '@/lib/material-view'
 
 /** True for a file we can play ourselves and therefore actually gate on. */
 function isDirectVideo(url: string) {
@@ -31,6 +32,7 @@ export function BlockPlayer({
   content,
   completed,
   materialUrl,
+  materialDisplay = null,
 }: {
   courseId: string
   blockId: string
@@ -39,6 +41,8 @@ export function BlockPlayer({
   completed: boolean
   /** Signed URL for the uploaded file, minted server-side. Null if there is none. */
   materialUrl: string | null
+  /** How to show an uploaded document in the page — see lib/material-view. */
+  materialDisplay?: MaterialView | null
 }) {
   const router = useRouter()
   const [done, setDone] = React.useState(false)
@@ -71,7 +75,12 @@ export function BlockPlayer({
           onWatched={() => setDone(true)}
         />
       ) : (
-        <TextLesson content={content} materialUrl={materialUrl} onRead={() => setDone(true)} />
+        <TextLesson
+          content={content}
+          materialUrl={materialUrl}
+          materialDisplay={materialDisplay}
+          onRead={() => setDone(true)}
+        />
       )}
 
       {!canComplete && (
@@ -242,10 +251,12 @@ function toEmbedUrl(url: string): string | null {
 function TextLesson({
   content,
   materialUrl,
+  materialDisplay,
   onRead,
 }: {
   content: unknown
   materialUrl: string | null
+  materialDisplay: MaterialView | null
   onRead: () => void
 }) {
   const value = asText(content)
@@ -255,7 +266,12 @@ function TextLesson({
       <Guidance icon={Target} label="What to look for" body={value.pointers} />
 
       <Card className="p-6 md:p-8">
-        <TextSurface value={value} materialUrl={materialUrl} onRead={onRead} />
+        <TextSurface
+          value={value}
+          materialUrl={materialUrl}
+          materialDisplay={materialDisplay}
+          onRead={onRead}
+        />
       </Card>
 
       {value.summary.trim() && (
@@ -282,14 +298,17 @@ function TextLesson({
 function TextSurface({
   value,
   materialUrl,
+  materialDisplay,
   onRead,
 }: {
   value: ReturnType<typeof asText>
   materialUrl: string | null
+  materialDisplay: MaterialView | null
   onRead: () => void
 }) {
-  // Scroll-to-end gating, per the handoff. Only meaningful for text we render
-  // ourselves — an uploaded file is read somewhere we cannot observe.
+  // Scroll-to-end gating, per the handoff. Meaningful for anything we render
+  // ourselves — including a converted document, which is now most of them.
+  // Only a file handed to the browser's own viewer is read where we cannot see.
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
@@ -313,12 +332,71 @@ function TextSurface({
     if (!value.path) {
       return <p className="m-0 text-sm text-ink-muted">This lesson has no document yet.</p>
     }
-    return materialUrl ? (
-      <ExternalContent url={materialUrl} label={value.fileName ?? 'Open the document'} />
-    ) : (
-      <p className="m-0 text-sm text-ink-muted">
-        This document could not be loaded. Try again, or let the course owner know.
-      </p>
+    if (!materialUrl) {
+      return (
+        <p className="m-0 text-sm text-ink-muted">
+          This document could not be loaded. Try again, or let the course owner know.
+        </p>
+      )
+    }
+
+    /* A PDF goes to the browser's own viewer. It is read inside an iframe we
+       cannot observe, so the "I've read this" checkbox stays the gate. */
+    if (materialDisplay?.kind === 'embed') {
+      return (
+        <div>
+          <iframe
+            src={materialDisplay.url}
+            title={materialDisplay.fileName}
+            className="h-[70vh] w-full rounded-lg border border-surface-border bg-surface-inset"
+          />
+          <MaterialFooter url={materialDisplay.url} fileName={materialDisplay.fileName} />
+        </div>
+      )
+    }
+
+    /* A converted document is our own markup, so it scrolls in the page and
+       reaching the end counts as having read it — the same gate the rich-text
+       lesson below has always used. */
+    if (materialDisplay?.kind === 'html') {
+      return (
+        <div>
+          <div
+            ref={scrollRef}
+            className="prose-material max-h-[70vh] overflow-y-auto text-[15px] leading-relaxed text-ink"
+            // Converted by mammoth from the uploaded .docx and sanitised
+            // server-side — see sanitizeDocumentHtml in lib/material-view.
+            dangerouslySetInnerHTML={{ __html: materialDisplay.html }}
+          />
+          <MaterialFooter url={materialUrl} fileName={materialDisplay.fileName} />
+        </div>
+      )
+    }
+
+    if (materialDisplay?.kind === 'text') {
+      return (
+        <div>
+          <div
+            ref={scrollRef}
+            className="max-h-[70vh] overflow-y-auto whitespace-pre-wrap text-[15px] leading-relaxed text-ink"
+          >
+            {materialDisplay.text}
+          </div>
+          <MaterialFooter url={materialUrl} fileName={materialDisplay.fileName} />
+        </div>
+      )
+    }
+
+    // Nothing we can render: say why, and still let them open it.
+    return (
+      <div>
+        {materialDisplay?.kind === 'link' && materialDisplay.reason && (
+          <p className="m-0 mb-3 rounded-md bg-surface-inset px-3.5 py-2.5 text-xs text-ink-muted">
+            {materialDisplay.reason}
+          </p>
+        )}
+        <ExternalContent url={materialUrl} label={value.fileName ?? 'Open the document'} />
+      </div>
     )
   }
 
@@ -332,6 +410,31 @@ function TextSurface({
       className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-[15px] leading-relaxed text-ink"
     >
       {value.body}
+    </div>
+  )
+}
+
+/**
+ * Under a document shown in the page: what it is, and a way to keep it.
+ *
+ * Reading happens here now, so the download is the secondary action rather
+ * than the only one — but a learner who wants the file on their phone for the
+ * shop floor should still be able to take it.
+ */
+function MaterialFooter({ url, fileName }: { url: string; fileName: string }) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-surface-border pt-3">
+      <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-[#9ca3af]">
+        <FileText size={13} className="shrink-0" aria-hidden />
+        <span className="truncate">{fileName}</span>
+      </span>
+      <a
+        href={url}
+        download={fileName}
+        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-ink-muted no-underline hover:text-ink"
+      >
+        <Download size={13} aria-hidden /> Download
+      </a>
     </div>
   )
 }
