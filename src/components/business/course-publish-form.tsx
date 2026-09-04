@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle2, CircleAlert, Globe, Lock } from 'lucide-react'
 import { Badge, Button } from '@/components/ui'
 import { CourseSteps } from '@/components/business/course-steps'
 import { NAVIGATION_LABELS, type CourseStatus, type CourseVisibility, type QuizNavigation } from '@/lib/course'
-import { publishCourse, unpublishCourse } from '@/app/(business)/courses/actions'
+import { publishCourse } from '@/app/(business)/courses/actions'
 
 /**
  * Course Builder step 4 — Review & publish (build step 6). A published course
@@ -49,10 +49,16 @@ export function CoursePublishForm({
   const missingBlocks = blockCount === 0
   const ready = !missingTitle && !missingBlocks
 
-  function toggle() {
+  /**
+   * Publishing only. Unpublishing is not offered here — this screen is the end
+   * of the build flow, and taking a live course down is a management decision
+   * made later, on the Settings tab (see CoursePublishToggle). Having it in
+   * both places meant the wizard's terminal action was "undo".
+   */
+  function publish() {
     setError(null)
     startTransition(async () => {
-      const result = status === 'published' ? await unpublishCourse(courseId) : await publishCourse(courseId)
+      const result = await publishCourse(courseId)
       if (!result.ok) {
         setError(result.error)
         return
@@ -166,11 +172,13 @@ export function CoursePublishForm({
             <Button variant="secondary">Exit</Button>
           </Link>
           {status === 'published' ? (
-            <Button variant="danger" size="lg" loading={pending} onClick={toggle}>
-              Unpublish
-            </Button>
+            /* The course exists and is live, so the forward action is going to
+               look at it — not back into the flow that made it. */
+            <Link href={`/courses/${courseId}/manage`} className="no-underline">
+              <Button size="lg">View course</Button>
+            </Link>
           ) : (
-            <Button size="lg" loading={pending} disabled={!ready} onClick={toggle}>
+            <Button size="lg" loading={pending} disabled={!ready} onClick={publish}>
               Publish
             </Button>
           )}
