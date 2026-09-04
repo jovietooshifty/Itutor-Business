@@ -32,7 +32,6 @@ export function QuizPlayer({
   blockId,
   questions,
   passingScore,
-  allowBack,
   attemptsUsed,
   attemptsAllowed,
   alreadyPassed,
@@ -43,8 +42,6 @@ export function QuizPlayer({
   blockId: string
   questions: QuizQuestion[]
   passingScore: number
-  /** Course/quiz navigation: false locks each answer once submitted. */
-  allowBack: boolean
   attemptsUsed: number
   attemptsAllowed: number
   alreadyPassed: boolean
@@ -272,11 +269,16 @@ export function QuizPlayer({
         loud: attemptsAllowed === 1 || attemptsLeft === 1,
       },
       {
-        icon: allowBack ? ArrowRightLeft : Lock,
-        text: allowBack
-          ? 'You can go back and change your answers before submitting'
-          : 'You cannot return to a question once you move on — but you can change your answer before you do',
-        loud: !allowBack,
+        icon: ArrowRightLeft,
+        text: 'You can move between questions and change your answers before submitting',
+      },
+      {
+        icon: Lock,
+        // The real restriction, and the one worth stating up front: this is a
+        // closed-book quiz. Said before they start, while they can still go
+        // and read the lesson again.
+        text: 'The lesson material is not available once you start — review it first if you need to',
+        loud: true,
       },
     ]
 
@@ -326,10 +328,17 @@ export function QuizPlayer({
             have this quiz reset for you.
           </p>
         ) : (
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <Button accent="coral" size="lg" onClick={begin}>
               Start quiz
             </Button>
+            {/* The last chance to re-read the lesson, offered at the moment it
+                is still possible rather than discovered after starting. */}
+            <Link href={`/learn/${courseId}`} className="no-underline">
+              <Button variant="secondary" size="lg">
+                Review the material
+              </Button>
+            </Link>
           </div>
         )}
       </Card>
@@ -381,24 +390,23 @@ export function QuizPlayer({
         })}
       </div>
 
-      {/* Shown before the choice is made, not after it. Warning someone that
-          they cannot come back is only useful while coming back is still
-          something they might have wanted. */}
-      {!allowBack && (
-        <p className="m-0 mt-3 text-xs text-[#9ca3af]">
-          This quiz is forward-only — change your answer now if you need to, because{' '}
-          {isLast ? 'submitting' : 'moving to the next question'} is final.
-        </p>
-      )}
+      <p className="m-0 mt-3 text-xs text-[#9ca3af]">
+        You can move between questions and change your answers. The lesson material is not
+        available until you submit.
+      </p>
 
       {error && (
         <p className="mt-4 rounded-md bg-danger-bg px-4 py-3 text-sm text-danger-fg">{error}</p>
       )}
 
       <div className="mt-6 flex items-center justify-between gap-3">
+        {/* Always available inside the quiz. Revisiting your own answers is
+            not the thing worth restricting — going back to the material to
+            look them up is, and that route is closed while an attempt is
+            open (see the rules screen and the lesson page's header). */}
         <Button
           variant="ghost"
-          disabled={!allowBack || index === 0 || pending}
+          disabled={index === 0 || pending}
           onClick={() => setIndex((i) => i - 1)}
         >
           Back

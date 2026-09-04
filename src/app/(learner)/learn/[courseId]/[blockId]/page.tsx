@@ -10,7 +10,6 @@ import {
   asText,
   asVideo,
   blockTypeMeta,
-  effectiveNavigation,
   type BlockType,
 } from '@/lib/course'
 import { bytesFromSignedUrl, materialView } from '@/lib/material-view'
@@ -53,12 +52,12 @@ export default async function Page({
   const [{ data: course }, { data: blocks }, { data: progress }] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, title, quiz_navigation_default')
+      .select('id, title')
       .eq('id', courseId)
       .maybeSingle(),
     supabase
       .from('course_blocks')
-      .select('id, type, title, content_ref, quiz_navigation_override, position')
+      .select('id, type, title, content_ref, position')
       .eq('course_id', courseId)
       .order('position'),
     supabase
@@ -136,7 +135,6 @@ export default async function Page({
   let quiz: {
     questions: QuizQuestion[]
     passingScore: number
-    allowBack: boolean
     attemptsUsed: number
     attemptsAllowed: number
     alreadyPassed: boolean
@@ -183,9 +181,13 @@ export default async function Page({
           options: Array.isArray(q.options) ? (q.options as string[]) : [],
         })),
         passingScore: quizRow.passing_score,
-        allowBack:
-          effectiveNavigation(course.quiz_navigation_default, block.quiz_navigation_override) ===
-          'allow_back',
+        /* The course's quiz_navigation setting is deliberately not read here
+           any more. Moving between a quiz's own questions is always allowed;
+           what is restricted is returning to the MATERIAL, and that applies to
+           every quiz rather than being per-course. The column and the builder
+           control still exist and still gate whether retries can be
+           configured — see retriesAllowed() — which is now the only thing they
+           do, and worth a decision. */
         attemptsUsed: (attempts ?? []).length,
         // null means no retries, i.e. one attempt (see submitQuiz).
         attemptsAllowed: quizRow.retry_max ?? 1,
@@ -198,12 +200,30 @@ export default async function Page({
 
   return (
     <main className="mx-auto max-w-[820px] p-6 md:p-10">
-      <Link
-        href={`/learn/${courseId}`}
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted no-underline hover:text-ink"
-      >
-        <ArrowLeft size={15} aria-hidden /> {course.title}
-      </Link>
+      {/*
+        A quiz gets no route back to the material. The lesson list is one click
+        from here, and every completed lesson on it is open — so on a quiz
+        block this header was a "look up the answers" button sitting above the
+        questions.
+
+        The quiz screen offers the course at the two moments it is safe to: on
+        the rules screen before an attempt starts ("Review the material"), and
+        on the result screen once it is graded. Going back between QUESTIONS is
+        unrestricted; that is a different thing, and not the one worth
+        stopping.
+      */}
+      {block.type === 'quiz' ? (
+        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted">
+          {course.title}
+        </span>
+      ) : (
+        <Link
+          href={`/learn/${courseId}`}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted no-underline hover:text-ink"
+        >
+          <ArrowLeft size={15} aria-hidden /> {course.title}
+        </Link>
+      )}
 
       <div className="mb-6 mt-4">
         <div className="mb-2 flex items-center justify-between gap-3">
@@ -226,7 +246,6 @@ export default async function Page({
             blockId={blockId}
             questions={quiz.questions}
             passingScore={quiz.passingScore}
-            allowBack={quiz.allowBack}
             attemptsUsed={quiz.attemptsUsed}
             attemptsAllowed={quiz.attemptsAllowed}
             alreadyPassed={quiz.alreadyPassed}
