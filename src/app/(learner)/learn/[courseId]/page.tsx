@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
     supabase
       .from('courses')
       .select(
-        'id, business_id, title, description, tagline, thumbnail_url, duration_label, what_you_will_learn, businesses(name)'
+        'id, business_id, title, description, tagline, duration_label, what_you_will_learn, businesses(name)'
       )
       .eq('id', courseId)
       .maybeSingle(),
@@ -85,11 +85,22 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
 
   return (
     <main className="mx-auto max-w-[880px] p-6 md:p-10">
+      {/*
+        Who is running this, first — in place of the course banner that used to
+        sit here. The banner was the course thumbnail, which on this page is
+        the same artwork as the company cover and stretched to 220px tall, so
+        it repeated the header below it and said nothing a learner needed. The
+        company panel occupies that space instead: it was at the foot of the
+        page, below the whole curriculum, where the person deciding whether to
+        trust this employer would never scroll to find it.
+      */}
+      {company && (
+        <div className="mb-5">
+          <CompanyPanel company={company} />
+        </div>
+      )}
+
       <Card className="overflow-hidden p-0">
-        {course.thumbnail_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={course.thumbnail_url} alt="" className="h-[220px] w-full object-cover" />
-        )}
         <div className="p-7 md:p-9">
           {businessName && (
             <p className="m-0 text-sm font-semibold text-ink-muted">{businessName}</p>
@@ -239,11 +250,6 @@ export default async function Page({ params }: { params: Promise<{ courseId: str
         )}
       </Card>
 
-      {company && (
-        <div className="mt-5">
-          <CompanyPanel company={company} />
-        </div>
-      )}
     </main>
   )
 }
