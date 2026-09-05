@@ -12,11 +12,26 @@ import {
   materialPath,
 } from '@/lib/course'
 
+type UploadKind = 'video' | 'document' | 'slides'
+
 /** What each kind of block will accept, in one place. */
-function mimeTypesFor(kind: 'video' | 'document' | 'slides'): readonly string[] {
+function mimeTypesFor(kind: UploadKind): readonly string[] {
   if (kind === 'video') return VIDEO_MIME_TYPES
   if (kind === 'slides') return SLIDE_MIME_TYPES
   return DOCUMENT_MIME_TYPES
+}
+
+/**
+ * What the drop zone says, per kind.
+ *
+ * Kept beside mimeTypesFor because the two must agree: the formats line was a
+ * hardcoded ternary that still read "PDF, Word, plain text or Markdown" on a
+ * slides block, so the picker accepted a .pptx the label said it would not.
+ */
+const PROMPTS: Record<UploadKind, { title: string; formats: string }> = {
+  video: { title: 'Upload a video file', formats: 'MP4, WebM, MOV or OGG' },
+  document: { title: 'Upload a document', formats: 'PDF, Word, plain text or Markdown' },
+  slides: { title: 'Upload a deck', formats: 'PDF or PowerPoint (.pptx)' },
 }
 
 /** Matches the bucket's own file_size_limit, so the check fails before the wire. */
@@ -43,7 +58,7 @@ export function MaterialUpload({
 }: {
   courseId: string
   blockId: string
-  kind: 'video' | 'document' | 'slides'
+  kind: UploadKind
   value: MaterialValue
   onChange: (next: MaterialValue) => void
   disabled?: boolean
@@ -179,17 +194,9 @@ export function MaterialUpload({
             <Upload size={20} className="text-[#9ca3af]" aria-hidden />
           )}
           <span className="text-sm font-semibold text-ink">
-            {busy
-              ? 'Uploading…'
-              : kind === 'video'
-                ? 'Upload a video file'
-                : 'Upload a document'}
+            {busy ? 'Uploading…' : PROMPTS[kind].title}
           </span>
-          <span className="text-xs text-[#9ca3af]">
-            {kind === 'video'
-              ? 'MP4, WebM, MOV or OGG · up to 500 MB'
-              : 'PDF, Word, plain text or Markdown · up to 500 MB'}
-          </span>
+          <span className="text-xs text-[#9ca3af]">{PROMPTS[kind].formats} · up to 500 MB</span>
         </button>
       )}
 
