@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { loadBusinessLearners, type LearnerRow } from '@/lib/learners'
 import { bytesFromSignedUrl, materialView, type MaterialView } from '@/lib/material-view'
-import { parseResumeData, type ResumeData } from '@/lib/resume'
+import type { IdDocumentType } from '@/lib/identification'
 
 /** Where the private resume/certification files live. */
 const PRIVATE_BUCKET = 'certifications'
@@ -24,11 +24,12 @@ export type LearnerRecord = {
   skills: string[]
   /** Optional and ungated — no verification, no bearing on enrolment. */
   certifications: { id: string; name: string; fileUrl: string | null }[]
-  resume:
-    /** An uploaded file, already resolved to how it should be displayed. */
-    | { kind: 'file'; view: MaterialView | null }
-    | { kind: 'built'; data: ResumeData }
-    | null
+  /**
+   * The learner's identification, already resolved to how it should be shown.
+   * Null when they have not provided one — which also means they cannot have
+   * enrolled, so it should not happen for anyone on this page.
+   */
+  identification: { type: IdDocumentType | null; view: MaterialView | null } | null
   /** This learner's enrolments in the caller's courses. */
   enrolments: LearnerRow[]
 }
@@ -57,7 +58,7 @@ export async function loadLearnerRecord(
       supabase
         .from('learner_profiles')
         // prettier-ignore
-        .select('avatar_url, bio, job_title, employed, years_experience, employer_name, phone_country_code, phone, resume_url, resume_data')
+        .select('avatar_url, bio, job_title, employed, years_experience, employer_name, phone_country_code, phone, id_document_url, id_document_type')
         .eq('user_id', learnerId)
         .maybeSingle(),
       supabase.from('learner_skills').select('skill').eq('user_id', learnerId),
@@ -71,33 +72,28 @@ export async function loadLearnerRecord(
 
   if (!learner) return null
 
-  /* An uploaded resume lives in a private bucket, so it is served through a
-     short-lived signed URL rather than a public one — a resume carries a phone
-     number and an address, and a public object URL needs no login at all. */
-  let resume: LearnerRecord['resume'] = null
-  if (profile?.resume_url) {
-    const path = profile.resume_url
+  /* The identification lives in a private bucket and is served through a
+     short-lived signed URL. This is the most sensitive thing the product
+     stores — a photographed ID card — so it is never a public object URL, and
+     the link expires. */
+  let identification: LearnerRecord['identification'] = null
+  if (profile?.id_document_url) {
+    const path = profile.id_document_url
     const { data: signed } = await supabase.storage
       .from(PRIVATE_BUCKET)
       .createSignedUrl(path, SIGNED_URL_SECONDS)
 
-    /* A browser has no .docx viewer, so a signed URL to one is a download and
-       the admin ends up reading a resume in Word. materialView renders it in
-       the page instead — the same path the lesson player takes. */
-    resume = {
-      kind: 'file',
+    identification = {
+      type: profile.id_document_type ?? null,
       view: signed?.signedUrl
         ? await materialView({
             path,
-            fileName: path.split('/').pop() ?? 'Resume',
+            fileName: path.split('/').pop() ?? 'Identification',
             url: signed.signedUrl,
             loadBytes: () => bytesFromSignedUrl(signed.signedUrl),
           })
         : null,
     }
-  } else {
-    const built = parseResumeData(profile?.resume_data)
-    if (built) resume = { kind: 'built', data: built }
   }
 
   const phone = [profile?.phone_country_code, profile?.phone]
@@ -122,7 +118,7 @@ export async function loadLearnerRecord(
       name: c.name,
       fileUrl: c.file_url,
     })),
-    resume,
+    identification,
     enrolments: rows.filter((row) => row.learnerId === learnerId),
   }
 }

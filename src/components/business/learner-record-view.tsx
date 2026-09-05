@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { Award, Briefcase, FileText, Mail, Phone } from 'lucide-react'
+import { Award, Briefcase, Mail, Phone, ShieldCheck } from 'lucide-react'
 import { Avatar, Badge, Card, ProgressBar, cn } from '@/components/ui'
 import { InviteToRetake } from '@/components/business/invite-to-retake'
 import { ResetQuizAttempts } from '@/components/business/reset-quiz-attempts'
+import { idDocumentLabel } from '@/lib/identification'
 import type { LearnerRecord } from '@/lib/learner-record'
 import type { LearnerQuiz } from '@/lib/learners'
 
@@ -86,8 +87,8 @@ export function LearnerRecordView({
         )}
       </Card>
 
-      <h2 className="mb-3 mt-7 font-display text-lg font-bold text-ink">Resume</h2>
-      <ResumePanel resume={record.resume} name={record.name} />
+      <h2 className="mb-3 mt-7 font-display text-lg font-bold text-ink">Identification</h2>
+      <IdentificationPanel identification={record.identification} name={record.name} />
 
       {record.certifications.length > 0 && (
         <Card className="mt-3 p-5">
@@ -197,142 +198,90 @@ function newestCycle(record: LearnerRecord, row: LearnerRecord['enrolments'][num
   )
 }
 
-/* ── Resume ────────────────────────────────────────────────────────────── */
+/* ── Identification ────────────────────────────────────────────────────── */
 
-function ResumePanel({ resume, name }: { resume: LearnerRecord['resume']; name: string }) {
-  if (!resume) {
+/**
+ * The learner's ID, as the business sees it.
+ *
+ * Replaced the resume panel. A business deciding whether to put someone on a
+ * jobsite needs to know they are who they say they are; a work history it
+ * cannot verify was never answering that question.
+ *
+ * A photograph is shown as a photograph — an <img>, not an iframe — because
+ * that is what almost all of these are.
+ */
+function IdentificationPanel({
+  identification,
+  name,
+}: {
+  identification: LearnerRecord['identification']
+  name: string
+}) {
+  if (!identification?.view) {
     return (
       <Card className="py-8 text-center">
         <p className="m-0 text-sm text-ink-muted">
-          {name.split(' ')[0]} has not added a resume yet.
+          {identification
+            ? 'The document could not be opened. It may have been removed.'
+            : `${name.split(' ')[0]} has not provided identification.`}
         </p>
       </Card>
     )
   }
 
-  if (resume.kind === 'file') {
-    const view = resume.view
-    if (!view) {
-      return (
-        <Card>
-          <p className="m-0 p-6 text-sm text-ink-muted">
-            The uploaded resume could not be opened. It may have been removed.
-          </p>
-        </Card>
-      )
-    }
+  const view = identification.view
 
-    /* Read in place, whatever the format. A download makes an admin leave the
-       page, open a file manager and come back — for something they are only
-       going to glance at. A PDF goes to the browser's viewer; a .docx is
-       converted to its own markup, because browsers have no viewer for one. */
-    return (
-      <Card className="overflow-hidden p-0">
-        {view.kind === 'embed' && (
-          <iframe
-            src={view.url}
-            title={`${name}'s resume`}
-            className="h-[720px] w-full border-0 bg-surface-inset"
-          />
-        )}
-
-        {view.kind === 'html' && (
-          <div
-            className="prose-material max-h-[720px] overflow-y-auto p-6 text-sm leading-relaxed text-ink md:p-7"
-            // Sanitised server-side — see sanitizeDocumentHtml.
-            dangerouslySetInnerHTML={{ __html: view.html }}
-          />
-        )}
-
-        {view.kind === 'text' && (
-          <div className="max-h-[720px] overflow-y-auto whitespace-pre-wrap p-6 text-sm leading-relaxed text-ink md:p-7">
-            {view.text}
-          </div>
-        )}
-
-        {view.kind === 'link' && (
-          <p className="m-0 px-6 pt-6 text-sm text-ink-muted">
-            {view.reason ?? 'This resume cannot be shown in the page.'}
-          </p>
-        )}
-
-        <div className="border-t border-border px-4 py-2.5">
-          <a
-            href={view.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted no-underline hover:text-ink"
-          >
-            <FileText size={13} aria-hidden /> Open the original
-          </a>
-        </div>
-      </Card>
-    )
-  }
-
-  const { data } = resume
   return (
-    <Card className="p-6">
-      {data.summary && <p className="m-0 text-sm leading-relaxed text-ink">{data.summary}</p>}
+    <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-ink">
+          <ShieldCheck size={15} className="text-[var(--itutor-green)]" aria-hidden />
+          {idDocumentLabel(identification.type)}
+        </span>
+        <a
+          href={view.url}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-semibold text-ink-muted no-underline hover:text-ink"
+        >
+          Open full size
+        </a>
+      </div>
 
-      {data.work.length > 0 && (
-        <section className={data.summary ? 'mt-6' : undefined}>
-          <h3 className="m-0 mb-3 text-xs font-semibold uppercase tracking-wide text-[#9ca3af]">
-            Work history
-          </h3>
-          <ol className="m-0 grid list-none gap-4 p-0">
-            {data.work.map((job, i) => (
-              <li key={`${job.employer}-${i}`}>
-                <p className="m-0 text-sm font-semibold text-ink">
-                  {job.title}
-                  {job.employer && <span className="font-normal text-ink-muted"> · {job.employer}</span>}
-                </p>
-                {(job.start || job.end) && (
-                  <p className="m-0 mt-0.5 text-xs text-[#9ca3af]">
-                    {job.start}
-                    {job.start && ' — '}
-                    {job.end || 'Present'}
-                  </p>
-                )}
-                {job.summary && (
-                  <p className="m-0 mt-1.5 text-sm leading-relaxed text-ink-muted">{job.summary}</p>
-                )}
-              </li>
-            ))}
-          </ol>
-        </section>
+      {view.kind === 'image' && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={view.url}
+          alt={`${name}'s identification`}
+          className="max-h-[520px] w-full bg-surface-inset object-contain"
+        />
       )}
 
-      {data.education.length > 0 && (
-        <section className="mt-6">
-          <h3 className="m-0 mb-3 text-xs font-semibold uppercase tracking-wide text-[#9ca3af]">
-            Education
-          </h3>
-          <ul className="m-0 grid list-none gap-2 p-0">
-            {data.education.map((entry, i) => (
-              <li key={`${entry.institution}-${i}`} className="text-sm text-ink">
-                {entry.qualification}
-                {entry.institution && <span className="text-ink-muted"> · {entry.institution}</span>}
-                {entry.year && <span className="text-[#9ca3af]"> · {entry.year}</span>}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {view.kind === 'embed' && (
+        <iframe
+          src={view.url}
+          title={`${name}'s identification`}
+          className="h-[520px] w-full border-0 bg-surface-inset"
+        />
       )}
 
-      {data.skills.length > 0 && (
-        <section className="mt-6">
-          <h3 className="m-0 mb-2.5 text-xs font-semibold uppercase tracking-wide text-[#9ca3af]">
-            Skills
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {data.skills.map((skill) => (
-              <Badge key={skill} tone="neutral">
-                {skill}
-              </Badge>
-            ))}
-          </div>
-        </section>
+      {view.kind === 'html' && (
+        <div
+          className="prose-material max-h-[520px] overflow-y-auto p-6 text-sm leading-relaxed text-ink"
+          dangerouslySetInnerHTML={{ __html: view.html }}
+        />
+      )}
+
+      {view.kind === 'text' && (
+        <div className="max-h-[520px] overflow-y-auto whitespace-pre-wrap p-6 text-sm leading-relaxed text-ink">
+          {view.text}
+        </div>
+      )}
+
+      {view.kind === 'link' && (
+        <p className="m-0 p-6 text-sm text-ink-muted">
+          {view.reason ?? 'This document cannot be shown in the page.'}
+        </p>
       )}
     </Card>
   )

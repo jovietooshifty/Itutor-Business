@@ -17,7 +17,10 @@ import {
 import { RoleCombobox } from '@/components/ui/combobox'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { ProfileStrength, StickyFooterBar, type StrengthItem } from '@/components/ui/profile-strength'
-import { ResumeField, type ResumeValue } from '@/components/learner/resume-field'
+import {
+  IdentificationField,
+  type IdentificationValue,
+} from '@/components/learner/identification-field'
 import {
   COUNTRY_CODES,
   countWords,
@@ -32,7 +35,7 @@ import {
   YEARS_EXPERIENCE_OPTIONS,
 } from '@/lib/constants'
 import { saveLearnerProfile, type LearnerCertificationInput } from '@/app/(learner)/actions'
-import type { ResumeData } from '@/lib/resume'
+import type { IdDocumentType } from '@/lib/identification'
 
 export type LearnerProfileInitial = {
   userId: string
@@ -53,10 +56,9 @@ export type LearnerProfileInitial = {
   timezone: string
   skills: string[]
   certifications: LearnerCertificationInput[]
-  /** Storage path of an uploaded resume, if there is one. */
-  resumeUrl: string | null
-  /** The in-app resume, if that path was taken instead. */
-  resumeData: ResumeData | null
+  /** Storage path of the identification document, if one is on file. */
+  idDocumentUrl: string | null
+  idDocumentType: IdDocumentType | null
   portfolioSlug: string
 }
 
@@ -93,9 +95,9 @@ export function LearnerProfileForm({
   const [certifications, setCertifications] = React.useState<LearnerCertificationInput[]>(
     initial.certifications
   )
-  const [resume, setResume] = React.useState<ResumeValue>({
-    url: initial.resumeUrl,
-    data: initial.resumeData,
+  const [identification, setIdentification] = React.useState<IdentificationValue>({
+    url: initial.idDocumentUrl,
+    type: initial.idDocumentType,
     fileName: null,
   })
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
@@ -103,15 +105,14 @@ export function LearnerProfileForm({
   const bioWordCount = countWords(bio)
   const bioOverLimit =
     bioWordCount > LEARNER_BIO_MAX_WORDS || bio.length > LEARNER_BIO_MAX_CHARS
-  const hasResume = Boolean(resume.url) || Boolean(resume.data?.work.length) ||
-    (resume.data?.summary.trim().length ?? 0) >= 40
+  const hasIdentification = Boolean(identification.url) && Boolean(identification.type)
 
   // Employment is a gate: answering "No" marks the employment-dependent rows
   // complete rather than leaving them permanently unsatisfiable.
   const strengthItems: StrengthItem[] = [
     // Required, not merely scored — see the two "Required" markers below.
     { label: 'Profile photo', done: !!avatarUrl },
-    { label: 'Resume', done: hasResume },
+    { label: 'Identification', done: hasIdentification },
     { label: 'Full name', done: !!fullName.trim() },
     { label: 'Date of birth', done: !!dateOfBirth },
     { label: 'Bio', done: !!bio.trim() && !bioOverLimit },
@@ -169,8 +170,8 @@ export function LearnerProfileForm({
         timezone,
         skills,
         certifications,
-        resumeUrl: resume.url,
-        resumeData: resume.url ? null : resume.data,
+        idDocumentUrl: identification.url,
+        idDocumentType: identification.type,
       })
 
       if (!result.ok) {
@@ -275,17 +276,17 @@ export function LearnerProfileForm({
           </SectionCard>
 
           <SectionCard
-            title="Resume"
-            subtitle="Required. Upload a file, or answer a few questions and we will build one — only businesses running a course you join can see it."
+            title="Identification"
+            subtitle="Required before you can join a course. Businesses need to know who they are putting on a jobsite."
           >
-            <ResumeField
-              value={resume}
-              onChange={setResume}
-              invalid={Boolean(fieldErrors.resume)}
+            <IdentificationField
+              value={identification}
+              onChange={setIdentification}
+              invalid={Boolean(fieldErrors.identification)}
             />
-            {fieldErrors.resume && (
+            {fieldErrors.identification && (
               <p className="m-0 mt-2 text-xs font-semibold text-danger-fg">
-                {fieldErrors.resume}
+                {fieldErrors.identification}
               </p>
             )}
           </SectionCard>

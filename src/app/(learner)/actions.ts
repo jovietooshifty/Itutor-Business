@@ -9,15 +9,15 @@ import {
   countWords,
 } from '@/lib/constants'
 import {
-  RESUME_MAX_BYTES,
-  parseResumeData,
-  resumeIsUsable,
-  type ResumeData,
-} from '@/lib/resume'
+  ID_MAX_BYTES,
+  isAcceptedIdFile,
+  type IdDocumentType,
+} from '@/lib/identification'
+import { notifyCompletion, notifyEnrolment } from '@/lib/email/notify'
 import type { ActionResult } from '@/app/(auth)/actions'
 
-/** Private bucket; resumes sit under learner/{user_id}/ like certifications. */
-const RESUME_BUCKET = 'certifications'
+/** Private bucket; ID documents sit under learner/{user_id}/ like certifications. */
+const ID_BUCKET = 'certifications'
 
 export type LearnerCertificationInput = {
   name: string
@@ -40,10 +40,9 @@ export type LearnerProfileInput = {
   timezone: string
   skills: string[]
   certifications: LearnerCertificationInput[]
-  /** Storage path of an uploaded resume, when that path was taken. */
-  resumeUrl: string | null
-  /** The in-app resume, when that path was taken instead. */
-  resumeData: ResumeData | null
+  /** Storage path of the identification document. */
+  idDocumentUrl: string | null
+  idDocumentType: IdDocumentType | null
 }
 
 export async function saveLearnerProfile(input: LearnerProfileInput): Promise<ActionResult> {
@@ -54,16 +53,18 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'You are not signed in.' }
 
-  /* Mandatory now, and enforced here rather than only in the form: a photo
-     and a resume are what turn a profile into something an admin can make a
-     decision from, and the client is not the place that decision is protected. */
+  /* Mandatory, and enforced here rather than only in the form: a photo and a
+     form of identification are what let a business know who it is putting on a
+     jobsite, and the client is not where that gets protected. */
   const fieldErrors: Record<string, string> = {}
 
   if (!input.fullName.trim()) fieldErrors.fullName = 'Enter your full name'
   if (!input.avatarUrl) fieldErrors.avatarUrl = 'Add a profile photo'
 
-  if (!input.resumeUrl && !resumeIsUsable(input.resumeData)) {
-    fieldErrors.resume = 'Upload a resume, or build one here'
+  if (!input.idDocumentUrl) {
+    fieldErrors.identification = 'Add a form of identification'
+  } else if (!input.idDocumentType) {
+    fieldErrors.identification = 'Say which document this is'
   }
 
   if (input.bio.length > LEARNER_BIO_MAX_CHARS) {
@@ -113,10 +114,8 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
     phone: input.phone.trim() || null,
     preferred_language: input.preferredLanguage || null,
     timezone: input.timezone || null,
-    resume_url: input.resumeUrl,
-    // Exactly one of the two. Clearing the other keeps "which resume is the
-    // real one" from being a question anyone has to answer later.
-    resume_data: input.resumeUrl ? null : (input.resumeData as never),
+    id_document_url: input.idDocumentUrl,
+    id_document_type: input.idDocumentType,
     /* Portfolios are reached by an unguessable link and nothing else, so there
        is no public/private state left to store. The column stays until it can
        be dropped; true is the only value the product has. */
@@ -152,18 +151,20 @@ export async function saveLearnerProfile(input: LearnerProfileInput): Promise<Ac
   return { ok: true }
 }
 
-/* ── Resume upload ─────────────────────────────────────────────────────── */
+/* ── Identification upload ─────────────────────────────────────────────── */
 
 /**
- * Stores an uploaded resume and returns its storage PATH, not a URL.
+ * Stores an identification document and returns its storage PATH, not a URL.
  *
  * The bucket is private, so there is no public URL to hand back; admins get a
- * short-lived signed one when they open the learner's record. A resume carries
- * a phone number and often an address — putting it in the public `avatars`
- * bucket, as first specified, would have made all of that readable by anyone
- * holding the link, with no login at all.
+ * short-lived signed one when they open the learner's record. This matters
+ * more here than it did for resumes — a photographed ID card is the single
+ * most sensitive thing this product stores, and a public object URL would make
+ * it readable by anyone holding the link, with no login at all.
  */
-export async function uploadResume(form: FormData): Promise<ActionResult<{ path: string }>> {
+export async function uploadIdentification(
+  form: FormData
+): Promise<ActionResult<{ path: string }>> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -174,20 +175,22 @@ export async function uploadResume(form: FormData): Promise<ActionResult<{ path:
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: 'No file was received.' }
   }
-  if (file.size > RESUME_MAX_BYTES) {
-    return { ok: false, error: `Keep the file under ${RESUME_MAX_BYTES / 1024 / 1024}MB.` }
+  if (file.size > ID_MAX_BYTES) {
+    return { ok: false, error: `Keep the file under ${ID_MAX_BYTES / 1024 / 1024}MB.` }
+  }
+  if (!isAcceptedIdFile(file)) {
+    return { ok: false, error: 'Use a photo (PNG, JPEG, HEIC or WebP) or a PDF.' }
   }
 
-  const extension = file.name.match(/\.(pdf|docx?)$/i)?.[0].toLowerCase()
-  if (!extension) return { ok: false, error: 'Upload a PDF or a Word document.' }
+  const extension = file.name.match(/\.(png|jpe?g|webp|heic|heif|pdf)$/i)?.[0].toLowerCase() ?? '.jpg'
 
   /* The path has to start `learner/{user_id}/` — every storage policy on this
      bucket keys off those two segments. The timestamp is what makes replacing
-     a resume a new object rather than a cache-busting problem. */
-  const path = `learner/${user.id}/resume-${Date.now()}${extension}`
+     a document a new object rather than a cache-busting problem. */
+  const path = `learner/${user.id}/id-${Date.now()}${extension}`
 
   const { error } = await supabase.storage
-    .from(RESUME_BUCKET)
+    .from(ID_BUCKET)
     .upload(path, file, { contentType: file.type || undefined, upsert: true })
   if (error) return { ok: false, error: error.message }
 
@@ -198,22 +201,20 @@ export async function uploadResume(form: FormData): Promise<ActionResult<{ path:
 
 /**
  * What a learner must have on file before they can join a course: a photo, and
- * a resume one way or the other. Both are what the admin on the other side is
- * being asked to make a decision from.
+ * a form of identification. Together they answer the only question a business
+ * has before putting someone on a jobsite — who is this.
  */
 async function enrolmentBlockers(userId: string): Promise<string[]> {
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from('learner_profiles')
-    .select('avatar_url, resume_url, resume_data')
+    .select('avatar_url, id_document_url')
     .eq('user_id', userId)
     .maybeSingle()
 
   const missing: string[] = []
   if (!profile?.avatar_url) missing.push('a profile photo')
-  if (!profile?.resume_url && !resumeIsUsable(parseResumeData(profile?.resume_data))) {
-    missing.push('a resume')
-  }
+  if (!profile?.id_document_url) missing.push('a form of identification')
   return missing
 }
 
@@ -288,6 +289,11 @@ export async function enrolInCourse(courseId: string): Promise<ActionResult<{ id
     )
     if (progressError) return { ok: false, error: progressError.message }
   }
+
+  /* Awaited rather than fired and forgotten: a serverless function that has
+     returned may be frozen mid-request, so a detached promise is not reliably
+     delivered. notifyEnrolment never throws — see lib/email/notify. */
+  await notifyEnrolment(courseId, user.id)
 
   revalidatePath('/marketplace')
   revalidatePath(`/learn/${courseId}`)
@@ -379,6 +385,8 @@ export async function completeBlock(
     if (enrolError) return { ok: false, error: enrolError.message }
 
     await issueCertificate(enrolment.id)
+    // After the certificate exists, so the email cannot promise one that does not.
+    await notifyCompletion(courseId, enrolment.userId)
   }
 
   revalidatePath(`/learn/${courseId}`)

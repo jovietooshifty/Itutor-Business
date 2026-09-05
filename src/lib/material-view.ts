@@ -21,6 +21,8 @@ import * as mammoth from 'mammoth'
 export type MaterialView =
   /** Render the signed URL in an iframe — the browser has a viewer for it. */
   | { kind: 'embed'; url: string; fileName: string }
+  /** A picture. Shown with <img>, not an iframe — an ID is usually photographed. */
+  | { kind: 'image'; url: string; fileName: string }
   /** Converted document markup, already sanitised. `url` is the original. */
   | { kind: 'html'; html: string; fileName: string; url: string; warnings: string[] }
   /** Plain text, rendered as-is. `url` is the original. */
@@ -124,6 +126,14 @@ export async function materialView({
   const ext = extensionOf(fileName ?? path)
 
   if (ext === 'pdf') return { kind: 'embed', url, fileName: name }
+
+  /* Photographs, which is what identification usually is. HEIC is included
+     even though Safari is the only browser that renders it — the alternative
+     is refusing the default output of every iPhone, and a broken <img> at
+     least still offers the link. */
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'heic', 'heif'].includes(ext)) {
+    return { kind: 'image', url, fileName: name }
+  }
 
   if (ext === 'docx' || ext === 'doc') {
     const buffer = await loadBytes()

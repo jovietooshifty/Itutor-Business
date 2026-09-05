@@ -633,6 +633,8 @@ export type Database = {
           employer_business_id: string | null
           employer_locked: boolean
           employer_name: string | null
+          id_document_type: Database["public"]["Enums"]["id_document_type"] | null
+          id_document_url: string | null
           job_title: string | null
           phone: string | null
           phone_country_code: string | null
@@ -654,6 +656,8 @@ export type Database = {
           employer_business_id?: string | null
           employer_locked?: boolean
           employer_name?: string | null
+          id_document_type?: Database["public"]["Enums"]["id_document_type"] | null
+          id_document_url?: string | null
           job_title?: string | null
           phone?: string | null
           phone_country_code?: string | null
@@ -675,6 +679,8 @@ export type Database = {
           employer_business_id?: string | null
           employer_locked?: boolean
           employer_name?: string | null
+          id_document_type?: Database["public"]["Enums"]["id_document_type"] | null
+          id_document_url?: string | null
           job_title?: string | null
           phone?: string | null
           phone_country_code?: string | null
@@ -1033,6 +1039,7 @@ export type Database = {
     }
     Enums: {
       block_progress_status: "locked" | "unlocked" | "completed"
+      id_document_type: "national_id" | "drivers_permit" | "passport"
       block_source_status: "empty" | "ready" | "pending" | "failed"
       block_type: "video" | "text" | "quiz"
       business_status: "active"
