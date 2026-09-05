@@ -181,6 +181,16 @@ export function BlockWalkthrough({
     })
   }
 
+  /* The file the saved extraction verdict belongs to. Taken from the block
+     prop — server state — rather than from `content`, which changes the moment
+     a new file is attached and would make every stale verdict look current. */
+  const savedPath =
+    block.type === 'slides'
+      ? asSlides(block.content).path
+      : block.type === 'text'
+        ? asText(block.content).path
+        : null
+
   const isLast = nextBlockId === null
 
   /**
@@ -257,6 +267,7 @@ export function BlockWalkthrough({
               value={asText(content)}
               sourceStatus={block.sourceStatus}
               sourceError={block.sourceError}
+              savedPath={savedPath}
               onChange={setContent}
             />
           )}
@@ -267,6 +278,7 @@ export function BlockWalkthrough({
               value={asSlides(content)}
               sourceStatus={block.sourceStatus}
               sourceError={block.sourceError}
+              savedPath={savedPath}
               onChange={setContent}
             />
           )}
@@ -391,6 +403,7 @@ function SlidesPage({
   value,
   sourceStatus,
   sourceError,
+  savedPath,
   onChange,
 }: {
   courseId: string
@@ -398,9 +411,17 @@ function SlidesPage({
   value: SlidesContent
   sourceStatus: BlockSourceStatus
   sourceError: string | null
+  /**
+   * The file the saved verdict below actually describes. Attaching a new deck
+   * changes `value.path` immediately but extraction only runs on save, so
+   * without this the previous file's verdict sits under the new file's name —
+   * "only 9 characters from 1 slide" pointing at a deck nobody has read yet.
+   */
+  savedPath: string | null
   onChange: (next: SlidesContent) => void
 }) {
   const inline = slidesRenderInline(value.fileName)
+  const verdictIsForThisFile = Boolean(value.path) && value.path === savedPath
 
   return (
     <div className="grid gap-6">
@@ -435,19 +456,24 @@ function SlidesPage({
           </p>
         )}
 
-        {/* The extraction verdict, exactly as the text block reports it: a deck
-            of screenshots reads as no text, and that is worth knowing here
-            rather than at the quiz. */}
-        {value.path && sourceStatus === 'failed' && (
+        {/* The extraction verdict, and only when it is about the file on
+            screen: a deck of screenshots reads as no text, and that is worth
+            knowing here rather than at the quiz. */}
+        {value.path && !verdictIsForThisFile && (
+          <p className="mt-2 text-xs text-ink-muted">
+            Save to read this deck — quizzes after this block are generated from what it says.
+          </p>
+        )}
+        {verdictIsForThisFile && sourceStatus === 'failed' && (
           <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-[var(--danger-fg)]">
             <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
             {sourceError ?? 'That deck could not be read.'} Saving again retries it.
           </p>
         )}
-        {value.path && sourceStatus === 'ready' && sourceError && (
+        {verdictIsForThisFile && sourceStatus === 'ready' && sourceError && (
           <p className="mt-2 text-xs leading-relaxed text-[#92400e]">{sourceError}</p>
         )}
-        {value.path && sourceStatus === 'ready' && !sourceError && (
+        {verdictIsForThisFile && sourceStatus === 'ready' && !sourceError && (
           <p className="mt-2 text-xs text-[var(--itutor-green)]">
             Read successfully — quizzes after this block can be generated from its slides and
             speaker notes.
@@ -659,6 +685,7 @@ function TextPage({
   value,
   sourceStatus,
   sourceError,
+  savedPath,
   onChange,
 }: {
   courseId: string
@@ -666,8 +693,12 @@ function TextPage({
   value: TextContent
   sourceStatus: BlockSourceStatus
   sourceError: string | null
+  /** The file the verdict describes — see SlidesPage. */
+  savedPath: string | null
   onChange: (next: TextContent) => void
 }) {
+  const verdictIsForThisFile = Boolean(value.path) && value.path === savedPath
+
   return (
     <div className="grid gap-6">
       <div>
@@ -698,18 +729,25 @@ function TextPage({
               value={{ path: value.path, fileName: value.fileName }}
               onChange={(next) => onChange({ ...value, ...next })}
             />
-            {/* The extraction verdict from the last save. A PDF that is really
-                a scan is worth knowing about here, not at the quiz. */}
-            {value.path && sourceStatus === 'failed' && (
+            {/* The extraction verdict from the last save, shown only when it
+                is about the file on screen. A PDF that is really a scan is
+                worth knowing about here, not at the quiz. */}
+            {value.path && !verdictIsForThisFile && (
+              <p className="mt-2 text-xs text-ink-muted">
+                Save to read this document — quizzes after this block are generated from what it
+                says.
+              </p>
+            )}
+            {verdictIsForThisFile && sourceStatus === 'failed' && (
               <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-[var(--danger-fg)]">
                 <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
                 {sourceError ?? 'That document could not be read.'} Saving again retries it.
               </p>
             )}
-            {value.path && sourceStatus === 'ready' && sourceError && (
+            {verdictIsForThisFile && sourceStatus === 'ready' && sourceError && (
               <p className="mt-2 text-xs leading-relaxed text-[#92400e]">{sourceError}</p>
             )}
-            {value.path && sourceStatus === 'ready' && !sourceError && (
+            {verdictIsForThisFile && sourceStatus === 'ready' && !sourceError && (
               <p className="mt-2 text-xs text-[var(--itutor-green)]">
                 Read successfully — quizzes after this block can be generated from it.
               </p>
