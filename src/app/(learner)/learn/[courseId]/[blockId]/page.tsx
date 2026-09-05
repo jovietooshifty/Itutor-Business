@@ -155,11 +155,13 @@ export default async function Page({
       // correct_option stripped, and the table itself is staff-only.
       const [{ data: questions }, { data: attempts }] = await Promise.all([
         supabase.rpc('quiz_questions_for_learner', { p_quiz_id: quizRow.id }),
+        // Live attempts only — a reset must actually show as attempts regained.
         supabase
           .from('quiz_attempts')
           .select('passed, attempted_at')
           .eq('quiz_id', quizRow.id)
           .eq('learner_id', user.id)
+          .is('superseded_at', null)
           .order('attempted_at', { ascending: false }),
       ])
 

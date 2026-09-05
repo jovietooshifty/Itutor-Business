@@ -465,11 +465,15 @@ export async function submitQuiz(
   if (!questions?.length) return { ok: false, error: 'This quiz has no questions yet.' }
 
   const attemptsAllowed = quiz.retry_max ?? 1
+  /* Superseded attempts are excluded everywhere the limit is counted: an
+     administrator resetting this learner gives the attempts back without
+     erasing what they scored. See 20260905000100. */
   const { data: priorAttempts } = await supabase
     .from('quiz_attempts')
     .select('id, passed, attempted_at')
     .eq('quiz_id', quiz.id)
     .eq('learner_id', enrolment.userId)
+    .is('superseded_at', null)
     .order('attempted_at', { ascending: false })
 
   const prior = priorAttempts ?? []

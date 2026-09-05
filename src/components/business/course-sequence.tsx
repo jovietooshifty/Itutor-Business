@@ -154,6 +154,14 @@ export function CourseSequence({
     const [moved] = next.splice(from, 1)
     next.splice(to, 0, moved)
 
+    /* The same rule as adding: a quiz cannot lead the course. Checked on the
+       resulting order rather than on what was dragged, because either a quiz
+       moving up or the opening block moving down puts one first. */
+    if (next[0]?.type === 'quiz') {
+      setError('A quiz cannot be the first block — it would have no material to test.')
+      return
+    }
+
     setBlocks(next)
     setError(null)
 
@@ -229,6 +237,9 @@ export function CourseSequence({
           open={insertAt === 0}
           onToggle={() => setInsertAt(insertAt === 0 ? null : 0)}
           onPick={(type) => handleAdd(0, type)}
+          // Nothing precedes position 0, so a quiz there has no material to
+          // test. addBlock refuses it too.
+          allowQuiz={false}
         />
 
         {blocks.map((block, index) => (
@@ -320,10 +331,13 @@ function InsertRow({
   open,
   onToggle,
   onPick,
+  allowQuiz = true,
 }: {
   open: boolean
   onToggle: () => void
   onPick: (type: BlockType) => void
+  /** False at the top of the sequence, where a quiz would have nothing to test. */
+  allowQuiz?: boolean
 }) {
   return (
     <div className="py-1.5">
@@ -354,12 +368,21 @@ function InsertRow({
         <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {BLOCK_TYPES.map((meta) => {
             const Icon = meta.icon
+            // Offered but visibly unavailable, with the reason in place of the
+            // description — quietly omitting it would read as a missing feature.
+            const blocked = meta.type === 'quiz' && !allowQuiz
             return (
               <button
                 key={meta.type}
                 type="button"
+                disabled={blocked}
                 onClick={() => onPick(meta.type)}
-                className="rounded-lg border border-surface-border bg-white p-3.5 text-left transition-[border-color,box-shadow] duration-fast hover:border-[color:var(--itutor-green)] hover:shadow-sm"
+                className={cn(
+                  'rounded-lg border border-surface-border bg-white p-3.5 text-left transition-[border-color,box-shadow] duration-fast',
+                  blocked
+                    ? 'cursor-not-allowed opacity-55'
+                    : 'hover:border-[color:var(--itutor-green)] hover:shadow-sm'
+                )}
               >
                 <span
                   className="mb-2 grid h-8 w-8 place-items-center rounded-md"
@@ -369,7 +392,7 @@ function InsertRow({
                 </span>
                 <span className="block text-sm font-bold text-ink">{meta.label}</span>
                 <span className="mt-0.5 block text-xs leading-snug text-[#9ca3af]">
-                  {meta.description}
+                  {blocked ? 'Needs material before it — add a video or text first.' : meta.description}
                 </span>
               </button>
             )

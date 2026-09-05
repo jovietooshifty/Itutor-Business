@@ -16,6 +16,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (context.role === 'auditor') redirect('/courses')
 
   const supabase = await createClient()
+  // The banner every course of this business shows.
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('cover_url')
+    .eq('id', context.businessId)
+    .maybeSingle()
+
   const [{ data: course }, { data: blocks }] = await Promise.all([
     supabase
       .from('courses')
@@ -40,7 +47,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       status={course.status}
       title={course.title}
       description={course.description}
-      thumbnailUrl={course.thumbnail_url}
+      thumbnailUrl={business?.cover_url ?? null}
       visibility={course.visibility}
       durationLabel={course.duration_label}
       blockSummary={Object.entries(counts).map(([type, count]) => ({

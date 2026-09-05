@@ -26,7 +26,7 @@ export default async function Page() {
          gives a second relationship between these tables, which makes a bare
          embed ambiguous and fails the query outright. */
       .select(
-        'id, title, description, thumbnail_url, duration_label, businesses(name, cover_url), course_tags(tag), course_blocks!course_blocks_course_id_fkey(id)'
+        'id, title, description, duration_label, businesses(name, cover_url), course_tags(tag), course_blocks!course_blocks_course_id_fkey(id)'
       )
       .order('updated_at', { ascending: false }),
     supabase.from('enrollments').select('course_id').eq('learner_id', user.id),
@@ -40,12 +40,8 @@ export default async function Page() {
     id: course.id,
     title: course.title,
     description: course.description,
-    /* Falls back to the provider's cover image so no card is ever blank.
-       A course thumbnail_url always wins. */
-    thumbnailUrl:
-      course.thumbnail_url ??
-      (course.businesses as { cover_url: string | null } | null)?.cover_url ??
-      null,
+    // The provider's banner, on every one of their courses.
+    imageUrl: (course.businesses as { cover_url: string | null } | null)?.cover_url ?? null,
     durationLabel: course.duration_label,
     businessName: (course.businesses as { name: string } | null)?.name ?? 'iTutor',
     tags: ((course.course_tags as { tag: string }[] | null) ?? []).map((t) => t.tag),

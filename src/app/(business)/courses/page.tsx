@@ -26,9 +26,8 @@ export default async function Page() {
      courses and course_blocks — the course's blocks, and courses.build_block_id
      pointing back at one — so a bare `course_blocks(id)` is ambiguous and
      PostgREST refuses the whole query. */
-  /* The company cover doubles as the default course artwork, so a card is
-     never blank while a thumbnail is outstanding. A course thumbnail_url
-     always wins. */
+  /* The banner and logo shown on every one of this business's course cards.
+     Courses carry no artwork of their own. */
   const { data: business } = await supabase
     .from('businesses')
     .select('logo_url, cover_url')
@@ -38,7 +37,7 @@ export default async function Page() {
   const { data: courses, error } = await supabase
     .from('courses')
     .select(
-      'id, title, description, thumbnail_url, visibility, status, share_token, duration_label, updated_at, course_blocks!course_blocks_course_id_fkey(id)'
+      'id, title, description, visibility, status, share_token, duration_label, updated_at, course_blocks!course_blocks_course_id_fkey(id)'
     )
     .eq('business_id', context.businessId)
     .order('updated_at', { ascending: false })
@@ -95,8 +94,7 @@ export default async function Page() {
                 <CourseCard
                   href={`/courses/${course.id}/manage`}
                   title={course.title}
-                  thumbnailUrl={course.thumbnail_url}
-                  fallbackThumbnailUrl={business?.cover_url ?? null}
+                  imageUrl={business?.cover_url ?? null}
                   providerName={context.businessName}
                   providerLogoUrl={business?.logo_url ?? null}
                   description={course.description}
@@ -116,11 +114,6 @@ export default async function Page() {
                         {course.visibility === 'public' ? 'Public' : 'Private'}
                       </Badge>
                     </>
-                  }
-                  thumbnailPrompt={
-                    canCreate
-                      ? { href: `/courses/${course.id}/basics`, label: 'Add a thumbnail' }
-                      : undefined
                   }
                   footerLeft={
                     course.status === 'published' ? 'Live' : 'Not published yet'

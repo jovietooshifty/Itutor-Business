@@ -85,6 +85,13 @@ export function CompanyProfileForm({
   const descWordCount = countWords(description)
 
   const strengthItems: StrengthItem[] = [
+    /* Both are gate requirements — loadCompanyGate blocks course creation and
+       invites without them — and neither was on this list, so a profile could
+       read as complete here and still be refused. The banner now carries more
+       weight than that: it is the image shown on every course this business
+       publishes. */
+    { label: 'Company logo', done: !!logoUrl },
+    { label: 'Banner (shown on your courses)', done: !!coverUrl },
     { label: 'Company name', done: !!name.trim() },
     { label: 'Industry', done: !!industry },
     { label: `Description (${DESCRIPTION_MIN_WORDS}+ words)`, done: descWordCount >= DESCRIPTION_MIN_WORDS },
@@ -168,11 +175,18 @@ export function CompanyProfileForm({
               shape="rect"
               width="100%"
               height={140}
-              placeholder="Add a cover banner (optional)"
+              placeholder="Add your banner — shown on every course you publish"
               className="[&>button]:rounded-none [&>button]:border-x-0 [&>button]:border-t-0"
             />
             <div className="px-7 pb-7">
-              <div className="-mt-10 flex items-end gap-5">
+              {/*
+                Only the logo overlaps the banner, and it is the only thing on
+                this row. The stamp used to sit here too, at a different height
+                and with its own caption, so with each upload's "Remove" control
+                underneath them the three collided into each other and into the
+                heading. The stamp has its own row below now, where it has room.
+              */}
+              <div className="-mt-12 flex items-end gap-4">
                 <div className="shrink-0 rounded-full bg-white p-1 shadow-sm">
                   <ImageUpload
                     bucket="business-assets"
@@ -185,20 +199,7 @@ export function CompanyProfileForm({
                     placeholder="Logo"
                   />
                 </div>
-                <div className="shrink-0">
-                  <ImageUpload
-                    bucket="business-assets"
-                    path={`${initial.businessId}/stamp`}
-                    preset="stamp"
-                    value={stampUrl}
-                    onChange={setStampUrl}
-                    width={56}
-                    height={56}
-                    placeholder="Stamp"
-                  />
-                  <p className="mt-1 text-center text-[10.5px] text-[#9ca3af]">Stamp (optional)</p>
-                </div>
-                <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
+                <p className="m-0 pb-3 text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
                   Business profile
                 </p>
               </div>
@@ -225,6 +226,30 @@ export function CompanyProfileForm({
                     placeholder="Search or type your industry…"
                   />
                 </Field>
+              </div>
+
+              {/* Its own row, with its purpose stated. It was a 56px square
+                  wedged between the logo and the heading, captioned only
+                  "Stamp (optional)" — which does not say where it appears. */}
+              <div className="mt-6 flex items-start gap-4 border-t border-[#f3f4f6] pt-5">
+                <ImageUpload
+                  bucket="business-assets"
+                  path={`${initial.businessId}/stamp`}
+                  preset="stamp"
+                  value={stampUrl}
+                  onChange={setStampUrl}
+                  width={56}
+                  height={56}
+                  placeholder="Stamp"
+                  className="shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="m-0 text-sm font-semibold text-ink">Certificate stamp</p>
+                  <p className="m-0 mt-0.5 text-xs text-ink-muted">
+                    Optional. Printed on every certificate this business issues, so a PNG with a
+                    transparent background sits best.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

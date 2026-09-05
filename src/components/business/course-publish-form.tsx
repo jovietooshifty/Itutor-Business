@@ -86,16 +86,18 @@ export function CoursePublishForm({
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-6 shadow-sm md:p-7">
         <div className="flex flex-wrap items-start gap-4">
+          {/* The company banner, which is what learners will see on this
+              course. There is no per-course thumbnail to review any more. */}
           {thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumbnailUrl}
               alt=""
-              className="h-[70px] w-[100px] shrink-0 rounded-lg object-cover"
+              className="h-[70px] w-[100px] shrink-0 rounded-lg bg-surface-inset object-contain"
             />
           ) : (
-            <div className="grid h-[70px] w-[100px] shrink-0 place-items-center rounded-lg bg-surface-inset text-xs text-[#9ca3af]">
-              No thumbnail
+            <div className="grid h-[70px] w-[100px] shrink-0 place-items-center rounded-lg bg-surface-inset px-2 text-center text-[10px] leading-tight text-[#9ca3af]">
+              Add a banner on your company profile
             </div>
           )}
           <div className="min-w-0 flex-1">

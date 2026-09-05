@@ -783,6 +783,7 @@ export type Database = {
           score: number
           started_at: string | null
           submitted_at: string | null
+          superseded_at: string | null
         }
         Insert: {
           attempt_number?: number | null
@@ -794,6 +795,7 @@ export type Database = {
           score: number
           started_at?: string | null
           submitted_at?: string | null
+          superseded_at?: string | null
         }
         Update: {
           attempt_number?: number | null
@@ -805,6 +807,7 @@ export type Database = {
           score?: number
           started_at?: string | null
           submitted_at?: string | null
+          superseded_at?: string | null
         }
         Relationships: [
           {

@@ -57,14 +57,9 @@ export default async function Page({ params }: { params: Promise<{ token: string
 
           {course.tagline && <p className="m-0 mt-2 text-base text-ink-muted">{course.tagline}</p>}
 
-          {course.thumbnail_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={course.thumbnail_url}
-              alt=""
-              className="mt-6 max-h-[280px] w-full rounded-xl object-cover"
-            />
-          )}
+          {/* The company's banner, which the panel below already shows in full.
+              Courses have no artwork of their own any more, so repeating it
+              here would just be the same image twice on one screen. */}
 
           {course.description && (
             <p className="mt-6 text-[15px] leading-relaxed text-ink">{course.description}</p>

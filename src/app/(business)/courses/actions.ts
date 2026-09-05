@@ -378,6 +378,18 @@ export async function addBlock(
 
   const at = Math.max(0, Math.min(index, existing?.length ?? 0))
 
+  /* A quiz cannot open a course. Every scope a quiz can have — the preceding
+     block, everything since the last quiz, the whole course — resolves to
+     nothing when there is no material before it, so generation has nothing to
+     read and a learner is tested before being taught. The sequence editor also
+     refuses this, but that is a courtesy; this is the rule. */
+  if (type === 'quiz' && at === 0) {
+    return {
+      ok: false,
+      error: 'A quiz cannot be the first block — add the material it tests first.',
+    }
+  }
+
   // Push everything at or after the insertion point down one slot. Descending
   // order matters only if (course_id, position) were unique — it is not — but
   // it keeps the sequence sane if that constraint is ever added.
@@ -1092,6 +1104,49 @@ export async function inviteToRetake(
   revalidatePath(`/courses/${courseId}/manage`)
   revalidatePath('/learners')
   return { ok: true, data: { enrollmentId: enrollment.id } }
+}
+
+/**
+ * Gives a learner their attempts back on one quiz.
+ *
+ * Marks their current attempts superseded rather than deleting them: the
+ * scores stay on the learner's record, where they are the evidence for having
+ * granted the reset in the first place, but stop counting towards retry_max.
+ *
+ * Authorization is the RLS policy quiz_attempts_update_editor — Admin and
+ * Operator of the business that owns the quiz, never an Auditor — so this runs
+ * through the caller's own session and the guard here only turns a silent
+ * no-op into a sentence.
+ */
+export async function resetQuizAttempts(
+  courseId: string,
+  quizId: string,
+  learnerId: string
+): Promise<ActionResult<{ cleared: number }>> {
+  const auth = await requireEditor()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  if (!(await ownedCourse(courseId, auth.businessId))) {
+    return { ok: false, error: 'Course not found.' }
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('quiz_attempts')
+    .update({ superseded_at: new Date().toISOString() })
+    .eq('quiz_id', quizId)
+    .eq('learner_id', learnerId)
+    .is('superseded_at', null)
+    .select('id')
+
+  if (error) return { ok: false, error: error.message }
+  if (!data || data.length === 0) {
+    return { ok: false, error: 'There are no attempts to reset on that quiz.' }
+  }
+
+  revalidatePath(`/courses/${courseId}/manage/learners/${learnerId}`)
+  revalidatePath(`/learners/${learnerId}`)
+  revalidatePath(`/courses/${courseId}/manage`)
+  return { ok: true, data: { cleared: data.length } }
 }
 
 /* ── Sharing ───────────────────────────────────────────────────────────── */

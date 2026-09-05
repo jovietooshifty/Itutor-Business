@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, X } from 'lucide-react'
 import { Button, Field, Input, SegmentedControl, Textarea } from '@/components/ui'
-import { ImageUpload } from '@/components/ui/image-upload'
 import { MultiSelectCombobox } from '@/components/ui/combobox'
 import { CourseSteps } from '@/components/business/course-steps'
 import {
@@ -68,7 +67,9 @@ export function CourseBasicsForm({
   const [tags, setTags] = React.useState<string[]>(initial.tags)
   const [outcomes, setOutcomes] = React.useState<string[]>(initial.whatYouWillLearn)
   const [outcomeDraft, setOutcomeDraft] = React.useState('')
-  const [thumbnailUrl, setThumbnailUrl] = React.useState(initial.thumbnailUrl)
+  /* Held and sent back untouched. The control is gone but the column is not,
+     so a course that had artwork keeps it rather than being silently wiped. */
+  const [thumbnailUrl] = React.useState(initial.thumbnailUrl)
 
   /**
    * The id of a course this form created, so a second submit edits it instead
@@ -164,31 +165,19 @@ export function CourseBasicsForm({
       )}
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-6 shadow-sm md:p-7">
-        <div className="flex flex-col gap-5 sm:flex-row">
-          <ImageUpload
-            bucket="business-assets"
-            path={`${businessId}/course-thumbnails`}
-            preset="cover"
-            value={thumbnailUrl}
-            onChange={setThumbnailUrl}
-            shape="rect"
-            width={140}
-            height={100}
-            placeholder="Thumbnail"
-            className="shrink-0"
+        {/* No per-course thumbnail. Every course now shows the company's
+            banner, so a business has one look across its whole catalogue and
+            nobody has to source a fresh image per course. Set it once on the
+            company profile. */}
+        <Field label="Course title" htmlFor="course-title" error={fieldErrors.title}>
+          <Input
+            id="course-title"
+            value={title}
+            onChange={(e) => editTitle(e.target.value)}
+            placeholder="e.g. Food Safety & Sanitation Basics"
+            invalid={Boolean(fieldErrors.title)}
           />
-          <div className="flex-1">
-            <Field label="Course title" htmlFor="course-title" error={fieldErrors.title}>
-              <Input
-                id="course-title"
-                value={title}
-                onChange={(e) => editTitle(e.target.value)}
-                placeholder="e.g. Food Safety & Sanitation Basics"
-                invalid={Boolean(fieldErrors.title)}
-              />
-            </Field>
-          </div>
-        </div>
+        </Field>
 
         <Field
           className="mt-6"

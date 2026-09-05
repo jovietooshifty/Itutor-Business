@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BookOpen, ImagePlus } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 /**
@@ -15,8 +15,7 @@ import { cn } from '@/lib/cn'
 export function CourseCard({
   href,
   title,
-  thumbnailUrl,
-  fallbackThumbnailUrl = null,
+  imageUrl,
   providerName,
   providerLogoUrl,
   meta,
@@ -25,19 +24,16 @@ export function CourseCard({
   footerLeft,
   actionLabel,
   accent = 'brand',
-  /** Business side only: nudges an admin to upload artwork. */
-  thumbnailPrompt,
 }: {
   href: string
   title: string
-  thumbnailUrl: string | null
   /**
-   * Shown when the course has no artwork of its own — in practice the
-   * provider's cover image. A card is never blank, and "Add a thumbnail"
-   * becomes a nudge over real artwork instead of sitting in a gap. Setting a
-   * course's own thumbnail_url overrides it.
+   * The provider's banner. Courses no longer carry artwork of their own: one
+   * business has one look, every card is consistent, and nobody has to find a
+   * 16:9 image per course. courses.thumbnail_url still exists and still holds
+   * whatever was set before, but nothing writes or reads it now.
    */
-  fallbackThumbnailUrl?: string | null
+  imageUrl: string | null
   providerName: string
   providerLogoUrl?: string | null
   meta?: string
@@ -46,11 +42,8 @@ export function CourseCard({
   footerLeft?: React.ReactNode
   actionLabel: string
   accent?: 'brand' | 'coral'
-  thumbnailPrompt?: { href: string; label: string }
 }) {
   const isBrand = accent === 'brand'
-  const artwork = thumbnailUrl ?? fallbackThumbnailUrl
-
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-card border border-[#e5e7eb] bg-white transition-[transform,box-shadow] duration-slow ease-out hover:-translate-y-1 hover:shadow-hover-card">
       {/* One link covers the tile; anything clickable sits above it. */}
@@ -62,9 +55,13 @@ export function CourseCard({
           isBrand ? 'bg-brand-light' : 'bg-coral-soft'
         )}
       >
-        {artwork ? (
+        {imageUrl ? (
+          /* `contain`, not `cover`. A banner is usually a wordmark, and
+             filling a 132px box with a wide logo crops its ends off — which is
+             how "EVOLVE" was rendering as "VOLV". The ground behind it is the
+             brand tint, so the letterboxing reads as a deliberate frame. */
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={artwork} alt="" className="h-full w-full object-cover" />
+          <img src={imageUrl} alt="" className="h-full w-full object-contain" />
         ) : (
           <BookOpen
             size={40}
@@ -75,17 +72,6 @@ export function CourseCard({
         )}
 
         {chips && <div className="absolute left-2.5 top-2.5 z-10 flex gap-1.5">{chips}</div>}
-
-        {/* Keyed on the course's OWN artwork, not on what is displayed: the
-            fallback fills the space but is still not this course's picture. */}
-        {!thumbnailUrl && thumbnailPrompt && (
-          <Link
-            href={thumbnailPrompt.href}
-            className="absolute bottom-2.5 right-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-ink no-underline shadow-sm transition-colors duration-fast hover:bg-white"
-          >
-            <ImagePlus size={13} aria-hidden /> {thumbnailPrompt.label}
-          </Link>
-        )}
       </div>
 
       <div className="flex flex-1 flex-col p-[18px]">

@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { Award, Briefcase, FileText, Mail, Phone } from 'lucide-react'
-import { Avatar, Badge, Card, ProgressBar } from '@/components/ui'
+import { Avatar, Badge, Card, ProgressBar, cn } from '@/components/ui'
 import { InviteToRetake } from '@/components/business/invite-to-retake'
+import { ResetQuizAttempts } from '@/components/business/reset-quiz-attempts'
 import type { LearnerRecord } from '@/lib/learner-record'
 import type { LearnerQuiz } from '@/lib/learners'
 
@@ -175,7 +176,12 @@ export function LearnerRecordView({
                 />
               )}
 
-              <QuizHistory quizzes={row.quizzes} />
+              <QuizHistory
+                quizzes={row.quizzes}
+                courseId={row.courseId}
+                learnerId={record.learnerId}
+                canReset={canInvite}
+              />
             </Card>
           ))}
         </div>
@@ -346,7 +352,17 @@ function formatDuration(seconds: number): string {
  * has understood the material needs to see 40 → 55 → 70 differently from a
  * single 70, and the old record could not tell those apart.
  */
-function QuizHistory({ quizzes }: { quizzes: LearnerQuiz[] }) {
+function QuizHistory({
+  quizzes,
+  courseId,
+  learnerId,
+  canReset,
+}: {
+  quizzes: LearnerQuiz[]
+  courseId: string
+  learnerId: string
+  canReset: boolean
+}) {
   if (quizzes.length === 0) {
     return <p className="m-0 mt-3 text-xs text-[#9ca3af]">No quizzes attempted in this course.</p>
   }
@@ -363,24 +379,59 @@ function QuizHistory({ quizzes }: { quizzes: LearnerQuiz[] }) {
             </span>
           </div>
 
-          <p className="m-0 mt-1 text-xs text-ink-muted">
-            Best {quiz.bestScore}% · latest {quiz.latestScore}% ·{' '}
-            <span
-              className={
-                quiz.passed ? 'font-semibold text-[var(--itutor-green)]' : 'font-semibold text-danger-fg'
-              }
-            >
-              {quiz.passed ? 'Passed' : 'Not passed'}
-            </span>
-          </p>
+          {quiz.attemptsUsed === 0 ? (
+            <p className="m-0 mt-1 text-xs text-ink-muted">
+              Attempts reset — nothing counted yet on this quiz.
+            </p>
+          ) : (
+            <p className="m-0 mt-1 text-xs text-ink-muted">
+              Best {quiz.bestScore}% · latest {quiz.latestScore}% ·{' '}
+              <span
+                className={
+                  quiz.passed
+                    ? 'font-semibold text-[var(--itutor-green)]'
+                    : 'font-semibold text-danger-fg'
+                }
+              >
+                {quiz.passed ? 'Passed' : 'Not passed'}
+              </span>
+            </p>
+          )}
+
+          {quiz.supersededCount > 0 && (
+            <p className="m-0 mt-1 text-xs text-[#9ca3af]">
+              {quiz.supersededCount} earlier attempt
+              {quiz.supersededCount === 1 ? '' : 's'} reset by an administrator, kept below.
+            </p>
+          )}
+
+          {canReset && (
+            <ResetQuizAttempts
+              courseId={courseId}
+              quizId={quiz.quizId}
+              learnerId={learnerId}
+              quizTitle={quiz.title}
+              attemptsUsed={quiz.attemptsUsed}
+              attemptsAllowed={quiz.attemptsAllowed}
+            />
+          )}
 
           <ol className="m-0 mt-2 grid list-none gap-1 p-0">
             {quiz.attempts.map((attempt) => (
               <li
                 key={attempt.attemptNumber}
-                className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md bg-surface-inset px-2.5 py-1.5 text-xs"
+                className={cn(
+                  'flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md bg-surface-inset px-2.5 py-1.5 text-xs',
+                  // Reset away: still readable, visibly not current.
+                  attempt.superseded && 'opacity-60'
+                )}
               >
                 <span className="font-semibold text-ink">Attempt {attempt.attemptNumber}</span>
+                {attempt.superseded && (
+                  <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#9ca3af]">
+                    Reset
+                  </span>
+                )}
                 <span
                   className={
                     attempt.passed ? 'font-semibold text-[var(--itutor-green)]' : 'text-ink-muted'

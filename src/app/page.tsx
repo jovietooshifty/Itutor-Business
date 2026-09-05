@@ -17,7 +17,6 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react'
-import { CoursePreview } from '@/components/marketing/course-preview'
 import { SiteFooter } from '@/components/marketing/site-footer'
 import { SiteHeader } from '@/components/marketing/site-header'
 
@@ -51,7 +50,6 @@ export default function HomePage() {
       */}
       <main className="bg-mint">
         <Hero />
-        <CoursePreview />
         <HowItWorks />
         <Stats />
         <TrustStrip />

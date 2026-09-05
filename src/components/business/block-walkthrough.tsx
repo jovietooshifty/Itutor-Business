@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowLeft, ArrowRight, Clock, Sparkles } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Clock, Sparkles } from 'lucide-react'
 import {
   Button,
   Checkbox,
@@ -321,14 +321,28 @@ export function BlockWalkthrough({
               onClick={() =>
                 save(() =>
                   router.push(
+                    /* The last block returns to the sequence rather than
+                       marching on to Details. Filling in the final block is
+                       not the same as being finished with the content: the
+                       usual next move is adding another block or fixing an
+                       earlier one, and both live on the sequence screen. From
+                       there, Continue goes to Details when the author says so. */
                     isLast
-                      ? `/courses/${courseId}/details`
+                      ? `/courses/${courseId}`
                       : `/courses/${courseId}/content/${nextBlockId}`
                   )
                 )
               }
             >
-              {isLast ? 'Continue to details' : 'Continue to next page'} <ArrowRight size={15} />
+              {isLast ? (
+                <>
+                  <Check size={15} /> Done
+                </>
+              ) : (
+                <>
+                  Continue to next page <ArrowRight size={15} />
+                </>
+              )}
             </Button>
           )}
         </div>

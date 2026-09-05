@@ -9,6 +9,11 @@ export type LearnerAttempt = {
   submittedAt: string
   /** Seconds from opening the quiz to submitting, when the start was recorded. */
   durationSeconds: number | null
+  /**
+   * Reset by an administrator: still on the record, no longer counted against
+   * the attempt cap. See 20260905000100.
+   */
+  superseded: boolean
 }
 
 /** One quiz in the course, and everything this learner did on it. */
@@ -19,7 +24,10 @@ export type LearnerQuiz = {
   passingScore: number
   /** retry_max is the TOTAL allowed; null means a single attempt. */
   attemptsAllowed: number
+  /** Live attempts only — what actually counts against attemptsAllowed. */
   attemptsUsed: number
+  /** How many were reset away, so the record can say a reset happened. */
+  supersededCount: number
   bestScore: number | null
   latestScore: number | null
   passed: boolean
@@ -132,7 +140,8 @@ async function buildRows(enrollments: EnrollmentRow[]): Promise<LearnerRow[]> {
     if (quizzes?.length) {
       const { data: attempts } = await supabase
         .from('quiz_attempts')
-        .select('quiz_id, learner_id, score, passed, attempt_number, started_at, submitted_at, attempted_at')
+        // prettier-ignore
+        .select('quiz_id, learner_id, score, passed, attempt_number, started_at, submitted_at, attempted_at, superseded_at')
         .in(
           'quiz_id',
           quizzes.map((q) => q.id)
@@ -161,6 +170,7 @@ async function buildRows(enrollments: EnrollmentRow[]): Promise<LearnerRow[]> {
                 Math.round((Date.parse(submittedAt) - Date.parse(startedAt)) / 1000)
               )
             : null,
+          superseded: attempt.superseded_at !== null,
         })
         byQuizLearner.set(key, list)
       }
@@ -182,6 +192,11 @@ async function buildRows(enrollments: EnrollmentRow[]): Promise<LearnerRow[]> {
           const sat = byQuizLearner.get(`${quiz.id}:${learnerId}`)
           if (!sat?.length) continue
 
+          /* Everything that describes where the learner STANDS is measured on
+             live attempts — used, best, latest, passed. Superseded ones were
+             reset away by an admin and stay only as history. */
+          const live = sat.filter((a) => !a.superseded)
+
           const courseId = block.course_id
           const key = `${learnerId}:${courseId}`
           const list = quizzesByLearnerCourse.get(key) ?? []
@@ -191,10 +206,11 @@ async function buildRows(enrollments: EnrollmentRow[]): Promise<LearnerRow[]> {
             title: block.title || blockById.get(block.id)?.title || 'Quiz',
             passingScore: quiz.passing_score,
             attemptsAllowed: quiz.retry_max ?? 1,
-            attemptsUsed: sat.length,
-            bestScore: Math.max(...sat.map((a) => a.score)),
-            latestScore: sat[sat.length - 1].score,
-            passed: sat.some((a) => a.passed),
+            attemptsUsed: live.length,
+            supersededCount: sat.length - live.length,
+            bestScore: live.length ? Math.max(...live.map((a) => a.score)) : null,
+            latestScore: live.length ? live[live.length - 1].score : null,
+            passed: live.some((a) => a.passed),
             attempts: sat,
           })
           quizzesByLearnerCourse.set(key, list)

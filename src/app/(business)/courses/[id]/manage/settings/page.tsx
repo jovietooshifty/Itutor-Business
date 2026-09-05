@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import { CourseTabs } from '@/components/business/course-tabs'
 import { CourseBasicsForm } from '@/components/business/course-basics-form'
 import { CourseDetailsForm } from '@/components/business/course-details-form'
@@ -51,6 +53,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   return (
     <main className="mx-auto max-w-[960px] p-6 md:p-10">
+      <Link
+        href="/courses"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted no-underline hover:text-ink"
+      >
+        <ArrowLeft size={15} aria-hidden /> All courses
+      </Link>
       <h1 className="m-0 mb-5 font-display text-[28px] font-bold text-ink">{course.title}</h1>
 
       <CourseTabs courseId={course.id} active="settings" />
