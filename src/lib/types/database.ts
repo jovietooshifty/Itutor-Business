@@ -1041,7 +1041,7 @@ export type Database = {
       block_progress_status: "locked" | "unlocked" | "completed"
       id_document_type: "national_id" | "drivers_permit" | "passport"
       block_source_status: "empty" | "ready" | "pending" | "failed"
-      block_type: "video" | "text" | "quiz"
+      block_type: "video" | "text" | "quiz" | "slides"
       business_status: "active"
       business_type: "independent" | "franchise" | "chain"
       course_build_stage:
@@ -1193,7 +1193,7 @@ export const Constants = {
     Enums: {
       block_progress_status: ["locked", "unlocked", "completed"],
       block_source_status: ["empty", "ready", "pending", "failed"],
-      block_type: ["video", "text", "quiz"],
+      block_type: ["video", "text", "quiz", "slides"],
       business_status: ["active"],
       business_type: ["independent", "franchise", "chain"],
       course_build_stage: [

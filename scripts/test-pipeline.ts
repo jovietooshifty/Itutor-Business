@@ -8,6 +8,7 @@
      npm run pipeline:test -- --docx ./notes.docx --questions 3 --regenerate */
 
 import { extractFromDocx } from '../src/lib/pipeline/extract/docx'
+import { extractFromPptx } from '../src/lib/pipeline/extract/pptx'
 import { extractFromPdf } from '../src/lib/pipeline/extract/pdf'
 import { ExtractionError, type ExtractedContent, type SourceType } from '../src/lib/pipeline/extract/types'
 import { extractFromVideo } from '../src/lib/pipeline/extract/video'
@@ -200,6 +201,8 @@ function extract(sourceType: SourceType, input: string): Promise<ExtractedConten
       return extractFromPdf(input)
     case 'docx':
       return extractFromDocx(input)
+    case 'pptx':
+      return extractFromPptx(input)
     case 'website':
       return extractFromWebsite(input)
   }

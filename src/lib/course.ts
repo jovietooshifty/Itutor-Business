@@ -1,4 +1,4 @@
-import { FileText, HelpCircle, Video, type LucideIcon } from 'lucide-react'
+import { FileText, HelpCircle, Presentation, Video, type LucideIcon } from 'lucide-react'
 import type { Database } from '@/lib/types/database'
 
 export type BlockType = Database['public']['Enums']['block_type']
@@ -45,6 +45,14 @@ export const BLOCK_TYPES: BlockTypeMeta[] = [
     iconColor: '#7c3aed',
   },
   {
+    type: 'slides',
+    label: 'Slides',
+    description: 'A deck — PDF shows in the page, PowerPoint downloads',
+    icon: Presentation,
+    iconBg: '#fef3c7',
+    iconColor: '#b45309',
+  },
+  {
     type: 'quiz',
     label: 'Quiz',
     description: 'Test what learners just covered',
@@ -87,6 +95,26 @@ export const DOCUMENT_MIME_TYPES = [
   'text/plain',
   'text/markdown',
 ] as const
+
+/**
+ * What a slides block accepts.
+ *
+ * PDF first, and deliberately: a browser renders one page by page with no help
+ * from us, and every deck tool exports to it in a step. A .pptx cannot be
+ * rendered by a browser and cannot be converted without LibreOffice, so it is
+ * accepted for its text — quizzes still work — and handed to the learner as a
+ * download. `.ppt`, the pre-2007 binary, is not accepted at all: it would
+ * upload happily and then yield nothing.
+ */
+export const SLIDE_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+] as const
+
+/** True when a deck will render in the page rather than only download. */
+export function slidesRenderInline(fileName: string | null): boolean {
+  return /\.pdf$/i.test(fileName ?? '')
+}
 
 /* ── content_ref payloads ──────────────────────────────────────────────── */
 
@@ -132,6 +160,16 @@ export type TextContent = {
   summary: string
 }
 
+export type SlidesContent = {
+  /** Object path in MATERIAL_BUCKET. Null until a deck is uploaded. */
+  path: string | null
+  fileName: string | null
+  /** What to look for while going through it, shown above the deck. */
+  pointers: string
+  /** The takeaway, shown after it. */
+  summary: string
+}
+
 /** Reads a jsonb payload defensively — rows may predate the current shape. */
 export function asVideo(content: unknown): VideoContent {
   const c = (content ?? {}) as Partial<VideoContent>
@@ -158,6 +196,16 @@ export function asText(content: unknown): TextContent {
   }
 }
 
+export function asSlides(content: unknown): SlidesContent {
+  const c = (content ?? {}) as Partial<SlidesContent>
+  return {
+    path: c.path ?? null,
+    fileName: c.fileName ?? null,
+    pointers: c.pointers ?? '',
+    summary: c.summary ?? '',
+  }
+}
+
 export const EMPTY_CONTENT: Record<BlockType, unknown> = {
   video: {
     path: null,
@@ -176,6 +224,12 @@ export const EMPTY_CONTENT: Record<BlockType, unknown> = {
     pointers: '',
     summary: '',
   } satisfies TextContent,
+  slides: {
+    path: null,
+    fileName: null,
+    pointers: '',
+    summary: '',
+  } satisfies SlidesContent,
   quiz: {},
 }
 

@@ -7,6 +7,7 @@ import { BlockPlayer } from '@/components/learner/block-player'
 import { QuizPlayer, type QuizQuestion } from '@/components/learner/quiz-player'
 import {
   MATERIAL_BUCKET,
+  asSlides,
   asText,
   asVideo,
   blockTypeMeta,
@@ -98,7 +99,9 @@ export default async function Page({
       ? asVideo(block.content_ref).path
       : block.type === 'text'
         ? asText(block.content_ref).path
-        : null
+        : block.type === 'slides'
+          ? asSlides(block.content_ref).path
+          : null
 
   if (materialPath) {
     const { data: signed } = await supabase.storage
@@ -119,10 +122,13 @@ export default async function Page({
    * the signed URL by the player itself.
    */
   let materialDisplay = null
-  if (materialPath && materialUrl && block.type === 'text') {
+  if (materialPath && materialUrl && (block.type === 'text' || block.type === 'slides')) {
     materialDisplay = await materialView({
       path: materialPath,
-      fileName: asText(block.content_ref).fileName,
+      fileName:
+        block.type === 'slides'
+          ? asSlides(block.content_ref).fileName
+          : asText(block.content_ref).fileName,
       url: materialUrl,
       // Through the signed URL just minted, not a second storage call — see
       // bytesFromSignedUrl.

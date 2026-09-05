@@ -1,15 +1,23 @@
 'use client'
 
 import * as React from 'react'
-import { FileText, Loader2, Upload, Video, X } from 'lucide-react'
+import { FileText, Loader2, Presentation, Upload, Video, X } from 'lucide-react'
 import { Button, cn } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import {
   DOCUMENT_MIME_TYPES,
   MATERIAL_BUCKET,
+  SLIDE_MIME_TYPES,
   VIDEO_MIME_TYPES,
   materialPath,
 } from '@/lib/course'
+
+/** What each kind of block will accept, in one place. */
+function mimeTypesFor(kind: 'video' | 'document' | 'slides'): readonly string[] {
+  if (kind === 'video') return VIDEO_MIME_TYPES
+  if (kind === 'slides') return SLIDE_MIME_TYPES
+  return DOCUMENT_MIME_TYPES
+}
 
 /** Matches the bucket's own file_size_limit, so the check fails before the wire. */
 const MAX_BYTES = 500 * 1024 * 1024
@@ -35,7 +43,7 @@ export function MaterialUpload({
 }: {
   courseId: string
   blockId: string
-  kind: 'video' | 'document'
+  kind: 'video' | 'document' | 'slides'
   value: MaterialValue
   onChange: (next: MaterialValue) => void
   disabled?: boolean
@@ -45,7 +53,7 @@ export function MaterialUpload({
   const [error, setError] = React.useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
 
-  const accept = (kind === 'video' ? VIDEO_MIME_TYPES : DOCUMENT_MIME_TYPES).join(',')
+  const accept = mimeTypesFor(kind).join(',')
 
   // Signed previews expire, so this re-runs whenever the stored path changes
   // rather than caching a URL that would quietly go dead mid-session.
@@ -70,12 +78,16 @@ export function MaterialUpload({
   async function handleFile(file: File) {
     setError(null)
 
-    const allowed: readonly string[] = kind === 'video' ? VIDEO_MIME_TYPES : DOCUMENT_MIME_TYPES
+    const allowed: readonly string[] = mimeTypesFor(kind)
     if (file.type && !allowed.includes(file.type)) {
       setError(
         kind === 'video'
           ? 'That is not a video file. MP4, WebM, MOV and OGG are accepted.'
-          : 'That is not a document. PDF, Word, plain text and Markdown are accepted.'
+          : kind === 'slides'
+            ? // .ppt is named because it looks acceptable and is not: a
+              // different format entirely, which nothing here can read.
+              'That is not a deck. Upload a PDF or a .pptx — an older .ppt needs saving as one of those first.'
+            : 'That is not a document. PDF, Word, plain text and Markdown are accepted.'
       )
       return
     }
@@ -112,7 +124,7 @@ export function MaterialUpload({
     onChange({ path: null, fileName: null })
   }
 
-  const Icon = kind === 'video' ? Video : FileText
+  const Icon = kind === 'video' ? Video : kind === 'slides' ? Presentation : FileText
 
   return (
     <div>

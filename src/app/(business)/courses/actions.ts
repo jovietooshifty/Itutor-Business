@@ -8,6 +8,7 @@ import {
   DEFAULT_COURSE_DETAILS,
   EMPTY_CONTENT,
   MATERIAL_BUCKET,
+  asSlides,
   asText,
   asVideo,
   effectiveNavigation,
@@ -715,6 +716,25 @@ export async function saveBlockPage(
 
       if (needsExtraction) {
         const result = await extractUploadedSource(text.path, text.fileName)
+        derived = result.derived
+        warnings.push(...result.warnings)
+      }
+    }
+  } else if (block.type === 'slides') {
+    /* A deck goes through the same extractor as a document — a PDF by its
+       pages, a .pptx by its slide text and speaker notes — so a quiz after it
+       reads the real material rather than the block's title. */
+    const slides = asSlides(input.content)
+    update.content_ref = slides as never
+
+    if (!slides.path) {
+      derived = empty
+    } else {
+      const previousPath = asSlides(block.content_ref).path
+      const needsExtraction = previousPath !== slides.path || block.source_status !== 'ready'
+
+      if (needsExtraction) {
+        const result = await extractUploadedSource(slides.path, slides.fileName)
         derived = result.derived
         warnings.push(...result.warnings)
       }

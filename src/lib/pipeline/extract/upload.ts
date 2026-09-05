@@ -36,6 +36,11 @@ export async function extractFromUpload(
     return extractFromDocx(buffer)
   }
 
+  if (kind === 'pptx') {
+    const { extractFromPptx } = await import('./pptx')
+    return extractFromPptx(buffer)
+  }
+
   if (kind === 'plain') {
     const text = new TextDecoder('utf-8').decode(bytes).replace(/[ \t]+/g, ' ').trim()
     const warnings: string[] = []
@@ -76,21 +81,26 @@ export async function transcribeUpload(
 function classify(
   fileName: string,
   mimeType: string | null
-): 'pdf' | 'docx' | 'plain' | 'unknown' {
+): 'pdf' | 'docx' | 'pptx' | 'plain' | 'unknown' {
   const mime = (mimeType ?? '').toLowerCase()
   if (mime === 'application/pdf') return 'pdf'
   if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     return 'docx'
+  }
+  if (mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+    return 'pptx'
   }
   if (mime.startsWith('text/')) return 'plain'
 
   const ext = fileName.toLowerCase().split('.').pop() ?? ''
   if (ext === 'pdf') return 'pdf'
   if (ext === 'docx') return 'docx'
+  if (ext === 'pptx') return 'pptx'
   if (ext === 'txt' || ext === 'md' || ext === 'markdown') return 'plain'
 
-  // .doc is the one worth naming: it is a different format entirely, not a
-  // .docx with an older extension, and mammoth cannot read it.
+  // .doc and .ppt are the ones worth naming: both are different formats
+  // entirely, not older extensions of the same thing, and neither mammoth nor
+  // the pptx reader can open them.
   return 'unknown'
 }
 

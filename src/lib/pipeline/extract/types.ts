@@ -1,4 +1,4 @@
-export type SourceType = 'video' | 'pdf' | 'docx' | 'website'
+export type SourceType = 'video' | 'pdf' | 'docx' | 'pptx' | 'website'
 
 /* Every extractor returns this shape so quiz generation and the test harness
    can treat all four ingestion paths identically.

@@ -12,6 +12,10 @@ const SOURCE_LABELS: Record<SourceType, string> = {
   video: 'transcript of a training video',
   pdf: 'PDF training document',
   docx: 'Word training document',
+  /* Named as slides on purpose: the model gets terse bullets and speaker
+     notes rather than prose, and knowing that is the difference between
+     questions about the material and questions about the phrasing. */
+  pptx: 'slide deck, given as its slide text and speaker notes',
   website: 'training article from a website',
 }
 

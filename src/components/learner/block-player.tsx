@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Download, ExternalLink, FileText, Lightbulb, Target } from 'lucide-react'
 import { Button, Card, Checkbox } from '@/components/ui'
 import { completeBlock } from '@/app/(learner)/actions'
-import { asText, asVideo, type BlockType } from '@/lib/course'
+import { asSlides, asText, asVideo, type BlockType } from '@/lib/course'
 import type { MaterialView } from '@/lib/material-view'
 
 /** True for a file we can play ourselves and therefore actually gate on. */
@@ -74,6 +74,12 @@ export function BlockPlayer({
           materialUrl={materialUrl}
           onWatched={() => setDone(true)}
         />
+      ) : type === 'slides' ? (
+        <SlidesLesson
+          content={content}
+          materialUrl={materialUrl}
+          materialDisplay={materialDisplay}
+        />
       ) : (
         <TextLesson
           content={content}
@@ -86,7 +92,13 @@ export function BlockPlayer({
       {!canComplete && (
         <div className="mt-4 rounded-lg border border-surface-border bg-white px-4 py-3.5">
           <Checkbox
-            label={type === 'video' ? "I've watched this video" : "I've read this"}
+            label={
+              type === 'video'
+                ? "I've watched this video"
+                : type === 'slides'
+                  ? "I've been through these slides"
+                  : "I've read this"
+            }
             checked={confirmed}
             onChange={(e) => setConfirmed(e.target.checked)}
           />
@@ -244,6 +256,83 @@ function toEmbedUrl(url: string): string | null {
   } catch {
     return null
   }
+}
+
+/* ── Slides ────────────────────────────────────────────────────────────── */
+
+/**
+ * A deck, framed the way a text lesson is.
+ *
+ * A PDF gets the browser's own viewer, which already does pagination, zoom and
+ * fullscreen better than anything worth rebuilding here. A .pptx has no viewer
+ * anywhere, so it is offered as a download and says so plainly — the author was
+ * warned about this when they uploaded it.
+ */
+function SlidesLesson({
+  content,
+  materialUrl,
+  materialDisplay,
+}: {
+  content: unknown
+  materialUrl: string | null
+  materialDisplay: MaterialView | null
+}) {
+  const value = asSlides(content)
+
+  return (
+    <>
+      <Guidance icon={Target} label="What to look for" body={value.pointers} />
+
+      <Card className="p-6 md:p-8">
+        {!value.path || !materialUrl ? (
+          <p className="m-0 text-sm text-ink-muted">
+            {value.path
+              ? 'This deck could not be loaded. Try again, or let the course owner know.'
+              : 'This lesson has no slides yet.'}
+          </p>
+        ) : materialDisplay?.kind === 'embed' ? (
+          <div>
+            <iframe
+              src={materialDisplay.url}
+              title={materialDisplay.fileName}
+              className="h-[75vh] w-full rounded-lg border border-surface-border bg-surface-inset"
+            />
+            <MaterialFooter url={materialDisplay.url} fileName={materialDisplay.fileName} />
+          </div>
+        ) : (
+          <div>
+            {/* The honest version of "we cannot show this". Nothing renders a
+                PowerPoint file in a browser, so pretending otherwise with a
+                broken frame would be worse than saying so. */}
+            <p className="m-0 mb-3 rounded-md bg-surface-inset px-3.5 py-2.5 text-xs text-ink-muted">
+              This deck is a PowerPoint file, which cannot be shown inside the lesson. Download it
+              to go through it, then come back.
+            </p>
+            <ExternalContent url={materialUrl} label={value.fileName ?? 'Open the deck'} />
+          </div>
+        )}
+      </Card>
+
+      {/* No auto-completion here. A PDF is read inside the browser's own
+          viewer, which tells us nothing about how far someone scrolled, and a
+          downloaded deck is read somewhere else entirely — so the confirmation
+          checkbox is the honest gate, exactly as it is for a linked video. */}
+
+      {value.summary.trim() && (
+        <div className="mt-4 flex items-start gap-3 rounded-lg border border-[color:var(--itutor-green)] bg-brand-light px-4 py-3.5">
+          <Lightbulb size={16} className="mt-0.5 shrink-0 text-[var(--itutor-green)]" aria-hidden />
+          <div className="min-w-0">
+            <p className="m-0 text-xs font-bold uppercase tracking-wide text-[var(--itutor-green)]">
+              The takeaway
+            </p>
+            <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink">
+              {value.summary}
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
 
 /* ── Text ──────────────────────────────────────────────────────────────── */

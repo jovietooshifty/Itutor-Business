@@ -20,14 +20,17 @@ import {
   PASSING_SCORE_OPTIONS,
   QUIZ_SCOPE_OPTIONS,
   VIDEO_GUIDELINE_PRESETS,
+  asSlides,
   asText,
   asVideo,
   blockTypeMeta,
   isGuidelinePreset,
+  slidesRenderInline,
   type BlockSourceStatus,
   type BlockType,
   type QuizNavigationOverride,
   type QuizScope,
+  type SlidesContent,
   type TextContent,
   type VideoContent,
 } from '@/lib/course'
@@ -257,6 +260,16 @@ export function BlockWalkthrough({
               onChange={setContent}
             />
           )}
+          {block.type === 'slides' && (
+            <SlidesPage
+              courseId={courseId}
+              blockId={block.id}
+              value={asSlides(content)}
+              sourceStatus={block.sourceStatus}
+              sourceError={block.sourceError}
+              onChange={setContent}
+            />
+          )}
           {block.type === 'quiz' && quiz && (
             <QuizPage
               courseId={courseId}
@@ -358,7 +371,117 @@ export function BlockWalkthrough({
 const PAGE_INTROS: Record<BlockType, string> = {
   video: 'Add the video, and tell learners what to do with it.',
   text: 'Add the written material, and frame it — what to look for, and what to take away.',
+  slides: 'Upload the deck, and frame it — what to look for, and what to take away.',
   quiz: 'Set what this quiz tests and how it behaves, then write or generate its questions.',
+}
+
+/* ── Slides page ───────────────────────────────────────────────────────── */
+
+/**
+ * A deck, plus the same framing a text block gets.
+ *
+ * The format warning is the whole reason this is its own page rather than a
+ * mode of the text block: PDF and .pptx behave completely differently for the
+ * learner, and an author needs to know that before they publish rather than
+ * after someone tells them the slides only download.
+ */
+function SlidesPage({
+  courseId,
+  blockId,
+  value,
+  sourceStatus,
+  sourceError,
+  onChange,
+}: {
+  courseId: string
+  blockId: string
+  value: SlidesContent
+  sourceStatus: BlockSourceStatus
+  sourceError: string | null
+  onChange: (next: SlidesContent) => void
+}) {
+  const inline = slidesRenderInline(value.fileName)
+
+  return (
+    <div className="grid gap-6">
+      <div>
+        <span className="mb-1.5 block text-sm font-medium text-[#374151]">Deck</span>
+        <MaterialUpload
+          courseId={courseId}
+          blockId={blockId}
+          kind="slides"
+          value={{ path: value.path, fileName: value.fileName }}
+          onChange={(next) => onChange({ ...value, ...next })}
+        />
+
+        {!value.path && (
+          <p className="mt-2 text-xs leading-relaxed text-[#9ca3af]">
+            A PDF shows page by page inside the lesson. A PowerPoint file can only be downloaded —
+            export it as PDF first if you want learners to read it in place.
+          </p>
+        )}
+
+        {value.path && !inline && (
+          <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-[#92400e]">
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
+            Learners will have to download this deck to view it — no browser can display a
+            PowerPoint file. Exporting it as PDF and re-uploading shows it in the lesson.
+          </p>
+        )}
+
+        {value.path && inline && (
+          <p className="mt-2 text-xs text-[var(--itutor-green)]">
+            This will display inside the lesson.
+          </p>
+        )}
+
+        {/* The extraction verdict, exactly as the text block reports it: a deck
+            of screenshots reads as no text, and that is worth knowing here
+            rather than at the quiz. */}
+        {value.path && sourceStatus === 'failed' && (
+          <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-[var(--danger-fg)]">
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
+            {sourceError ?? 'That deck could not be read.'} Saving again retries it.
+          </p>
+        )}
+        {value.path && sourceStatus === 'ready' && sourceError && (
+          <p className="mt-2 text-xs leading-relaxed text-[#92400e]">{sourceError}</p>
+        )}
+        {value.path && sourceStatus === 'ready' && !sourceError && (
+          <p className="mt-2 text-xs text-[var(--itutor-green)]">
+            Read successfully — quizzes after this block can be generated from its slides and
+            speaker notes.
+          </p>
+        )}
+      </div>
+
+      <Field
+        label="Pointers"
+        optional
+        hint="Key things to focus on while going through it. Shown above the deck."
+      >
+        <Textarea
+          rows={3}
+          value={value.pointers}
+          onChange={(e) => onChange({ ...value, pointers: e.target.value })}
+          placeholder="e.g. Slides 4 to 9 are the ones that matter for the assessment."
+        />
+      </Field>
+
+      <Field
+        label="Summary and important notes"
+        optional
+        hint="The takeaway. Shown after the deck."
+      >
+        <Textarea
+          rows={3}
+          value={value.summary}
+          onChange={(e) => onChange({ ...value, summary: e.target.value })}
+          placeholder="e.g. Any spill over 10 litres is a supervisor call, not yours."
+        />
+      </Field>
+    </div>
+  )
 }
 
 /* ── Video page ────────────────────────────────────────────────────────── */
