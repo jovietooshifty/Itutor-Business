@@ -287,14 +287,16 @@ export function CourseSequence({
             Save changes
           </Button>
           {isWizard && (
+            /* On to Details, not into the first block. Filling blocks in is
+               what Open on each row is for, and each of those now returns
+               here when it is done — so if Continue also went into the
+               walkthrough there would be no way out of the pair. */
             <Button
               size="lg"
               loading={pending}
               disabled={!firstBlockId}
               title={firstBlockId ? undefined : 'Add at least one block first'}
-              onClick={() =>
-                saveTitles(() => router.push(`/courses/${course.id}/content/${firstBlockId}`))
-              }
+              onClick={() => saveTitles(() => router.push(`/courses/${course.id}/details`))}
             >
               Continue <ArrowRight size={15} />
             </Button>
@@ -304,8 +306,7 @@ export function CourseSequence({
 
       {isWizard && blocks.length > 0 && (
         <p className="mt-2.5 text-right text-xs text-[#9ca3af]">
-          Next: {blocks.length} {blocks.length === 1 ? 'page' : 'pages'}, one per block, in this
-          order.
+          Open each block to fill it in. Continue goes on to details.
         </p>
       )}
 

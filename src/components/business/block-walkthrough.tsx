@@ -25,7 +25,6 @@ import {
   asVideo,
   blockTypeMeta,
   isGuidelinePreset,
-  slidesRenderInline,
   type BlockSourceStatus,
   type BlockType,
   type QuizNavigationOverride,
@@ -420,7 +419,6 @@ function SlidesPage({
   savedPath: string | null
   onChange: (next: SlidesContent) => void
 }) {
-  const inline = slidesRenderInline(value.fileName)
   const verdictIsForThisFile = Boolean(value.path) && value.path === savedPath
 
   return (
@@ -435,26 +433,10 @@ function SlidesPage({
           onChange={(next) => onChange({ ...value, ...next })}
         />
 
-        {!value.path && (
-          <p className="mt-2 text-xs leading-relaxed text-[#9ca3af]">
-            A PDF shows page by page inside the lesson. A PowerPoint file can only be downloaded —
-            export it as PDF first if you want learners to read it in place.
-          </p>
-        )}
-
-        {value.path && !inline && (
-          <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-[#92400e]">
-            <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden />
-            Learners will have to download this deck to view it — no browser can display a
-            PowerPoint file. Exporting it as PDF and re-uploading shows it in the lesson.
-          </p>
-        )}
-
-        {value.path && inline && (
-          <p className="mt-2 text-xs text-[var(--itutor-green)]">
-            This will display inside the lesson.
-          </p>
-        )}
+        {/* No format commentary here. The drop zone already names what is
+            accepted, and the difference between a PDF and a .pptx shows itself
+            in the lesson. Three lines of caveat above the fold was the deck
+            block explaining itself instead of getting on with it. */}
 
         {/* The extraction verdict, and only when it is about the file on
             screen: a deck of screenshots reads as no text, and that is worth
