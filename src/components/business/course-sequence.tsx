@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, Check, Clock, GripVertical, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Clock, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { Button, cn } from '@/components/ui'
 import { CourseSteps } from '@/components/business/course-steps'
 import {
@@ -222,16 +222,9 @@ export function CourseSequence({
       )}
 
       <div className="rounded-xl border border-[#f3f4f6] bg-white p-4 shadow-sm md:p-6">
-        {/* A course with no blocks is the one state where the + has to be
-            pointed at rather than merely present: there is no list yet for it
-            to sit between, so it reads as a divider ornament. Goes as soon as
-            there is a block, because by then it has been understood. */}
-        {blocks.length === 0 && (
-          <p className="m-0 mb-3 flex items-start gap-2 rounded-md bg-brand-light px-3.5 py-2.5 text-sm font-semibold text-[var(--itutor-green)]">
-            <ArrowDown size={15} className="mt-0.5 shrink-0" aria-hidden />
-            Click the + to add your first block — video, text, or quiz.
-          </p>
-        )}
+        {/* The + carries this on its own now. It was made solid and larger for
+            exactly that reason, and a green banner above an empty box was
+            saying twice what one obvious control already says. */}
 
         <InsertRow
           open={insertAt === 0}
@@ -364,8 +357,11 @@ function InsertRow({
         <span className="h-px flex-1 bg-surface-border" />
       </div>
 
+      {/* One row per block type, so the set reads as four choices rather than
+          three and a straggler. Two-up on a phone, where four would be too
+          narrow to read. */}
       {open && (
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {BLOCK_TYPES.map((meta) => {
             const Icon = meta.icon
             // Offered but visibly unavailable, with the reason in place of the
