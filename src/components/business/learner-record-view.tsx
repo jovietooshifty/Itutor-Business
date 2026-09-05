@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import { Award, Briefcase, Mail, Phone, ShieldCheck } from 'lucide-react'
-import { Avatar, Badge, Card, ProgressBar, cn } from '@/components/ui'
+import { Avatar, Badge, Card, ProgressBar } from '@/components/ui'
+/* From lib, not from the UI module. This file is a server component and
+   components/ui is marked 'use client', so importing cn from there makes it a
+   client function the server may not call — which threw at request time on
+   every learner page, with nothing failing at build. */
+import { cn } from '@/lib/cn'
 import { InviteToRetake } from '@/components/business/invite-to-retake'
 import { ResetQuizAttempts } from '@/components/business/reset-quiz-attempts'
 import { idDocumentLabel } from '@/lib/identification'
